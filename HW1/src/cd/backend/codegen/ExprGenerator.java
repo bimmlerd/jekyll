@@ -48,7 +48,14 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 	@Override
 	public Register binaryOp(BinaryOp ast, Void arg) {
 		{
-			throw new ToDoException();
+			Register r = visit((Expr) ast.rwChildren.get(1), null); // TODO right child first atm, implement counterVisitor
+			Register l = visit((Expr) ast.rwChildren.get(0), null);
+			switch (ast.operator.name()) {
+				case "B_PLUS":
+					cg.emit.emit("addl", l, r);
+			}
+			cg.rm.releaseRegister(l);
+			return r;
 		}
 	}
 
@@ -83,7 +90,9 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 	@Override
 	public Register intConst(IntConst ast, Void arg) {
 		{
-			throw new ToDoException();
+			Register r = cg.rm.getRegister();
+			cg.emit.emitMove(AssemblyEmitter.constant(ast.value), r);
+			return r;
 		}
 	}
 
@@ -132,7 +141,10 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 	@Override
 	public Register var(Var ast, Void arg) {
 		{
-			throw new ToDoException();
+			Register r = cg.rm.getRegister();
+			cg.emit.emitMove(AssemblyEmitter.labelAddress(ast.name), r);
+			cg.emit.emitLoad(0,r,r);
+			return r;
 		}
 	}
 

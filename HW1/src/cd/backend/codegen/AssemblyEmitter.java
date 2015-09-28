@@ -119,6 +119,30 @@ public class AssemblyEmitter {
 			emit("movl", src, dest);
 	}
 
+    void emitMoveToAddress(String src, String dest, int offset) { emitMove(src, String.format("%d(%s)", offset, dest)); }
+
+    void emitMoveToAddress(Register src, String dest, int offset) { emitMove(src, String.format("%d(%s)", offset, dest)); }
+
+    void emitMoveToAddress(String src, Register dest, int offset) { emitMove(src, String.format("%d(%s)", offset, dest.repr)); }
+
+    void emitMoveToAddress(Register src, Register dest, int offset) { emitMove(src, String.format("%d(%s)", offset, dest.repr)); }
+
+    void emitMoveToAddress(String src, String dest) { emitMoveToAddress(src, dest, 0); }
+
+    void emitMoveToAddress(Register src, String dest) { emitMoveToAddress(src, dest, 0); }
+
+    void emitMoveToAddress(String src, Register dest) { emitMoveToAddress(src, dest, 0); }
+
+    void emitMoveToAddress(Register src, Register dest) { emitMoveToAddress(src, dest, 0); }
+
+	void emitCall(String func) {
+		emit("call", func);
+	}
+
+    void emitClearEAX() {
+        emit("xorl", "%eax", "%eax");
+    }
+
 	void emitLoad(int srcOffset, Register src, Register dest) {
 		emitMove(registerOffset(srcOffset, src), dest.repr);
 	}
@@ -136,8 +160,7 @@ public class AssemblyEmitter {
 	}
 
 	String uniqueLabel() {
-		String labelName = "label" + counter++;
-		return labelName;
+        return "label" + counter++;
 	}
 
 	void emitLabel(String label) {

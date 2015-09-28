@@ -10,6 +10,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
+import cd.util.debug.AstToDot;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -100,6 +101,9 @@ public class Main {
 		
 		debug("AST Resulting From Parsing Stage:");
 		dumpAst(result);
+
+		debug("AST rendering");
+		renderAst(result);
 		
 		return result;
 	}
@@ -123,4 +127,10 @@ public class Main {
 		if (this.debug == null) return;
 		this.debug.write(AstDump.toString(astRoots));
 	}
+
+	private void renderAst(List<ClassDecl> astRoots) throws IOException{
+		if (this.debug == null) return;
+		this.debug.write(AstToDot.toDot("ToDot", astRoots));
+	}
+
 }

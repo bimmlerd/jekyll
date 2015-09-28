@@ -1,0 +1,370 @@
+Debug information for file: ./javali_tests/HW1/EightVariables.javali
+AST Resulting From Parsing Stage:
+ClassDecl (name: Main, superClass: Object)
+| MethodDecl (argumentNames: [], argumentTypes: [], name: main, returnType: void)
+| | Seq ()
+| | | VarDecl (name: r1, type: int)
+| | | VarDecl (name: r2, type: int)
+| | | VarDecl (name: r3, type: int)
+| | | VarDecl (name: i0, type: int)
+| | | VarDecl (name: i1, type: int)
+| | | VarDecl (name: i2, type: int)
+| | | VarDecl (name: i3, type: int)
+| | | VarDecl (name: i4, type: int)
+| | | VarDecl (name: i5, type: int)
+| | | VarDecl (name: i6, type: int)
+| | | VarDecl (name: i7, type: int)
+| | Seq ()
+| | | Assign ()
+| | | | Var (name: i0)
+| | | | IntConst (value: 0)
+| | | Assign ()
+| | | | Var (name: i1)
+| | | | IntConst (value: 1)
+| | | Assign ()
+| | | | Var (name: i2)
+| | | | IntConst (value: 2)
+| | | Assign ()
+| | | | Var (name: i3)
+| | | | IntConst (value: 3)
+| | | Assign ()
+| | | | Var (name: i4)
+| | | | IntConst (value: 4)
+| | | Assign ()
+| | | | Var (name: i5)
+| | | | IntConst (value: 5)
+| | | Assign ()
+| | | | Var (name: i6)
+| | | | IntConst (value: 6)
+| | | Assign ()
+| | | | Var (name: i7)
+| | | | IntConst (value: 7)
+| | | Assign ()
+| | | | Var (name: r1)
+| | | | BinaryOp (operator: B_PLUS)
+| | | | | Var (name: i0)
+| | | | | BinaryOp (operator: B_PLUS)
+| | | | | | Var (name: i1)
+| | | | | | BinaryOp (operator: B_PLUS)
+| | | | | | | Var (name: i2)
+| | | | | | | BinaryOp (operator: B_PLUS)
+| | | | | | | | Var (name: i3)
+| | | | | | | | BinaryOp (operator: B_PLUS)
+| | | | | | | | | Var (name: i4)
+| | | | | | | | | BinaryOp (operator: B_PLUS)
+| | | | | | | | | | Var (name: i5)
+| | | | | | | | | | BinaryOp (operator: B_PLUS)
+| | | | | | | | | | | Var (name: i6)
+| | | | | | | | | | | Var (name: i7)
+| | | Assign ()
+| | | | Var (name: r2)
+| | | | BinaryOp (operator: B_PLUS)
+| | | | | BinaryOp (operator: B_PLUS)
+| | | | | | BinaryOp (operator: B_PLUS)
+| | | | | | | BinaryOp (operator: B_PLUS)
+| | | | | | | | BinaryOp (operator: B_PLUS)
+| | | | | | | | | BinaryOp (operator: B_PLUS)
+| | | | | | | | | | BinaryOp (operator: B_PLUS)
+| | | | | | | | | | | Var (name: i0)
+| | | | | | | | | | | Var (name: i1)
+| | | | | | | | | | Var (name: i2)
+| | | | | | | | | Var (name: i3)
+| | | | | | | | Var (name: i4)
+| | | | | | | Var (name: i5)
+| | | | | | Var (name: i6)
+| | | | | Var (name: i7)
+| | | Assign ()
+| | | | Var (name: r3)
+| | | | BinaryOp (operator: B_PLUS)
+| | | | | BinaryOp (operator: B_PLUS)
+| | | | | | BinaryOp (operator: B_PLUS)
+| | | | | | | Var (name: i0)
+| | | | | | | Var (name: i1)
+| | | | | | BinaryOp (operator: B_PLUS)
+| | | | | | | Var (name: i2)
+| | | | | | | Var (name: i3)
+| | | | | BinaryOp (operator: B_PLUS)
+| | | | | | BinaryOp (operator: B_PLUS)
+| | | | | | | Var (name: i4)
+| | | | | | | Var (name: i5)
+| | | | | | BinaryOp (operator: B_PLUS)
+| | | | | | | Var (name: i6)
+| | | | | | | Var (name: i7)
+| | | BuiltInWrite ()
+| | | | Var (name: r1)
+| | | BuiltInWriteln ()
+| | | BuiltInWrite ()
+| | | | Var (name: r2)
+| | | BuiltInWriteln ()
+| | | BuiltInWrite ()
+| | | | Var (name: r3)
+| | | BuiltInWriteln ()
+AST rendering
+graph ToDot{
+node453523494_info [label="Main : Object", color="green", shape=box];
+node453523494 -- node453523494_info;
+node453523494 [label="ClassDecl", style=filled, fillcolor="green"];
+node274722023_info [label="main", color="blue", shape=box];
+node274722023 -- node274722023_info;
+node274722023 [label="MethodDecl", style=filled, fillcolor="blue"];
+node1052967153 [label="Seq", style=filled, fillcolor="white"];
+node1210898719 [label="VarDecl", style=filled, fillcolor="white"];
+node1052967153 -- node1210898719;
+node306123060 [label="VarDecl", style=filled, fillcolor="white"];
+node1052967153 -- node306123060;
+node2104028992 [label="VarDecl", style=filled, fillcolor="white"];
+node1052967153 -- node2104028992;
+node1527430292 [label="VarDecl", style=filled, fillcolor="white"];
+node1052967153 -- node1527430292;
+node1975546571 [label="VarDecl", style=filled, fillcolor="white"];
+node1052967153 -- node1975546571;
+node521960438 [label="VarDecl", style=filled, fillcolor="white"];
+node1052967153 -- node521960438;
+node632587706 [label="VarDecl", style=filled, fillcolor="white"];
+node1052967153 -- node632587706;
+node726950788 [label="VarDecl", style=filled, fillcolor="white"];
+node1052967153 -- node726950788;
+node1567885839 [label="VarDecl", style=filled, fillcolor="white"];
+node1052967153 -- node1567885839;
+node558569884 [label="VarDecl", style=filled, fillcolor="white"];
+node1052967153 -- node558569884;
+node550752602 [label="VarDecl", style=filled, fillcolor="white"];
+node1052967153 -- node550752602;
+node274722023 -- node1052967153;
+node680779399 [label="Seq", style=filled, fillcolor="white"];
+node1439337960 [label="Assign", style=filled, fillcolor="white"];
+node741669172 [label="Var", style=filled, fillcolor="white"];
+node1439337960 -- node741669172;
+node315860201 [label="IntConst", style=filled, fillcolor="yellow"];
+node1439337960 -- node315860201;
+node680779399 -- node1439337960;
+node604125138 [label="Assign", style=filled, fillcolor="white"];
+node631659383 [label="Var", style=filled, fillcolor="white"];
+node604125138 -- node631659383;
+node785447854 [label="IntConst", style=filled, fillcolor="yellow"];
+node604125138 -- node785447854;
+node680779399 -- node604125138;
+node556529265 [label="Assign", style=filled, fillcolor="white"];
+node346224929 [label="Var", style=filled, fillcolor="white"];
+node556529265 -- node346224929;
+node63468833 [label="IntConst", style=filled, fillcolor="yellow"];
+node556529265 -- node63468833;
+node680779399 -- node556529265;
+node720167805 [label="Assign", style=filled, fillcolor="white"];
+node1418334255 [label="Var", style=filled, fillcolor="white"];
+node720167805 -- node1418334255;
+node1466073198 [label="IntConst", style=filled, fillcolor="yellow"];
+node720167805 -- node1466073198;
+node680779399 -- node720167805;
+node398690014 [label="Assign", style=filled, fillcolor="white"];
+node1526298704 [label="Var", style=filled, fillcolor="white"];
+node398690014 -- node1526298704;
+node1593180232 [label="IntConst", style=filled, fillcolor="yellow"];
+node398690014 -- node1593180232;
+node680779399 -- node398690014;
+node492079624 [label="Assign", style=filled, fillcolor="white"];
+node380242442 [label="Var", style=filled, fillcolor="white"];
+node492079624 -- node380242442;
+node125881207 [label="IntConst", style=filled, fillcolor="yellow"];
+node492079624 -- node125881207;
+node680779399 -- node492079624;
+node1763344271 [label="Assign", style=filled, fillcolor="white"];
+node1353170030 [label="Var", style=filled, fillcolor="white"];
+node1763344271 -- node1353170030;
+node370869802 [label="IntConst", style=filled, fillcolor="yellow"];
+node1763344271 -- node370869802;
+node680779399 -- node1763344271;
+node398572781 [label="Assign", style=filled, fillcolor="white"];
+node765284253 [label="Var", style=filled, fillcolor="white"];
+node398572781 -- node765284253;
+node1077199500 [label="IntConst", style=filled, fillcolor="yellow"];
+node398572781 -- node1077199500;
+node680779399 -- node398572781;
+node240166646 [label="Assign", style=filled, fillcolor="white"];
+node351028485 [label="Var", style=filled, fillcolor="white"];
+node240166646 -- node351028485;
+node1405747618 [label="BinaryOp", style=filled, fillcolor="white"];
+node898406901 [label="Var", style=filled, fillcolor="white"];
+node1405747618 -- node898406901;
+node1054932644 [label="BinaryOp", style=filled, fillcolor="white"];
+node1213349904 [label="Var", style=filled, fillcolor="white"];
+node1054932644 -- node1213349904;
+node1259769769 [label="BinaryOp", style=filled, fillcolor="white"];
+node444920847 [label="Var", style=filled, fillcolor="white"];
+node1259769769 -- node444920847;
+node589835301 [label="BinaryOp", style=filled, fillcolor="white"];
+node2032188048 [label="Var", style=filled, fillcolor="white"];
+node589835301 -- node2032188048;
+node112466394 [label="BinaryOp", style=filled, fillcolor="white"];
+node992846223 [label="Var", style=filled, fillcolor="white"];
+node112466394 -- node992846223;
+node1493625803 [label="BinaryOp", style=filled, fillcolor="white"];
+node630074945 [label="Var", style=filled, fillcolor="white"];
+node1493625803 -- node630074945;
+node64133603 [label="BinaryOp", style=filled, fillcolor="white"];
+node1436901839 [label="Var", style=filled, fillcolor="white"];
+node64133603 -- node1436901839;
+node999522307 [label="Var", style=filled, fillcolor="white"];
+node64133603 -- node999522307;
+node1493625803 -- node64133603;
+node112466394 -- node1493625803;
+node589835301 -- node112466394;
+node1259769769 -- node589835301;
+node1054932644 -- node1259769769;
+node1405747618 -- node1054932644;
+node240166646 -- node1405747618;
+node680779399 -- node240166646;
+node1866161430 [label="Assign", style=filled, fillcolor="white"];
+node2024918163 [label="Var", style=filled, fillcolor="white"];
+node1866161430 -- node2024918163;
+node107241811 [label="BinaryOp", style=filled, fillcolor="white"];
+node558922244 [label="BinaryOp", style=filled, fillcolor="white"];
+node339099861 [label="BinaryOp", style=filled, fillcolor="white"];
+node1653986196 [label="BinaryOp", style=filled, fillcolor="white"];
+node1197365356 [label="BinaryOp", style=filled, fillcolor="white"];
+node1702660825 [label="BinaryOp", style=filled, fillcolor="white"];
+node1131040331 [label="BinaryOp", style=filled, fillcolor="white"];
+node254749889 [label="Var", style=filled, fillcolor="white"];
+node1131040331 -- node254749889;
+node973576304 [label="Var", style=filled, fillcolor="white"];
+node1131040331 -- node973576304;
+node1702660825 -- node1131040331;
+node992802731 [label="Var", style=filled, fillcolor="white"];
+node1702660825 -- node992802731;
+node1197365356 -- node1702660825;
+node715521683 [label="Var", style=filled, fillcolor="white"];
+node1197365356 -- node715521683;
+node1653986196 -- node1197365356;
+node1545242146 [label="Var", style=filled, fillcolor="white"];
+node1653986196 -- node1545242146;
+node339099861 -- node1653986196;
+node1524126153 [label="Var", style=filled, fillcolor="white"];
+node339099861 -- node1524126153;
+node558922244 -- node339099861;
+node102065302 [label="Var", style=filled, fillcolor="white"];
+node558922244 -- node102065302;
+node107241811 -- node558922244;
+node63001505 [label="Var", style=filled, fillcolor="white"];
+node107241811 -- node63001505;
+node1866161430 -- node107241811;
+node680779399 -- node1866161430;
+node191037037 [label="Assign", style=filled, fillcolor="white"];
+node330084561 [label="Var", style=filled, fillcolor="white"];
+node191037037 -- node330084561;
+node1043351526 [label="BinaryOp", style=filled, fillcolor="white"];
+node937773018 [label="BinaryOp", style=filled, fillcolor="white"];
+node728258269 [label="BinaryOp", style=filled, fillcolor="white"];
+node1572098393 [label="Var", style=filled, fillcolor="white"];
+node728258269 -- node1572098393;
+node1627857534 [label="Var", style=filled, fillcolor="white"];
+node728258269 -- node1627857534;
+node937773018 -- node728258269;
+node2084663827 [label="BinaryOp", style=filled, fillcolor="white"];
+node360062456 [label="Var", style=filled, fillcolor="white"];
+node2084663827 -- node360062456;
+node1790421142 [label="Var", style=filled, fillcolor="white"];
+node2084663827 -- node1790421142;
+node937773018 -- node2084663827;
+node1043351526 -- node937773018;
+node846947180 [label="BinaryOp", style=filled, fillcolor="white"];
+node1172131546 [label="BinaryOp", style=filled, fillcolor="white"];
+node1616974404 [label="Var", style=filled, fillcolor="white"];
+node1172131546 -- node1616974404;
+node927327686 [label="Var", style=filled, fillcolor="white"];
+node1172131546 -- node927327686;
+node846947180 -- node1172131546;
+node1582071873 [label="BinaryOp", style=filled, fillcolor="white"];
+node1908981452 [label="Var", style=filled, fillcolor="white"];
+node1582071873 -- node1908981452;
+node433287555 [label="Var", style=filled, fillcolor="white"];
+node1582071873 -- node433287555;
+node846947180 -- node1582071873;
+node1043351526 -- node846947180;
+node191037037 -- node1043351526;
+node680779399 -- node191037037;
+node27319466 [label="BuiltInWrite", style=filled, fillcolor="white"];
+node1003752023 [label="Var", style=filled, fillcolor="white"];
+node27319466 -- node1003752023;
+node680779399 -- node27319466;
+node266272063 [label="BuiltInWriteln", style=filled, fillcolor="white"];
+node680779399 -- node266272063;
+node226744878 [label="BuiltInWrite", style=filled, fillcolor="white"];
+node172032696 [label="Var", style=filled, fillcolor="white"];
+node226744878 -- node172032696;
+node680779399 -- node226744878;
+node299644693 [label="BuiltInWriteln", style=filled, fillcolor="white"];
+node680779399 -- node299644693;
+node1771243284 [label="BuiltInWrite", style=filled, fillcolor="white"];
+node2052256418 [label="Var", style=filled, fillcolor="white"];
+node1771243284 -- node2052256418;
+node680779399 -- node1771243284;
+node2013559698 [label="BuiltInWriteln", style=filled, fillcolor="white"];
+node680779399 -- node2013559698;
+node274722023 -- node680779399;
+node453523494 -- node274722023;
+}
+
+Test failed because an exception was thrown:
+    null
+Stack trace:
+cd.ToDoException
+	at cd.backend.codegen.StmtGenerator.assign(StmtGenerator.java:114)
+	at cd.backend.codegen.StmtGenerator.assign(StmtGenerator.java:22)
+	at cd.ir.Ast$Assign.accept(Ast.java:460)
+	at cd.ir.AstVisitor.visit(AstVisitor.java:16)
+	at cd.backend.codegen.StmtGenerator.visit(StmtGenerator.java:43)
+	at cd.backend.codegen.StmtGenerator.methodDecl(StmtGenerator.java:72)
+	at cd.backend.codegen.StmtGenerator.methodDecl(StmtGenerator.java:22)
+	at cd.ir.Ast$MethodDecl.accept(Ast.java:668)
+	at cd.ir.AstVisitor.visit(AstVisitor.java:16)
+	at cd.backend.codegen.StmtGenerator.visit(StmtGenerator.java:43)
+	at cd.backend.codegen.StmtGenerator.visit(StmtGenerator.java:22)
+	at cd.ir.AstVisitor.visitChildren(AstVisitor.java:28)
+	at cd.ir.AstVisitor.dflt(AstVisitor.java:37)
+	at cd.ir.AstVisitor.dfltDecl(AstVisitor.java:56)
+	at cd.ir.AstVisitor.classDecl(AstVisitor.java:72)
+	at cd.ir.Ast$ClassDecl.accept(Ast.java:701)
+	at cd.ir.AstVisitor.visit(AstVisitor.java:16)
+	at cd.backend.codegen.StmtGenerator.visit(StmtGenerator.java:43)
+	at cd.backend.codegen.StmtGenerator.gen(StmtGenerator.java:36)
+	at cd.backend.codegen.AstCodeGenerator.go(AstCodeGenerator.java:42)
+	at cd.Main.generateCode(Main.java:121)
+	at cd.test.AbstractTestAgainstFrozenReference.testCodeGenerator(AbstractTestAgainstFrozenReference.java:135)
+	at cd.test.AbstractTestAgainstFrozenReference.test(AbstractTestAgainstFrozenReference.java:47)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:483)
+	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
+	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:47)
+	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:325)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:78)
+	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:57)
+	at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+	at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+	at org.junit.runners.Suite.runChild(Suite.java:128)
+	at org.junit.runners.Suite.runChild(Suite.java:27)
+	at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+	at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+	at org.junit.runners.Suite.runChild(Suite.java:128)
+	at org.junit.runners.Suite.runChild(Suite.java:27)
+	at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+	at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+	at com.intellij.junit4.JUnit4IdeaTestRunner.startRunnerWithArgs(JUnit4IdeaTestRunner.java:78)
+	at com.intellij.rt.execution.junit.JUnitStarter.prepareStreamsAndStart(JUnitStarter.java:212)
+	at com.intellij.rt.execution.junit.JUnitStarter.main(JUnitStarter.java:68)
