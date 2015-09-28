@@ -15,6 +15,7 @@ public class AstCodeGenerator {
 	
 	protected final AssemblyEmitter emit;
 	protected final RegisterManager rm = new RegisterManager();
+	protected VariableManager vm = new VariableManager();
 
 	AstCodeGenerator(Main main, Writer out) {
 		this.emit = new AssemblyEmitter(out);

@@ -23,8 +23,6 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 	private final String WRITE_STRING_LABEL = "int_format.str";
 	private final String WRITELN_STRING_LABEL = "newline.str";
 
-	private List<Ast.VarDecl> symbols = new ArrayList<>();
-
 	StmtGenerator(AstCodeGenerator astCodeGenerator) {
 		cg = astCodeGenerator;
 	}
@@ -81,8 +79,8 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 
 			// DATA INT SECTION -------------------------------
 			cg.emit.emitRaw(Config.DATA_INT_SECTION);
-			for (VarDecl var: this.symbols) {
-				cg.emit.emitLabel(var.name);
+			for (String var: cg.vm) {
+				cg.emit.emitLabel(var);
 				cg.emit.emitRaw(String.format("%s %s", Config.DOT_INT, 0));
 			}
 
@@ -104,7 +102,7 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 
 	@Override
 	public Register varDecl(VarDecl ast, Void arg) {
-		this.symbols.add(ast);
+		cg.vm.declare(ast);
 		return null;
 	}
 
@@ -129,6 +127,7 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 			Ast.Expr right = (Ast.Expr) ast.rwChildren.get(1);
 			ExprGenerator eg = new ExprGenerator(cg);
 			return eg.visit(right, null);
+			// TODO
 		}
 	}
 

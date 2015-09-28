@@ -48,7 +48,7 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 	@Override
 	public Register binaryOp(BinaryOp ast, Void arg) {
 		{
-			Register r = visit((Expr) ast.rwChildren.get(1), null); // TODO right child first atm, implement counterVisitor
+			Register r = visit((Expr) ast.rwChildren.get(1), null); // TODO right child first atm, implement counterVisitor?
 			Register l = visit((Expr) ast.rwChildren.get(0), null);
 			switch (ast.operator.name()) {
 				case "B_PLUS":
