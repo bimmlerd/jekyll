@@ -1,0 +1,56 @@
+/* Test all binary expressions */
+class Main {
+    void main() {
+        int i0,  i1,  i2;
+
+        // Addition
+        i0 = 2 + 3;
+        i1 = i0 + 1;
+        i1 = 0 + i1;
+        i2 = i0 + i1;
+
+        write(i0); writeln();
+        write(i1); writeln();
+        write(i2); writeln();
+
+        // Subtraction
+        i0 = 6 - 1;
+        i1 = -12 - i0;
+        i1 = i1 - -4;
+        i2 = i0 - i1;
+
+        write(i0); writeln();
+        write(i1); writeln();
+        write(i2); writeln();
+
+        // Multiplication
+        i0 = 1 * 20;
+        i1 = 2 * i0;
+        i1 = i0 * -1;
+        i2 = i0 * i1;
+
+        write(i0); writeln();
+        write(i1); writeln();
+        write(i2); writeln();
+
+        // Division
+        i0 = 1 / 20;
+        i1 = 20 / i0;
+        i1 = i1 / -1;
+        i2 = i0 / i1;
+
+        write(i0); writeln();
+        write(i1); writeln();
+        write(i2); writeln();
+
+        // Modulo
+/*        i0 = 3 % 20;
+        i1 = 20 % i0;
+        i1 = i1 % 4;
+        i2 = i0 % i1;
+
+        write(i0); writeln();
+        write(i1); writeln();
+        write(i2); writeln();*/
+    }
+}

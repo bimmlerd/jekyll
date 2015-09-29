@@ -65,6 +65,10 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 				case B_TIMES:
 					cg.emit.emit("imul", l, r); // TODO this truncates the result to 32bit
 					break;
+				case B_DIV:
+					throw new ToDoException();
+				case B_MOD:
+					throw new ToDoException();
 				default:
 					throw new ToDoException();
 			}

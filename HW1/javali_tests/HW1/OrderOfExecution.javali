@@ -1,0 +1,14 @@
+/* Test order of execution (I guess this is handled correctly by the given parser at the moment) */
+class Main {
+    void main() {
+        int r1;
+
+        write(3 + 4 * 4); writeln();
+
+        r1 = 3 + 4 * 3;
+        write(r1); writeln();
+
+        r1 = (3 + 4) * 3;
+        write(r1); writeln();
+    }
+}

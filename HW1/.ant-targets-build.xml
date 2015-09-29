@@ -1,0 +1,5 @@
+clean
+clean-test
+clean-test-all
+compile
+test
