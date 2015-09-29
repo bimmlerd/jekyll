@@ -34,7 +34,7 @@ class Main {
         write(i2); writeln();
 
         // Division
-        i0 = 1 / 20;
+        i0 = 40 / 20;
         i1 = 20 / i0;
         i1 = i1 / -1;
         i2 = i0 / i1;

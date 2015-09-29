@@ -19,7 +19,6 @@ import cd.ir.Ast.UnaryOp;
 import cd.ir.Ast.Var;
 import cd.ir.ExprVisitor;
 import cd.util.debug.AstOneLine;
-import org.antlr.v4.codegen.CodeGenerator;
 
 /**
  * Generates code to evaluate expressions. After emitting the code, returns a
@@ -50,39 +49,68 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 	@Override
 	public Register binaryOp(BinaryOp ast, Void arg) {
 		{
-			Register r = visit((Expr) ast.rwChildren.get(1), null); // TODO right child first atm, implement counterVisitor?
-			Register l = visit((Expr) ast.rwChildren.get(0), null);
+			CounterVisitor cv = new CounterVisitor();
+
+			Expr l = (Expr) ast.rwChildren.get(0);
+			Expr r = (Expr) ast.rwChildren.get(1);
+			Register reg_left;
+			Register reg_right;
+			if (cv.visit(l, null) >= cv.visit(r, null)) {
+				reg_left = visit((Expr) ast.rwChildren.get(0), null);
+				reg_right = visit((Expr) ast.rwChildren.get(1), null);
+			} else {
+				reg_right = visit((Expr) ast.rwChildren.get(1), null);
+				reg_left = visit((Expr) ast.rwChildren.get(0), null);
+			}
 			switch (ast.operator) {
 				case B_PLUS:
-					cg.emit.emit("addl", l, r);
+					cg.emit.emit("addl", reg_left, reg_right);
 					break;
 				case B_MINUS:
-					cg.emit.emit("subl", r, l);
-					Register tmp = r;
-					r = l; // Switch because the result is now in l
-					l = tmp;
+					cg.emit.emit("subl", reg_right, reg_left);
+					Register tmp = reg_right;
+					reg_right = reg_left; // Switch because the result is now in l
+					reg_left = tmp;
 					break;
 				case B_TIMES:
-					cg.emit.emit("imul", l, r); // TODO this truncates the result to 32bit
+					cg.emit.emit("imul", reg_left, reg_right); // TODO this truncates the result to 32bit
 					break;
 				case B_DIV:
-					throw new ToDoException();
-				case B_MOD:
-					throw new ToDoException();
+					if (cg.rm.isInUse(Register.EAX)) {
+						cg.emit.emitComment("Save eax prior to div");
+						cg.emit.emitStore(Register.EAX, -4, RegisterManager.STACK_REG);
+					}
+					if (cg.rm.isInUse(Register.EDX)) {
+						cg.emit.emitComment("Save edx prior to div");
+						cg.emit.emitStore(Register.EDX, -8, RegisterManager.STACK_REG);
+					}
+					cg.emit.emitMove(AssemblyEmitter.constant(0), Register.EDX);
+					cg.emit.emitMove(reg_left, Register.EAX);
+					cg.emit.emit("idiv", reg_right);
+					cg.emit.emitMove(Register.EAX, reg_right);
+					if (cg.rm.isInUse(Register.EAX)) {
+						cg.emit.emitComment("Restore eax post div");
+						cg.emit.emitMove(AssemblyEmitter.registerOffset(-4, RegisterManager.STACK_REG), Register.EAX);
+					}
+					if (cg.rm.isInUse(Register.EDX)) {
+						cg.emit.emitComment("Restore edx post div");
+						cg.emit.emitMove(AssemblyEmitter.registerOffset(-8, RegisterManager.STACK_REG), Register.EDX);
+					}
+					break;
 				default:
 					throw new ToDoException();
 			}
 /*			if (cg.vm.has(r)) {
 				cg.vm.remove(r);
 			}*/
-			if (! cg.rm.isInUse(l)) {
+			if (!cg.rm.isInUse(reg_left)) {
 				throw new ToDoException();
 			}
-			cg.rm.releaseRegister(l);
+			cg.rm.releaseRegister(reg_left);
 			/*if (cg.vm.has(l)) {
 				cg.vm.remove(l);
 			}*/
-			return r;
+			return reg_right;
 		}
 	}
 
@@ -169,6 +197,8 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 				case U_MINUS:
 					cg.emit.emit("neg", r);
 					break;
+				case U_PLUS:
+					break;
 				default:
 					throw new ToDoException();
 			}
@@ -191,7 +221,6 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 			} else {
 				r = cg.vm.get(ast);
 			}*/
-
 			Register r;
 			r = cg.rm.getRegister();
 			cg.emit.emitMove(String.format("(%s)", ast.name), r);

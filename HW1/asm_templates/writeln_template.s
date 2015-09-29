@@ -6,8 +6,10 @@ _main:
 	movl	$newline.str, (%esp)
 	call	_printf
 # END RELEVANT SECTION
+# CHAINABLE
 	movl	$newline.str, (%esp)
 	call	_printf
+# CHAINABLE
 	movl	$0, (%esp)
 	call	_exit
 

@@ -60,7 +60,7 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 			cg.emit.emitLabel(Config.MAIN);
 
 			cg.emit.emitComment("Stack pad for 16 byte alignment requirement on OSX");
-			cg.emit.emit("addl", AssemblyEmitter.constant(4), "%esp");
+			cg.emit.emit("addl", AssemblyEmitter.constant(4), RegisterManager.STACK_REG);
 
 			List<Ast> declarations = ast.rwChildren.get(0).rwChildren;
 			for (Ast decl: declarations) {

@@ -104,6 +104,8 @@ public class AstDump {
 					continue;
 				if (rfld.getName().equals("rwChildren"))
 					continue;
+				if (rfld.getName().equals("registersUsed"))
+					continue;
 				
 				// ignore NULL fields, but add others to our list of pairs
 				try {

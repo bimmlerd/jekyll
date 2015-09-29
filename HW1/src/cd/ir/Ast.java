@@ -72,6 +72,9 @@ public abstract class Ast {
 		protected Expr(int fixedCount) {
 			super(fixedCount);
 		}
+
+		/* number of registers used in this expression. negative means not yet determined. */
+		public int registersUsed = Integer.MIN_VALUE;
 		
 		@Override
         public <R,A> R accept(AstVisitor<R, A> visitor, A arg) {
