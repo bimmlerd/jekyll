@@ -102,8 +102,8 @@ public class Main {
 		debug("AST Resulting From Parsing Stage:");
 		dumpAst(result);
 
-		debug("AST rendering");
-		renderAst(result);
+		/*debug("AST rendering");
+		renderAst(result);*/
 		
 		return result;
 	}

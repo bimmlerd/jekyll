@@ -8,7 +8,6 @@ import cd.ir.Ast.*;
 import cd.ir.AstVisitor;
 import cd.util.debug.AstOneLine;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -20,8 +19,8 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 	private Boolean usesWrite;
 	private Boolean usesWriteln;
 
-	private final String WRITE_STRING_LABEL = "int_format.str";
-	private final String WRITELN_STRING_LABEL = "newline.str";
+	protected static final String WRITE_STRING_LABEL = "int_format.str";
+	protected static final String WRITELN_STRING_LABEL = "newline.str";
 
 	StmtGenerator(AstCodeGenerator astCodeGenerator) {
 		cg = astCodeGenerator;
@@ -60,6 +59,9 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 			cg.emit.emitRaw(".globl " + Config.MAIN); // Needed on OSX
 			cg.emit.emitLabel(Config.MAIN);
 
+			cg.emit.emitComment("Stack pad for 16 byte alignment requirement on OSX");
+			cg.emit.emit("addl", AssemblyEmitter.constant(4), "%esp");
+
 			List<Ast> declarations = ast.rwChildren.get(0).rwChildren;
 			for (Ast decl: declarations) {
 				visit(decl, null);
@@ -71,9 +73,7 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 				visit(stmt, null);
 			}
 
-			cg.emit.emitComment("Stack pad for _exit");
-			cg.emit.emit("addl", AssemblyEmitter.constant(4), "%esp");
-			cg.emit.emitMoveToAddress(AssemblyEmitter.constant(0), "%esp"); // return 0
+			cg.emit.emitMoveToAddress(AssemblyEmitter.constant(0), RegisterManager.STACK_REG); // return 0
 			cg.emit.emitCall(Config.EXIT);
 
 
@@ -123,11 +123,23 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 	@Override
 	public Register assign(Assign ast, Void arg) {
 		{
+			ExprGenerator eg = new ExprGenerator(cg);
+
 			Var left = (Var) ast.rwChildren.get(0);
 			Ast.Expr right = (Ast.Expr) ast.rwChildren.get(1);
-			ExprGenerator eg = new ExprGenerator(cg);
-			return eg.visit(right, null);
-			// TODO
+			if (right instanceof Ast.Expr.BuiltInRead) {
+				// TODO this violates separation, but how do we get the variable name into the eg?
+				cg.emit.emitStore(AssemblyEmitter.labelAddress(left.name), 4, RegisterManager.STACK_REG);
+			}
+			Register reg = eg.visit(right, null);
+			if (reg != null) {
+				//cg.vm.add(left, reg);
+				cg.emit.emitMove(reg, String.format("(%s)", left.name));
+				cg.emit.emitComment("Releasing reg: " + reg.repr);
+				cg.rm.releaseRegister(reg);
+			}
+
+			return null;
 		}
 	}
 
@@ -136,38 +148,17 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 		{
 			this.usesWrite = true;
 
-			Register reg = null;
-			try {
-				reg = cg.rm.getRegister();
-			} catch (Exception e) {
-				e.printStackTrace();
-				System.exit(0);
-			}
+			ExprGenerator eg = new ExprGenerator(cg);
 
-			String tmpLabel = cg.emit.uniqueLabel();
-			String offsetCalculation = String.format("%s-%s(%s)", this.WRITE_STRING_LABEL, tmpLabel, reg.repr);
-			cg.emit.emitCall(tmpLabel);
-			cg.emit.emitLabel(tmpLabel);
-			cg.emit.emit("popl", reg);
-			cg.emit.emit("leal", offsetCalculation, reg);
-			cg.emit.emitComment("Stack pad for 16 byte alignment requirement on OSX");
-			cg.emit.emit("addl", AssemblyEmitter.constant(4), "%esp");
-			cg.emit.emitMoveToAddress(reg, "%esp");
-			Ast thing = ast.rwChildren.get(0);
-			if (thing instanceof Var) {
-				// load value of variable into reg
-				cg.emit.emitMove(AssemblyEmitter.labelAddress(((Var) thing).name), reg);
-				cg.emit.emitLoad(0, reg, reg);
-			} else {
-				// load constant into reg
-				cg.emit.emitMove(AssemblyEmitter.constant(((Ast.IntConst) thing).value), reg);
-			}
-			cg.emit.emitMoveToAddress(reg, "%esp", 4);
+			Expr e = (Expr) ast.rwChildren.get(0);
+			Register res = eg.visit(e, null); // TODO this uses a reg too much if e is an integer constant
+
+			cg.emit.emitStore(AssemblyEmitter.labelAddress(this.WRITE_STRING_LABEL), 0, RegisterManager.STACK_REG);
+			cg.emit.emitStore(res, 4, RegisterManager.STACK_REG);
 			cg.emit.emitCall(Config.PRINTF);
-			cg.emit.emitComment("Realign Stack");
-			cg.emit.emit("subl", AssemblyEmitter.constant(4), "%esp");
 
-			cg.rm.releaseRegister(reg);
+			cg.emit.emitComment("Releasing reg: " + res.repr);
+			cg.rm.releaseRegister(res);
 			return null;
 		}
 	}
@@ -177,28 +168,9 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 		{
 			this.usesWriteln = true;
 
-			Register reg = null;
-			try {
-				reg = cg.rm.getRegister();
-			} catch (Exception e) {
-				e.printStackTrace();
-				System.exit(0);
-			}
-
-			String tmpLabel = cg.emit.uniqueLabel();
-			String offsetCalculation = String.format("%s-%s(%s)", this.WRITELN_STRING_LABEL, tmpLabel, reg.repr);
-			cg.emit.emitCall(tmpLabel);
-			cg.emit.emitLabel(tmpLabel);
-			cg.emit.emit("popl", reg);
-			cg.emit.emit("leal", offsetCalculation, reg);
-			cg.emit.emitComment("Stack pad for 16 byte alignment requirement on OSX");
-			cg.emit.emit("addl", AssemblyEmitter.constant(4), "%esp");
-			cg.emit.emitMoveToAddress(reg, "%esp");
+			cg.emit.emitStore(AssemblyEmitter.labelAddress(this.WRITELN_STRING_LABEL), 0, RegisterManager.STACK_REG);
 			cg.emit.emitCall(Config.PRINTF);
-			cg.emit.emitComment("Realign Stack");
-			cg.emit.emit("subl", AssemblyEmitter.constant(4), "%esp");
 
-			cg.rm.releaseRegister(reg);
 			return null;
 		}
 	}

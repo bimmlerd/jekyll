@@ -1,5 +1,6 @@
 package cd.backend.codegen;
 
+import cd.Config;
 import cd.ToDoException;
 import cd.backend.codegen.RegisterManager.Register;
 import cd.ir.Ast.BinaryOp;
@@ -18,6 +19,7 @@ import cd.ir.Ast.UnaryOp;
 import cd.ir.Ast.Var;
 import cd.ir.ExprVisitor;
 import cd.util.debug.AstOneLine;
+import org.antlr.v4.codegen.CodeGenerator;
 
 /**
  * Generates code to evaluate expressions. After emitting the code, returns a
@@ -50,11 +52,32 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 		{
 			Register r = visit((Expr) ast.rwChildren.get(1), null); // TODO right child first atm, implement counterVisitor?
 			Register l = visit((Expr) ast.rwChildren.get(0), null);
-			switch (ast.operator.name()) {
-				case "B_PLUS":
+			switch (ast.operator) {
+				case B_PLUS:
 					cg.emit.emit("addl", l, r);
+					break;
+				case B_MINUS:
+					cg.emit.emit("subl", r, l);
+					Register tmp = r;
+					r = l; // Switch because the result is now in l
+					l = tmp;
+					break;
+				case B_TIMES:
+					cg.emit.emit("imul", l, r); // TODO this truncates the result to 32bit
+					break;
+				default:
+					throw new ToDoException();
+			}
+/*			if (cg.vm.has(r)) {
+				cg.vm.remove(r);
+			}*/
+			if (! cg.rm.isInUse(l)) {
+				throw new ToDoException();
 			}
 			cg.rm.releaseRegister(l);
+			/*if (cg.vm.has(l)) {
+				cg.vm.remove(l);
+			}*/
 			return r;
 		}
 	}
@@ -69,7 +92,10 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 	@Override
 	public Register builtInRead(BuiltInRead ast, Void arg) {
 		{
-			throw new ToDoException();
+			// TODO how can we do this cleaner? atm we write the var onto the stack in the assign statement!
+			cg.emit.emitStore(AssemblyEmitter.labelAddress(StmtGenerator.WRITE_STRING_LABEL), 0, RegisterManager.STACK_REG);
+			cg.emit.emitCall(Config.SCANF);
+			return null;
 		}
 	}
 
@@ -134,17 +160,39 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 	@Override
 	public Register unaryOp(UnaryOp ast, Void arg) {
 		{
-			throw new ToDoException();
+			Register r = visit((Expr) ast.rwChildren.get(0), null);
+			switch (ast.operator) {
+				case U_MINUS:
+					cg.emit.emit("neg", r);
+					break;
+				default:
+					throw new ToDoException();
+			}
+			/*if (cg.vm.has(r)) {
+				cg.vm.remove(r);
+			}*/
+			return r;
 		}
 	}
 	
 	@Override
 	public Register var(Var ast, Void arg) {
 		{
-			Register r = cg.rm.getRegister();
-			cg.emit.emitMove(AssemblyEmitter.labelAddress(ast.name), r);
-			cg.emit.emitLoad(0,r,r);
+			/*Register r;
+			if (! cg.vm.has(ast)) {
+				r = cg.rm.getRegister();
+				cg.emit.emitMove(AssemblyEmitter.labelAddress(ast.name), r);
+				cg.emit.emitLoad(0,r,r);
+				cg.vm.add(ast, r);
+			} else {
+				r = cg.vm.get(ast);
+			}*/
+
+			Register r;
+			r = cg.rm.getRegister();
+			cg.emit.emitMove(String.format("(%s)", ast.name), r);
 			return r;
+
 		}
 	}
 
