@@ -16,14 +16,15 @@ import java.util.List;
 class StmtGenerator extends AstVisitor<Register, Void> {
 	protected final AstCodeGenerator cg;
 
-	private Boolean usesWrite;
-	private Boolean usesWriteln;
+	private boolean usesWrite;
+	private boolean usesWriteln;
 
 	protected static final String WRITE_STRING_LABEL = "int_format.str";
 	protected static final String WRITELN_STRING_LABEL = "newline.str";
 
 	StmtGenerator(AstCodeGenerator astCodeGenerator) {
 		cg = astCodeGenerator;
+		cg.rm.initRegisters();
 	}
 
 	public void gen(Ast ast) {
@@ -53,8 +54,6 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 			// Because we only handle very simple programs in HW1,
 			// you can just emit the prologue here (there is only one
 			// method: main)!
-			cg.rm.initRegisters(); // TODO here?
-
 			cg.emit.emitRaw(Config.TEXT_SECTION);
 			cg.emit.emitRaw(".globl " + Config.MAIN); // Needed on OSX
 			cg.emit.emitLabel(Config.MAIN);
@@ -62,18 +61,10 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 			cg.emit.emitComment("Stack pad for 16 byte alignment requirement on OSX");
 			cg.emit.emit("addl", AssemblyEmitter.constant(4), RegisterManager.STACK_REG);
 
-			List<Ast> declarations = ast.rwChildren.get(0).rwChildren;
-			for (Ast decl: declarations) {
-				visit(decl, null);
-			}
+			visitChildren(ast.rwChildren.get(0), null); // visit declarations
+			visitChildren(ast.rwChildren.get(1), null); // visit statements
 
-			List<Ast> statements = ast.rwChildren.get(1).rwChildren;
-
-			for (Ast stmt: statements) {
-				visit(stmt, null);
-			}
-
-			cg.emit.emitMoveToAddress(AssemblyEmitter.constant(0), RegisterManager.STACK_REG); // return 0
+			cg.emit.emitStore(AssemblyEmitter.constant(0), 0, RegisterManager.STACK_REG); // return 0
 			cg.emit.emitCall(Config.EXIT);
 
 
@@ -88,15 +79,15 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 			// DATA STR SECTION -------------------------------
 			cg.emit.emitRaw(Config.DATA_STR_SECTION);
 			if (this.usesWrite) {
-				cg.emit.emitLabel(this.WRITE_STRING_LABEL);
+				cg.emit.emitLabel(StmtGenerator.WRITE_STRING_LABEL);
 				cg.emit.emitRaw(Config.DOT_STRING + " \"%d\"");
 			}
 			if (this.usesWriteln) {
-				cg.emit.emitLabel(this.WRITELN_STRING_LABEL);
+				cg.emit.emitLabel(StmtGenerator.WRITELN_STRING_LABEL);
 				cg.emit.emitRaw(Config.DOT_STRING + " \"\\n\"");
 			}
 
-			return null; // TODO?
+			return null;
 		}
 	}
 
@@ -150,15 +141,20 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 
 			ExprGenerator eg = new ExprGenerator(cg);
 
+
+			cg.emit.emitStore(AssemblyEmitter.labelAddress(StmtGenerator.WRITE_STRING_LABEL), 0, RegisterManager.STACK_REG);
 			Expr e = (Expr) ast.rwChildren.get(0);
-			Register res = eg.visit(e, null); // TODO this uses a reg too much if e is an integer constant
+			if (e instanceof IntConst) { // we need to save a register here, otherwise we are not optimal
+				cg.emit.emitStore(AssemblyEmitter.constant(((IntConst) e).value), 4, RegisterManager.STACK_REG);
+				cg.emit.emitCall(Config.PRINTF);
+			} else {
+				Register res = eg.visit(e, null);
+				cg.emit.emitStore(res, 4, RegisterManager.STACK_REG);
+				cg.emit.emitCall(Config.PRINTF);
+				cg.emit.emitComment("Releasing reg: " + res.repr);
+				cg.rm.releaseRegister(res);
+			}
 
-			cg.emit.emitStore(AssemblyEmitter.labelAddress(this.WRITE_STRING_LABEL), 0, RegisterManager.STACK_REG);
-			cg.emit.emitStore(res, 4, RegisterManager.STACK_REG);
-			cg.emit.emitCall(Config.PRINTF);
-
-			cg.emit.emitComment("Releasing reg: " + res.repr);
-			cg.rm.releaseRegister(res);
 			return null;
 		}
 	}
@@ -168,7 +164,7 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 		{
 			this.usesWriteln = true;
 
-			cg.emit.emitStore(AssemblyEmitter.labelAddress(this.WRITELN_STRING_LABEL), 0, RegisterManager.STACK_REG);
+			cg.emit.emitStore(AssemblyEmitter.labelAddress(StmtGenerator.WRITELN_STRING_LABEL), 0, RegisterManager.STACK_REG);
 			cg.emit.emitCall(Config.PRINTF);
 
 			return null;

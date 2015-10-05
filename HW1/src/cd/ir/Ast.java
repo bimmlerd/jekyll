@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import cd.backend.codegen.RegisterManager;
 import cd.util.Pair;
 import cd.util.debug.AstOneLine;
 
@@ -74,7 +75,8 @@ public abstract class Ast {
 		}
 
 		/* number of registers used in this expression. negative means not yet determined. */
-		public int registersUsed = Integer.MIN_VALUE;
+		public int registerCount = Integer.MIN_VALUE;
+		public List<RegisterManager.Register> registersUsed = new ArrayList<>();
 		
 		@Override
         public <R,A> R accept(AstVisitor<R, A> visitor, A arg) {

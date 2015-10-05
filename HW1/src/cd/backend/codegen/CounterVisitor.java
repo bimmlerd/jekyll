@@ -26,11 +26,11 @@ public class CounterVisitor extends ExprVisitor<Integer, Void> {
         Ast.Expr l = (Ast.Expr) ast.rwChildren.get(0);
         Ast.Expr r = (Ast.Expr) ast.rwChildren.get(1);
         if (visit(l, null).equals(visit(r, null))) {
-            ast.registersUsed = l.registersUsed + 1;
+            ast.registerCount = l.registerCount + 1;
         } else {
-            ast.registersUsed = Integer.max(r.registersUsed, l.registersUsed);
+            ast.registerCount = Integer.max(r.registerCount, l.registerCount);
         }
-        return ast.registersUsed;
+        return ast.registerCount;
     }
 
     @Override
@@ -40,8 +40,8 @@ public class CounterVisitor extends ExprVisitor<Integer, Void> {
 
     @Override
     public Integer builtInRead(Ast.BuiltInRead ast, Void arg) {
-        ast.registersUsed = 0;
-        return ast.registersUsed;
+        ast.registerCount = 0;
+        return ast.registerCount;
     }
 
     @Override
@@ -61,8 +61,8 @@ public class CounterVisitor extends ExprVisitor<Integer, Void> {
 
     @Override
     public Integer intConst(Ast.IntConst ast, Void arg) {
-        ast.registersUsed = 1;
-        return ast.registersUsed;
+        ast.registerCount = 1;
+        return ast.registerCount;
     }
 
     @Override
@@ -92,13 +92,13 @@ public class CounterVisitor extends ExprVisitor<Integer, Void> {
 
     @Override
     public Integer unaryOp(Ast.UnaryOp ast, Void arg) {
-        ast.registersUsed = ((Ast.Expr) ast.rwChildren.get(0)).registersUsed;
-        return ast.registersUsed;
+        ast.registerCount = ((Ast.Expr) ast.rwChildren.get(0)).registerCount;
+        return ast.registerCount;
     }
 
     @Override
     public Integer var(Ast.Var ast, Void arg) {
-        ast.registersUsed = 1;
-        return ast.registersUsed;
+        ast.registerCount = 1;
+        return ast.registerCount;
     }
 }

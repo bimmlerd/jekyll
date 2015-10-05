@@ -49,19 +49,27 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 	@Override
 	public Register binaryOp(BinaryOp ast, Void arg) {
 		{
+			Register reg_left, reg_right;
 			CounterVisitor cv = new CounterVisitor();
 
 			Expr l = (Expr) ast.rwChildren.get(0);
 			Expr r = (Expr) ast.rwChildren.get(1);
-			Register reg_left;
-			Register reg_right;
-			if (cv.visit(l, null) >= cv.visit(r, null)) {
+
+			if (l.registerCount < 0) {
+				cv.visit(l, null);
+			}
+			if (r.registerCount < 0) {
+				cv.visit(r, null);
+			}
+
+			if (l.registerCount >= r.registerCount) {
 				reg_left = visit((Expr) ast.rwChildren.get(0), null);
 				reg_right = visit((Expr) ast.rwChildren.get(1), null);
 			} else {
 				reg_right = visit((Expr) ast.rwChildren.get(1), null);
 				reg_left = visit((Expr) ast.rwChildren.get(0), null);
 			}
+
 			switch (ast.operator) {
 				case B_PLUS:
 					cg.emit.emit("addl", reg_left, reg_right);
@@ -73,7 +81,7 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 					reg_left = tmp;
 					break;
 				case B_TIMES:
-					cg.emit.emit("imul", reg_left, reg_right); // TODO this truncates the result to 32bit
+					cg.emit.emit("imul", reg_left, reg_right); // this truncates the result to 32bit
 					break;
 				case B_DIV:
 					if (cg.rm.isInUse(Register.EAX)) {
@@ -103,9 +111,6 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 /*			if (cg.vm.has(r)) {
 				cg.vm.remove(r);
 			}*/
-			if (!cg.rm.isInUse(reg_left)) {
-				throw new ToDoException();
-			}
 			cg.rm.releaseRegister(reg_left);
 			/*if (cg.vm.has(l)) {
 				cg.vm.remove(l);

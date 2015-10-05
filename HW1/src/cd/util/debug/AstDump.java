@@ -104,7 +104,8 @@ public class AstDump {
 					continue;
 				if (rfld.getName().equals("rwChildren"))
 					continue;
-				if (rfld.getName().equals("registersUsed"))
+				// skip custom fields to be able to use the testing framework
+				if (rfld.getName().equals("registerCount") || rfld.getName().equals("registersUsed"))
 					continue;
 				
 				// ignore NULL fields, but add others to our list of pairs

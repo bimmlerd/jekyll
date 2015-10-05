@@ -1,0 +1,7 @@
+/* Test whether caller saved registers are actually saved */
+/* This will be more relevant when we don't always save everything to .data after each statement */
+class Main {
+    void main() {
+        writeln(); // TODO devise a test which fills up all registers, then calls a function which overwrites caller saved regs
+    }
+}
