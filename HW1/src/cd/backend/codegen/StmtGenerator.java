@@ -72,7 +72,7 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 			cg.emit.emitRaw(Config.DATA_INT_SECTION);
 			for (String var: cg.vm) {
 				cg.emit.emitLabel(var);
-				cg.emit.emitRaw(String.format("%s %s", Config.DOT_INT, 0));
+				cg.emit.emitConstantData(Integer.toString(0));
 			}
 
 
