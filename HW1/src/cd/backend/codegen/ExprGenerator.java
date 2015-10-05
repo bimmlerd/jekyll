@@ -108,13 +108,7 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 				default:
 					throw new ToDoException();
 			}
-/*			if (cg.vm.has(r)) {
-				cg.vm.remove(r);
-			}*/
 			cg.rm.releaseRegister(reg_left);
-			/*if (cg.vm.has(l)) {
-				cg.vm.remove(l);
-			}*/
 			return reg_right;
 		}
 	}
@@ -207,9 +201,6 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 				default:
 					throw new ToDoException();
 			}
-			/*if (cg.vm.has(r)) {
-				cg.vm.remove(r);
-			}*/
 			return r;
 		}
 	}
@@ -217,15 +208,6 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 	@Override
 	public Register var(Var ast, Void arg) {
 		{
-			/*Register r;
-			if (! cg.vm.has(ast)) {
-				r = cg.rm.getRegister();
-				cg.emit.emitMove(AssemblyEmitter.labelAddress(ast.name), r);
-				cg.emit.emitLoad(0,r,r);
-				cg.vm.add(ast, r);
-			} else {
-				r = cg.vm.get(ast);
-			}*/
 			Register r;
 			r = cg.rm.getRegister();
 			cg.emit.emitMove(String.format("(%s)", ast.name), r);
