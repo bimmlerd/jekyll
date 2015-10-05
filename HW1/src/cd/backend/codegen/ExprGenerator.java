@@ -3,20 +3,8 @@ package cd.backend.codegen;
 import cd.Config;
 import cd.ToDoException;
 import cd.backend.codegen.RegisterManager.Register;
-import cd.ir.Ast.BinaryOp;
-import cd.ir.Ast.BooleanConst;
-import cd.ir.Ast.BuiltInRead;
-import cd.ir.Ast.Cast;
-import cd.ir.Ast.Expr;
-import cd.ir.Ast.Field;
-import cd.ir.Ast.Index;
-import cd.ir.Ast.IntConst;
-import cd.ir.Ast.NewArray;
-import cd.ir.Ast.NewObject;
-import cd.ir.Ast.NullConst;
-import cd.ir.Ast.ThisRef;
-import cd.ir.Ast.UnaryOp;
-import cd.ir.Ast.Var;
+import cd.ir.Ast;
+import cd.ir.Ast.*;
 import cd.ir.ExprVisitor;
 import cd.util.debug.AstOneLine;
 
@@ -38,8 +26,13 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 	@Override
 	public Register visit(Expr ast, Void arg) {
 		try {
+			Ast prev = cg.rm.currentAst;
+			cg.rm.currentAst = ast;
 			cg.emit.increaseIndent("Emitting " + AstOneLine.toString(ast));
-			return super.visit(ast, null);
+			Register r = super.visit(ast, null);
+			prev.registersUsed.addAll(ast.registersUsed);
+			cg.rm.currentAst = prev;
+			return r;
 		} finally {
 			cg.emit.decreaseIndent();
 		}
@@ -92,8 +85,8 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 						cg.emit.emitComment("Save edx prior to div");
 						cg.emit.emitStore(Register.EDX, -8, RegisterManager.STACK_REG);
 					}
-					cg.emit.emitMove(AssemblyEmitter.constant(0), Register.EDX);
 					cg.emit.emitMove(reg_left, Register.EAX);
+					cg.emit.emitRaw("cdq");
 					cg.emit.emit("idiv", reg_right);
 					cg.emit.emitMove(Register.EAX, reg_right);
 					if (cg.rm.isInUse(Register.EAX)) {

@@ -1,0 +1,6 @@
+/* Designed to break the Compiler as it uses more registers than we can provide. It should then exit gracefully. */
+class Main {
+    void main() {
+        write(((((0 + 0) + (0 + 0)) + ((0 + 0) + (0 + 0))) + (((0 + 0) + (0 + 0)) + ((0 + 0) + (0 + 0)))) + ((((0 + 0) + (0 + 0)) + ((0 + 0) + (0 + 0))) + (((0 + 0) + (0 + 0)) + ((0 + 0) + (0 + 0)))));
+    }
+}

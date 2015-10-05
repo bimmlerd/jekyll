@@ -1,21 +1,22 @@
 package cd.util.debug;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-
 import cd.ir.Ast;
 import cd.ir.AstVisitor;
 import cd.util.Pair;
+
+import java.lang.reflect.Field;
+import java.util.*;
 
 public class AstDump {
 	
 	public static String toString(Ast ast) {
 		return toString(ast, "");
 	}
+
+	public static String toString(Ast ast, boolean includeCustom) {
+		return toString(ast, "", includeCustom);
+	}
+
 	
 	public static String toString(List<? extends Ast> astRoots) {
 		StringBuilder sb = new StringBuilder();
@@ -26,8 +27,12 @@ public class AstDump {
 	}
 
 	public static String toString(Ast ast, String indent) {
+		return toString(ast, indent, false);
+	}
+
+	public static String toString(Ast ast, String indent, boolean includeCustom) {
 		AstDump ad = new AstDump();
-		ad.dump(ast, indent);
+		ad.dump(ast, indent, includeCustom);
 		return ad.sb.toString();
 	}
 	
@@ -39,12 +44,16 @@ public class AstDump {
 	
 	private StringBuilder sb = new StringBuilder();
 	private Visitor vis = new Visitor();
-		
+
 	protected void dump(Ast ast, String indent) {
+		dump(ast, indent, false);
+	}
+
+	protected void dump(Ast ast, String indent, boolean includeCustom) {
 		// print out the overall class structure
 		sb.append(indent);
 		String nodeName = ast.getClass().getSimpleName();
-		List<Pair<?>> flds = vis.visit(ast, null);
+		List<Pair<?>> flds = vis.visit(ast, includeCustom);
 		sb.append(String.format("%s (%s)\n", 
 				nodeName,
 				Pair.join(flds, ": ", ", ")));
@@ -52,7 +61,7 @@ public class AstDump {
 		// print out any children
 		String newIndent = indent + "| ";
 		for (Ast child : ast.children()) {
-			dump(child, newIndent);
+			dump(child, newIndent, includeCustom);
 		}
 	}
 	
@@ -72,11 +81,11 @@ public class AstDump {
 
 		sb.append("]");
 	}
-	
-	protected class Visitor extends AstVisitor<List<Pair<?>>, Void> {
+
+	protected class Visitor extends AstVisitor<List<Pair<?>>, Boolean> {
 		
 		@Override
-		protected List<Pair<?>> dflt(Ast ast, Void arg) {
+		protected List<Pair<?>> dflt(Ast ast, Boolean arg) {
 			ArrayList<Pair<?>> res = new ArrayList<Pair<?>>();
 			
 			// Get the list of fields and sort them by name:
@@ -102,22 +111,23 @@ public class AstDump {
 				// uncovered using the normal tree walk)
 				if (rfld.getType().isAssignableFrom(Ast.class))
 					continue;
-				if (rfld.getName().equals("rwChildren"))
+				if (rfld.getName().equals("rwChildren") || rfld.getName().equals("registerCount"))
 					continue;
-				// skip custom fields to be able to use the testing framework
-				if (rfld.getName().equals("registerCount") || rfld.getName().equals("registersUsed"))
-					continue;
+
+				if (arg != null && !arg) {
+					// skip custom fields to be able to use the testing framework
+					if (rfld.getName().equals("registersUsed"))
+						continue;
+				}
 				
 				// ignore NULL fields, but add others to our list of pairs
 				try {
 					Object value = rfld.get(ast);
 					if (value != null)
 						res.add(new Pair<Object>(rfld.getName(), value));
-				} catch (IllegalArgumentException e) {
+				} catch (IllegalArgumentException | IllegalAccessException e) {
 					throw new RuntimeException(e);
-				} catch (IllegalAccessException e) {
-					throw new RuntimeException(e);
-				}				
+				}
 			}
 			
 			return res;

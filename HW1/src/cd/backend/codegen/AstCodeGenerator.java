@@ -1,10 +1,10 @@
 package cd.backend.codegen;
 
-import java.io.Writer;
-import java.util.List;
-
 import cd.Main;
 import cd.ir.Ast.ClassDecl;
+
+import java.io.Writer;
+import java.util.List;
 
 public class AstCodeGenerator {
 
@@ -39,6 +39,7 @@ public class AstCodeGenerator {
 	 * occur
 	 */
 	public void go(List<? extends ClassDecl> astRoots) {
+		this.rm.initRegisters();
 		for (ClassDecl ast : astRoots) {
 			sg.gen(ast);
 		}

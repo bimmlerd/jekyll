@@ -1,17 +1,5 @@
 package cd.test;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
-import java.util.List;
-
-import org.junit.Assert;
-import org.junit.Test;
-
 import cd.Config;
 import cd.Main;
 import cd.backend.codegen.AssemblyFailedException;
@@ -19,9 +7,15 @@ import cd.frontend.parser.ParseFailure;
 import cd.ir.Ast.ClassDecl;
 import cd.util.FileUtil;
 import cd.util.debug.AstDump;
+import cd.util.debug.AstDumpToFile;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.io.*;
+import java.util.List;
 
 abstract public class AbstractTestAgainstFrozenReference {
-	public File file, sfile, binfile, infile;
+	public File file, sfile, binfile, infile, astfile;
 	public File parserreffile, semanticreffile, execreffile, cfgreffile, optreffile;
 	public File errfile;
 	public Main main;
@@ -38,6 +32,9 @@ abstract public class AbstractTestAgainstFrozenReference {
 				sfile.delete();
 			if (binfile.exists())
 				binfile.delete();
+			// delete ast file
+			if (astfile.exists())
+				astfile.delete();
 
 			runReference();
 			
@@ -45,6 +42,8 @@ abstract public class AbstractTestAgainstFrozenReference {
 			if (astRoots != null) {
 				{
 					testCodeGenerator(astRoots);
+					AstDumpToFile adtf = new AstDumpToFile(new FileWriter(this.astfile));
+					adtf.toFile(astRoots);
 				}
 			}
 		} catch (org.junit.ComparisonFailure cf) {

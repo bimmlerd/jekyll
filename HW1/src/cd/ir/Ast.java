@@ -1,15 +1,14 @@
 package cd.ir;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
 import cd.backend.codegen.RegisterManager;
 import cd.util.Pair;
 import cd.util.debug.AstOneLine;
 
+import java.util.*;
+
 public abstract class Ast {
+
+	public Set<RegisterManager.Register> registersUsed = new HashSet<>();
 
 	/**
 	 * The list of children AST nodes.  Typically, this list is of a fixed size: its contents
@@ -76,7 +75,6 @@ public abstract class Ast {
 
 		/* number of registers used in this expression. negative means not yet determined. */
 		public int registerCount = Integer.MIN_VALUE;
-		public List<RegisterManager.Register> registersUsed = new ArrayList<>();
 		
 		@Override
         public <R,A> R accept(AstVisitor<R, A> visitor, A arg) {

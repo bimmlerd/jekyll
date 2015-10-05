@@ -5,8 +5,8 @@ _main:
 # RELEVANT SECTION
 	movl $20, %edi
     movl $40, %esi
-    movl $0, %edx
     movl %esi, %eax
+    cdq
     idiv %edi
     movl %eax, %edi
 # END RELEVANT SECTION

@@ -1,18 +1,17 @@
 package cd.test;
 
+import cd.Config;
+import cd.Main;
+import cd.util.FileUtil;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+
 import java.io.File;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
-
-import cd.Config;
-import cd.Main;
-import cd.util.FileUtil;
 
 @RunWith(Parameterized.class)
 public class TestSamplePrograms extends AbstractTestAgainstFrozenReference {
@@ -60,6 +59,7 @@ public class TestSamplePrograms extends AbstractTestAgainstFrozenReference {
 		this.sfile = new File(file.getPath() + Config.ASMEXT);
 		this.binfile = new File(file.getPath() + Config.BINARYEXT);
 		this.infile = new File(file.getPath() + ".in");
+		this.astfile = new File(file.getPath() + ".ast");
 		this.parserreffile = new File(file.getPath() + ".parser.ref");
 		this.semanticreffile = new File(file.getPath() + ".semantic.ref");
 		this.execreffile = new File(file.getPath() + ".exec.ref");

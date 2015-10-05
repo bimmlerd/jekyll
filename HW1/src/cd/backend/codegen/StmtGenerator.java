@@ -1,14 +1,11 @@
 package cd.backend.codegen;
 
 import cd.Config;
-import cd.ToDoException;
 import cd.backend.codegen.RegisterManager.Register;
 import cd.ir.Ast;
 import cd.ir.Ast.*;
 import cd.ir.AstVisitor;
 import cd.util.debug.AstOneLine;
-
-import java.util.List;
 
 /**
  * Generates code to process statements and declarations.
@@ -24,7 +21,6 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 
 	StmtGenerator(AstCodeGenerator astCodeGenerator) {
 		cg = astCodeGenerator;
-		cg.rm.initRegisters();
 	}
 
 	public void gen(Ast ast) {
@@ -34,6 +30,7 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 	@Override
 	public Register visit(Ast ast, Void arg) {
 		try {
+			cg.rm.currentAst = ast;
 			cg.emit.increaseIndent("Emitting " + AstOneLine.toString(ast));
 			return super.visit(ast, arg);
 		} finally {
@@ -144,16 +141,11 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 
 			cg.emit.emitStore(AssemblyEmitter.labelAddress(StmtGenerator.WRITE_STRING_LABEL), 0, RegisterManager.STACK_REG);
 			Expr e = (Expr) ast.rwChildren.get(0);
-			if (e instanceof IntConst) { // we need to save a register here, otherwise we are not optimal
-				cg.emit.emitStore(AssemblyEmitter.constant(((IntConst) e).value), 4, RegisterManager.STACK_REG);
-				cg.emit.emitCall(Config.PRINTF);
-			} else {
-				Register res = eg.visit(e, null);
-				cg.emit.emitStore(res, 4, RegisterManager.STACK_REG);
-				cg.emit.emitCall(Config.PRINTF);
-				cg.emit.emitComment("Releasing reg: " + res.repr);
-				cg.rm.releaseRegister(res);
-			}
+			Register res = eg.visit(e, null);
+			cg.emit.emitStore(res, 4, RegisterManager.STACK_REG);
+			cg.emit.emitCall(Config.PRINTF);
+			cg.emit.emitComment("Releasing reg: " + res.repr);
+			cg.rm.releaseRegister(res);
 
 			return null;
 		}

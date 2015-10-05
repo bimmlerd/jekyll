@@ -1,5 +1,7 @@
 package cd.backend.codegen;
 
+import cd.ir.Ast;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -27,6 +29,7 @@ public class RegisterManager {
 
 	public static final int SIZEOF_REG = 4;
 
+	public Ast currentAst;
 	
 	public enum Register {
 		EAX("%eax", ByteRegister.EAX), EBX("%ebx", ByteRegister.EBX), ECX(
@@ -96,7 +99,9 @@ public class RegisterManager {
 			throw new AssemblyFailedException(
 					"Program requires too many registers");
 
-		return registers.remove(last);
+		Register r = registers.remove(last);
+		currentAst.registersUsed.add(r);
+		return r;
 	}
 
 	/**
