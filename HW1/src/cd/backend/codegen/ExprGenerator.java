@@ -77,7 +77,7 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 					cg.emit.emit("imul", reg_left, reg_right); // this truncates the result to 32bit
 					break;
 				case B_DIV:
-					if (cg.rm.isInUse(Register.EAX)) {
+					if (cg.rm.isInUse(Register.EAX) && Register.EAX != reg_left) {
 						cg.emit.emitComment("Save eax prior to div");
 						cg.emit.emitStore(Register.EAX, -4, RegisterManager.STACK_REG);
 					}
@@ -87,9 +87,17 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 					}
 					cg.emit.emitMove(reg_left, Register.EAX);
 					cg.emit.emitRaw("cdq");
-					cg.emit.emit("idiv", reg_right);
+					if (reg_right == Register.EAX) {
+						cg.emit.emitComment("Divide by %EAX, which is saved on the stack");
+						cg.emit.emit("idivl", AssemblyEmitter.registerOffset(-4, RegisterManager.STACK_REG));
+					} else if (reg_right == Register.EDX) {
+						cg.emit.emitComment("Divide by %EDX, which is saved on the stack");
+						cg.emit.emit("idivl", AssemblyEmitter.registerOffset(-8, RegisterManager.STACK_REG));
+					} else {
+						cg.emit.emit("idivl", reg_right);
+					}
 					cg.emit.emitMove(Register.EAX, reg_right);
-					if (cg.rm.isInUse(Register.EAX)) {
+					if (cg.rm.isInUse(Register.EAX) && Register.EAX != reg_left) {
 						cg.emit.emitComment("Restore eax post div");
 						cg.emit.emitMove(AssemblyEmitter.registerOffset(-4, RegisterManager.STACK_REG), Register.EAX);
 					}
