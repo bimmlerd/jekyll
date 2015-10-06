@@ -40,7 +40,7 @@ public class CounterVisitor extends ExprVisitor<Integer, Void> {
 
     @Override
     public Integer builtInRead(Ast.BuiltInRead ast, Void arg) {
-        ast.registerCount = 0;
+        ast.registerCount = 1;
         return ast.registerCount;
     }
 

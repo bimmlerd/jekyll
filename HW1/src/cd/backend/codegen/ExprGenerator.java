@@ -116,10 +116,16 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 	@Override
 	public Register builtInRead(BuiltInRead ast, Void arg) {
 		{
-			// TODO how can we do this cleaner? atm we write the var onto the stack in the assign statement!
+			String readLabel = cg.emit.uniqueLabel();
+			cg.vm.declare(readLabel);
+			Register r = cg.rm.getRegister();
+
+			cg.emit.emitStore(AssemblyEmitter.labelAddress(readLabel), 4, RegisterManager.STACK_REG);
 			cg.emit.emitStore(AssemblyEmitter.labelAddress(StmtGenerator.WRITE_STRING_LABEL), 0, RegisterManager.STACK_REG);
 			cg.emit.emitCall(Config.SCANF);
-			return null;
+
+			cg.emit.emitLoad(readLabel, r);
+			return r;
 		}
 	}
 
@@ -203,7 +209,7 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 		{
 			Register r;
 			r = cg.rm.getRegister();
-			cg.emit.emitMove(String.format("(%s)", ast.name), r);
+			cg.emit.emitLoad(ast.name, r);
 			return r;
 
 		}

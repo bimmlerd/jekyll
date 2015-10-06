@@ -61,6 +61,7 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 			visitChildren(ast.rwChildren.get(0), null); // visit declarations
 			visitChildren(ast.rwChildren.get(1), null); // visit statements
 
+			cg.emit.emitComment("Remove Stack pad");
 			cg.emit.emit("addl", AssemblyEmitter.constant(12), RegisterManager.STACK_REG);
 			cg.emit.emitClearEAX();
 			cg.emit.emitRaw("retl");
@@ -116,17 +117,11 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 
 			Var left = (Var) ast.rwChildren.get(0);
 			Ast.Expr right = (Ast.Expr) ast.rwChildren.get(1);
-			if (right instanceof Ast.Expr.BuiltInRead) {
-				// TODO this violates separation, but how do we get the variable name into the eg?
-				cg.emit.emitStore(AssemblyEmitter.labelAddress(left.name), 4, RegisterManager.STACK_REG);
-			}
+
 			Register reg = eg.visit(right, null);
-			if (reg != null) {
-				//cg.vm.add(left, reg);
-				cg.emit.emitMove(reg, String.format("(%s)", left.name));
-				cg.emit.emitComment("Releasing reg: " + reg.repr);
-				cg.rm.releaseRegister(reg);
-			}
+			cg.emit.emitMove(reg, String.format("(%s)", left.name));
+			cg.emit.emitComment("Releasing reg: " + reg.repr);
+			cg.rm.releaseRegister(reg);
 
 			return null;
 		}

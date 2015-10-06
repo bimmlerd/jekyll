@@ -1,10 +1,10 @@
 package cd.backend.codegen;
 
-import java.io.IOException;
-import java.io.Writer;
-
 import cd.Config;
 import cd.backend.codegen.RegisterManager.Register;
+
+import java.io.IOException;
+import java.io.Writer;
 
 public class AssemblyEmitter {
 	public Writer out;
@@ -27,6 +27,10 @@ public class AssemblyEmitter {
 
 	/** Creates an operand relative to another operand. */
 	static String registerOffset(int offset, Register reg) {
+		return registerOffset(offset, reg.repr);
+	}
+
+	static String registerOffset(int offset, String reg) {
 		return String.format("%d(%s)", offset, reg);
 	}
 
@@ -129,6 +133,10 @@ public class AssemblyEmitter {
 
 	void emitLoad(int srcOffset, Register src, Register dest) {
 		emitMove(registerOffset(srcOffset, src), dest.repr);
+	}
+
+	void emitLoad(String lbl, Register dest) {
+		emitMove(String.format("(%s)", lbl), dest.repr);
 	}
 
 	void emitStore(Register src, int destOffset, Register dest) {
