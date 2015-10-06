@@ -51,6 +51,7 @@
 			<fileset dir="${javali_tests.dir}" includes="**/*.bin"/>
 			<fileset dir="${javali_tests.dir}" includes="**/*.dot"/>
 			<fileset dir="${javali_tests.dir}" includes="**/*.exe"/>
+			<fileset dir="${javali_tests.dir}" includes="**/*.ast"/>
 		</delete>
 	</target>
 
