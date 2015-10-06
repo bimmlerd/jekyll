@@ -56,13 +56,14 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 			cg.emit.emitLabel(Config.MAIN);
 
 			cg.emit.emitComment("Stack pad for 16 byte alignment requirement on OSX");
-			cg.emit.emit("addl", AssemblyEmitter.constant(4), RegisterManager.STACK_REG);
+			cg.emit.emit("subl", AssemblyEmitter.constant(12), RegisterManager.STACK_REG);
 
 			visitChildren(ast.rwChildren.get(0), null); // visit declarations
 			visitChildren(ast.rwChildren.get(1), null); // visit statements
 
-			cg.emit.emitStore(AssemblyEmitter.constant(0), 0, RegisterManager.STACK_REG); // return 0
-			cg.emit.emitCall(Config.EXIT);
+			cg.emit.emit("addl", AssemblyEmitter.constant(12), RegisterManager.STACK_REG);
+			cg.emit.emitClearEAX();
+			cg.emit.emitRaw("retl");
 
 
 			// DATA INT SECTION -------------------------------
