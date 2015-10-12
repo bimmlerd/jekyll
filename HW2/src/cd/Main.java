@@ -10,6 +10,8 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
+import cd.frontend.parser.JavaliLexer;
+import cd.frontend.parser.JavaliParser;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -83,7 +85,7 @@ public class Main {
 			JavaliLexer lexer = new JavaliLexer(new ANTLRInputStream(reader));
 			JavaliParser parser = new JavaliParser(new CommonTokenStream(lexer));
 			parser.setErrorHandler(new BailErrorStrategy());
-			UnitContext unit = parser.unit();
+			JavaliParser.UnitContext unit = parser.unit();
 			
 			JavaliAstVisitor visitor = new JavaliAstVisitor();
 			visitor.visit(unit);

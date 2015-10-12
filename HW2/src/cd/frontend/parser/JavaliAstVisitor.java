@@ -10,11 +10,11 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<Void> {
 	
 	public List<ClassDecl> classDecls = new ArrayList<>();
 	@Override
-	public Void visitClassDecl(ClassDeclContext ctx) {
+	public Void visitClassDecl(JavaliParser.ClassDeclContext ctx) {
 		{
 			// classDecls = ...;
 			throw new ToDoException();
 		}
-		return null;
+		//return null;
 	}
 }

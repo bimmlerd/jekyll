@@ -12,57 +12,172 @@ grammar Javali; // parser grammar, parses streams of tokens
 //* // TODO: declare appropriate parser rules
 //* // NOTE: Remove //* from the beginning of each line.
 //* 
-//* unit
-//* 	: classDecl+ EOF
-//* 	;
+unit
+ 	: classDecl+ EOF
+ 	;
 
-        
+classDecl
+	:   'class' Identifier ('extends' Identifier)? '{' memberList '}'
+	;
 
+memberList
+	:   (varDecl | methodDecl)*
+	;
+
+varDecl
+	:   Type Identifier (',' Identifier)* ';'
+	;
+
+methodDecl
+	:   (Type | 'void') Identifier '(' formalParamList? ')' '{' varDecl* statement* '}'
+	;
+
+formalParamList
+	:   Type Identifier (',' Type Identifier)*
+	;
+
+statement
+	:   assignmentStatement | methodCallStatement | ifStatement | whileStatement | returnStatement | writeStatement
+	;
+
+statementBlock
+	:   '{' statement* '}'
+	;
+
+methodCallStatement
+	:   methodCallExpression ';'
+	;
+
+assignmentStatement
+	:   identAccess '=' ( expression | newExpression | readExpression ) ';'
+	;
+
+writeStatement
+	:   ( 'write' '(' expression ')' | 'writeln' '(' ')') ';'
+	;
+
+ifStatement
+	:   'if' '(' expression ')' statementBlock ('else' statementBlock)?
+	;
+
+whileStatement
+	:   'while' '(' expression ')' statementBlock
+	;
+
+returnStatement
+	:   'return' expression? ';'
+	;
+
+newExpression
+	:   'new' ( Identifier '(' ')'
+			| Identifier '[' expression ']'
+			| PrimitiveType '[' expression ']' )
+	;
+
+readExpression
+	:   'read' '(' ')'
+	;
+
+methodCallExpression
+	:   Identifier '(' actualParamList? ')'
+	|   identAccess '.' Identifier '(' actualParamList? ')'
+	;
+
+actualParamList
+	:   expression ( ',' expression )*
+	;
+
+identAccess
+	:   Identifier
+	|   'this'
+	|   identAccess '.' Identifier
+	;
+
+expression
+	:   Literal                                     # LIT
+	|   identAccess                                 # IDACC
+	|   '(' expression ')'                          # PARS
+	|   ('+'|'-'|'!') expression                    # UNARY
+	|   '(' ReferenceType ')'expression             # CAST
+	|   expression ('*'|'/'|'%') expression         # MULT
+	|   expression ('+'|'-') expression             # ADD
+	|   expression ('<'|'<='|'>'|'>=') expression   # COMP
+	|   expression ('=='|'!=') expression           # EQ
+	|   expression '&&' expression                  # LAND
+	|   expression '||' expression                  # LOR
+	;
 
 // LEXER RULES
 // TODO: provide appropriate lexer rules for numbers and boolean literals
 
+Identifier
+	:	Letter (Letter|Digit)*
+	;
 
+Literal
+	:   Integer
+	|   Boolean
+	|   'null'
+	;
 
-// Java(li) identifiers:
-Identifier 
-	:	Letter (Letter|JavaIDDigit)*
+Boolean
+	:   'true'
+	|   'false'
+	;
+
+Integer
+	:   Decimal
+	|   Hex
+	;
+
+Type
+	: PrimitiveType
+	| ReferenceType
+	;
+
+PrimitiveType
+	:   'int'
+	|   'boolean'
+	;
+
+ReferenceType
+	:   Identifier
+	|   ArrayType
+	;
+
+fragment
+ArrayType
+	:   Identifier '[' ']'
+	|   PrimitiveType '[' ']'
+	;
+
+fragment
+Decimal
+	:   '\u0030'
+	|   '\u0031'..'\u0039' Digit*
+	;
+
+fragment
+Hex
+	:   ('0x'|'0X') HexDigit+ // TODO unicodify
+	;
+
+fragment
+HexDigit
+	:   Digit
+	|   '\u0041'..'\u0046'
+	|   '\u0061'..'\u0066'
 	;
 
 fragment
 Letter
-	:	'\u0024'
-	|	'\u0041'..'\u005a'
-	|	'\u005f'
+	:	'\u0041'..'\u005a'
 	|	'\u0061'..'\u007a'
-	|	'\u00c0'..'\u00d6'
-	|	'\u00d8'..'\u00f6'
-	|	'\u00f8'..'\u00ff'
-	|	'\u0100'..'\u1fff'
-	|	'\u3040'..'\u318f'
-	|	'\u3300'..'\u337f'
-	|	'\u3400'..'\u3d2d'
-	|	'\u4e00'..'\u9fff'
-	|	'\uf900'..'\ufaff'
 	;
 
 fragment
-JavaIDDigit
-	:	'\u0030'..'\u0039'
-	|	'\u0660'..'\u0669'
-	|	'\u06f0'..'\u06f9'
-	|	'\u0966'..'\u096f'
-	|	'\u09e6'..'\u09ef'
-	|	'\u0a66'..'\u0a6f'
-	|	'\u0ae6'..'\u0aef'
-	|	'\u0b66'..'\u0b6f'
-	|	'\u0be7'..'\u0bef'
-	|	'\u0c66'..'\u0c6f'
-	|	'\u0ce6'..'\u0cef'
-	|	'\u0d66'..'\u0d6f'
-	|	'\u0e50'..'\u0e59'
-	|	'\u0ed0'..'\u0ed9'
-	|	'\u1040'..'\u1049'
+Digit
+	:   '\u0030'..'\u0039' // '0'..'9'
 	;
 
 // comments and white space does not produce tokens:
