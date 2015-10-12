@@ -6,12 +6,9 @@ grammar Javali; // parser grammar, parses streams of tokens
 }
 
 
-
 // PARSER RULES
+// TODO: declare appropriate parser rules
 
-//* // TODO: declare appropriate parser rules
-//* // NOTE: Remove //* from the beginning of each line.
-//* 
 unit
  	: classDecl+ EOF
  	;
@@ -80,7 +77,7 @@ readExpression
 
 methodCallExpression
 	:   Identifier '(' actualParamList? ')'
-	|   identAccess '.' Identifier '(' actualParamList? ')'
+	|   identAccess '.' Identifier '(' actualParamList? ')' //TODO handle indirect left recursion
 	;
 
 actualParamList
@@ -91,6 +88,8 @@ identAccess
 	:   Identifier
 	|   'this'
 	|   identAccess '.' Identifier
+	|	identAccess '[' expression ']'
+//	|   methodCallExpression //TODO handle indirect left recursion
 	;
 
 expression
@@ -107,6 +106,7 @@ expression
 	|   expression '||' expression                  # LOR
 	;
 
+
 // LEXER RULES
 // TODO: provide appropriate lexer rules for numbers and boolean literals
 
@@ -120,19 +120,21 @@ Literal
 	|   'null'
 	;
 
+fragment
 Boolean
 	:   'true'
 	|   'false'
 	;
 
+fragment
 Integer
 	:   Decimal
 	|   Hex
 	;
 
 Type
-	: PrimitiveType
-	| ReferenceType
+	:   PrimitiveType
+	|   ReferenceType
 	;
 
 PrimitiveType
