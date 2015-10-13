@@ -9,6 +9,27 @@ grammar Javali; // parser grammar, parses streams of tokens
 // PARSER RULES
 // TODO: declare appropriate parser rules
 
+type
+	:   primitiveType
+	|   referenceType
+	;
+
+primitiveType
+	:   'int'
+	|   'boolean'
+	;
+
+referenceType
+	:   Identifier
+	|   arrayType
+	;
+
+arrayType
+	:   Identifier '[' ']'
+	|   primitiveType '[' ']'
+	;
+
+
 unit
  	: classDecl+ EOF
  	;
@@ -22,15 +43,15 @@ memberList
 	;
 
 varDecl
-	:   Type Identifier (',' Identifier)* ';'
+	:   type Identifier (',' Identifier)* ';'
 	;
 
 methodDecl
-	:   (Type | 'void') Identifier '(' formalParamList? ')' '{' varDecl* statement* '}'
+	:   (type | 'void') Identifier '(' formalParamList? ')' '{' varDecl* statement* '}'
 	;
 
 formalParamList
-	:   Type Identifier (',' Type Identifier)*
+	:   type Identifier (',' type Identifier)*
 	;
 
 statement
@@ -69,7 +90,7 @@ returnStatement
 newExpression
 	:   'new' ( Identifier '(' ')'
 			| Identifier '[' expression ']'
-			| PrimitiveType '[' expression ']' )
+			| primitiveType '[' expression ']' )
 	;
 
 readExpression
@@ -103,7 +124,7 @@ expression
 	|   identAccess                                 # IDACC
 	|   '(' expression ')'                          # PARS
 	|   ('+'|'-'|'!') expression                    # UNARY
-	|   '(' ReferenceType ')'expression             # CAST
+	|   '(' referenceType ')'expression             # CAST
 	|   expression ('*'|'/'|'%') expression         # MULT
 	|   expression ('+'|'-') expression             # ADD
 	|   expression ('<'|'<='|'>'|'>=') expression   # COMP
@@ -138,26 +159,7 @@ Integer
 	|   Hex
 	;
 
-Type
-	:   PrimitiveType
-	|   ReferenceType
-	;
 
-PrimitiveType
-	:   'int'
-	|   'boolean'
-	;
-
-ReferenceType
-	:   Identifier
-	|   ArrayType
-	;
-
-fragment
-ArrayType
-	:   Identifier '[' ']'
-	|   PrimitiveType '[' ']'
-	;
 
 fragment
 Decimal
