@@ -1,0 +1,10 @@
+class Main {
+    int a,b;
+
+    void method(int a, int b) {
+        int c;
+        int d;
+    }
+
+    int c;
+}

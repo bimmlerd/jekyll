@@ -97,6 +97,12 @@ public interface JavaliVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitCOMP(@NotNull JavaliParser.COMPContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link JavaliParser#methodType}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitMethodType(@NotNull JavaliParser.MethodTypeContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link JavaliParser#memberList}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

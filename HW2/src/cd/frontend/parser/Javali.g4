@@ -14,6 +14,11 @@ type
 	|   referenceType
 	;
 
+methodType
+	:   type
+	|   'void'
+	;
+
 primitiveType
 	:   'int'
 	|   'boolean'
@@ -47,7 +52,7 @@ varDecl
 	;
 
 methodDecl
-	:   (type | 'void') Identifier '(' formalParamList? ')' '{' varDecl* statement* '}'
+	:   methodType Identifier '(' formalParamList? ')' '{' varDecl* statement* '}'
 	;
 
 formalParamList
