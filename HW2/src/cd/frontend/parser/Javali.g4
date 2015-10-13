@@ -42,7 +42,8 @@ statementBlock
 	;
 
 methodCallStatement
-	:   methodCallExpression ';'
+//	:   methodCallExpression ';'
+	:	(identAccess '.')? Identifier '(' actualParamList? ')' ';'
 	;
 
 assignmentStatement
@@ -75,10 +76,13 @@ readExpression
 	:   'read' '(' ')'
 	;
 
+/*
 methodCallExpression
-	:   Identifier '(' actualParamList? ')'
-	|   identAccess '.' Identifier '(' actualParamList? ')' //TODO handle indirect left recursion
+//	:   Identifier '(' actualParamList? ')'
+//	|   identAccess '.' Identifier '(' actualParamList? ')' //TODO handle indirect left recursion
+	:   (identAccess '.')? Identifier '(' actualParamList? ')'
 	;
+*/
 
 actualParamList
 	:   expression ( ',' expression )*
@@ -88,7 +92,9 @@ identAccess
 	:   Identifier
 	|   'this'
 	|   identAccess '.' Identifier
-	|	identAccess '[' expression ']'
+	|   identAccess '[' expression ']'
+	|	Identifier '(' actualParamList? ')'
+	|	identAccess '.' Identifier '(' actualParamList? ')'
 //	|   methodCallExpression //TODO handle indirect left recursion
 	;
 
