@@ -4,6 +4,9 @@ class Main {
     void method(int a, int b) {
         int c;
         int d;
+
+        c = 0;
+        d = c + 1;
     }
 
     int c;

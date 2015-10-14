@@ -7,7 +7,6 @@ grammar Javali; // parser grammar, parses streams of tokens
 
 
 // PARSER RULES
-// TODO: declare appropriate parser rules
 
 type
 	:   primitiveType
@@ -68,7 +67,6 @@ statementBlock
 	;
 
 methodCallStatement
-//	:   methodCallExpression ';'
 	:	(identAccess '.')? Identifier '(' actualParamList? ')' ';'
 	;
 
@@ -102,14 +100,6 @@ readExpression
 	:   'read' '(' ')'
 	;
 
-/*
-methodCallExpression
-//	:   Identifier '(' actualParamList? ')'
-//	|   identAccess '.' Identifier '(' actualParamList? ')' //TODO handle indirect left recursion
-	:   (identAccess '.')? Identifier '(' actualParamList? ')'
-	;
-*/
-
 actualParamList
 	:   expression ( ',' expression )*
 	;
@@ -121,7 +111,6 @@ identAccess
 	|   identAccess '[' expression ']'
 	|	Identifier '(' actualParamList? ')'
 	|	identAccess '.' Identifier '(' actualParamList? ')'
-//	|   methodCallExpression //TODO handle indirect left recursion
 	;
 
 expression
@@ -140,7 +129,6 @@ expression
 
 
 // LEXER RULES
-// TODO: provide appropriate lexer rules for numbers and boolean literals
 
 Identifier
 	:	Letter (Letter|Digit)*

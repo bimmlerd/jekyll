@@ -16,6 +16,7 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 
 	static final String OBJECT = "Object";
 	static final String VOID = "void";
+	static final String THIS = "this";
 
 	public List<Ast> visitChildren(ParserRuleContext ctx) {
 		List<Ast> result = new ArrayList<>();
@@ -57,20 +58,20 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 		typedMethodDecl.argumentTypes = argumentTypes;
 		typedMethodDecl.argumentNames = argumentNames;
 
-		if (! ctx.getChild(5).toString().equals("{")) {
-			if (ctx.getChild(5) instanceof JavaliParser.VarDeclContext) {
-				// TODO
+		List<Ast> decls = new ArrayList<>();
+		List<Ast> body = new ArrayList<>();
+
+		int i = ctx.getChild(5).toString().equals("{") ? 6 : 5;
+		for (; i < ctx.children.size() - 1; i++) {
+			if (ctx.getChild(i) instanceof JavaliParser.VarDeclContext) {
+				decls.addAll(visit(ctx.getChild(i)));
 			} else {
-				// TODO
+				body.addAll(visit(ctx.getChild(i)));
 			}
 		}
-		for (int i = 6; i < ctx.children.size(); i++) {
-			// things again
-			// TODO
-		}
 
-		typedMethodDecl.setDecls(new Ast.Seq(new ArrayList<>())); // TODO
-		typedMethodDecl.setBody(new Ast.Seq(new ArrayList<>())); // TODO
+		typedMethodDecl.setDecls(new Ast.Seq(decls));
+		typedMethodDecl.setBody(new Ast.Seq(body)); // TODO
 
 		List<Ast> result = new ArrayList<>();
 		result.add(typedMethodDecl);
@@ -99,7 +100,11 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 
 	@Override
 	public List<Ast> visitAssignmentStatement(@NotNull JavaliParser.AssignmentStatementContext ctx) {
-		return super.visitAssignmentStatement(ctx);
+		Ast.Var left = (Ast.Var) visit(ctx.getChild(0)).get(0);
+		Ast.Expr right = (Ast.Expr) visit(ctx.getChild(2)).get(0); // TODO readExpression?
+		List<Ast> result = new ArrayList<>();
+		result.add(new Ast.Assign(left, right));
+		return result;
 	}
 
 	@Override
@@ -180,7 +185,7 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 
 	@Override
 	public List<Ast> visitStatement(@NotNull JavaliParser.StatementContext ctx) {
-		return super.visitStatement(ctx);
+		return visitChildren(ctx); // TODO maybe implement this using labels?
 	}
 
 	@Override
@@ -223,7 +228,13 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 
 	@Override
 	public List<Ast> visitIdentAccess(@NotNull JavaliParser.IdentAccessContext ctx) {
-		return super.visitIdentAccess(ctx);
+		List<Ast> result = new ArrayList<>();
+		ParseTree child = ctx.getChild(0);
+		if (child.toString().equals(THIS)) {
+
+		}
+		result.add(new Ast.Var(child.toString())); // TODO handle all cases, not just Identifier
+		return result;
 	}
 
 	@Override
