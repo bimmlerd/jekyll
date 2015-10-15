@@ -48,12 +48,6 @@ public interface JavaliVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitMethodCallStatement(@NotNull JavaliParser.MethodCallStatementContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link JavaliParser#assignmentStatement}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitAssignmentStatement(@NotNull JavaliParser.AssignmentStatementContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link JavaliParser#formalParamList}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -73,6 +67,20 @@ public interface JavaliVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitLAND(@NotNull JavaliParser.LANDContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code methodTypeVoid}
+	 * labeled alternative in {@link JavaliParser#methodType}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitMethodTypeVoid(@NotNull JavaliParser.MethodTypeVoidContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code stmtWrite}
+	 * labeled alternative in {@link JavaliParser#statement}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitStmtWrite(@NotNull JavaliParser.StmtWriteContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link JavaliParser#methodDecl}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -85,24 +93,12 @@ public interface JavaliVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitReturnStatement(@NotNull JavaliParser.ReturnStatementContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link JavaliParser#type}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitType(@NotNull JavaliParser.TypeContext ctx);
-	/**
 	 * Visit a parse tree produced by the {@code COMP}
 	 * labeled alternative in {@link JavaliParser#expression}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitCOMP(@NotNull JavaliParser.COMPContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link JavaliParser#methodType}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitMethodType(@NotNull JavaliParser.MethodTypeContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link JavaliParser#memberList}.
 	 * @param ctx the parse tree
@@ -117,6 +113,13 @@ public interface JavaliVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitMULT(@NotNull JavaliParser.MULTContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code stmtIf}
+	 * labeled alternative in {@link JavaliParser#statement}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitStmtIf(@NotNull JavaliParser.StmtIfContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code PARS}
 	 * labeled alternative in {@link JavaliParser#expression}.
 	 * @param ctx the parse tree
@@ -124,11 +127,19 @@ public interface JavaliVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitPARS(@NotNull JavaliParser.PARSContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link JavaliParser#statement}.
+	 * Visit a parse tree produced by the {@code typeReference}
+	 * labeled alternative in {@link JavaliParser#type}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitStatement(@NotNull JavaliParser.StatementContext ctx);
+	T visitTypeReference(@NotNull JavaliParser.TypeReferenceContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code assignmentStmtRead}
+	 * labeled alternative in {@link JavaliParser#assignmentStatement}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitAssignmentStmtRead(@NotNull JavaliParser.AssignmentStmtReadContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link JavaliParser#primitiveType}.
 	 * @param ctx the parse tree
@@ -149,6 +160,13 @@ public interface JavaliVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitUNARY(@NotNull JavaliParser.UNARYContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code assignmentStmtExpr}
+	 * labeled alternative in {@link JavaliParser#assignmentStatement}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitAssignmentStmtExpr(@NotNull JavaliParser.AssignmentStmtExprContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code CAST}
 	 * labeled alternative in {@link JavaliParser#expression}.
 	 * @param ctx the parse tree
@@ -162,6 +180,13 @@ public interface JavaliVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitReferenceTypeAr(@NotNull JavaliParser.ReferenceTypeArContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code assignmentStmtNew}
+	 * labeled alternative in {@link JavaliParser#assignmentStatement}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitAssignmentStmtNew(@NotNull JavaliParser.AssignmentStmtNewContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link JavaliParser#classDecl}.
 	 * @param ctx the parse tree
@@ -207,6 +232,13 @@ public interface JavaliVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitLOR(@NotNull JavaliParser.LORContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code stmtMethodCall}
+	 * labeled alternative in {@link JavaliParser#statement}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitStmtMethodCall(@NotNull JavaliParser.StmtMethodCallContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link JavaliParser#whileStatement}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -218,6 +250,20 @@ public interface JavaliVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitUnit(@NotNull JavaliParser.UnitContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code methodTypeType}
+	 * labeled alternative in {@link JavaliParser#methodType}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitMethodTypeType(@NotNull JavaliParser.MethodTypeTypeContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code stmtWhile}
+	 * labeled alternative in {@link JavaliParser#statement}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitStmtWhile(@NotNull JavaliParser.StmtWhileContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code LIT}
 	 * labeled alternative in {@link JavaliParser#expression}.
@@ -233,6 +279,13 @@ public interface JavaliVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitReferenceTypeId(@NotNull JavaliParser.ReferenceTypeIdContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code stmtAssignment}
+	 * labeled alternative in {@link JavaliParser#statement}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitStmtAssignment(@NotNull JavaliParser.StmtAssignmentContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code arrayTypePr}
 	 * labeled alternative in {@link JavaliParser#arrayType}.
 	 * @param ctx the parse tree
@@ -245,4 +298,18 @@ public interface JavaliVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitVarDecl(@NotNull JavaliParser.VarDeclContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code typePrimitive}
+	 * labeled alternative in {@link JavaliParser#type}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTypePrimitive(@NotNull JavaliParser.TypePrimitiveContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code stmtReturn}
+	 * labeled alternative in {@link JavaliParser#statement}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitStmtReturn(@NotNull JavaliParser.StmtReturnContext ctx);
 }

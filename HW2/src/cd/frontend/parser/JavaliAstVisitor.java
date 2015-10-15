@@ -19,11 +19,15 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 	static final String THIS = "this";
 
 	public List<Ast> visitChildren(ParserRuleContext ctx) {
-        // TODO check for ctx.children == null ?
 		List<Ast> result = new ArrayList<>();
-		for (ParseTree child: ctx.children) {
-			result.addAll(visit(child));
-		}
+
+        // Check that ctx.children is not null
+        if (ctx.getChildCount() != 0) {
+            for (ParseTree child: ctx.children) {
+                result.addAll(visit(child));
+            }
+        }
+
 		return result;
 	}
 
@@ -31,57 +35,67 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 // types
 
     @Override
-    public List<Ast> visitType(@NotNull JavaliParser.TypeContext ctx) {
-        return visit(ctx.getChild(0));
+    public List<Ast> visitTypePrimitive(@NotNull JavaliParser.TypePrimitiveContext ctx) {
+        return visit(ctx.primitiveType());
     }
 
     @Override
-    public List<Ast> visitMethodType(@NotNull JavaliParser.MethodTypeContext ctx) {
-        assert ctx.children.size() == 1;
+    public List<Ast> visitTypeReference(@NotNull JavaliParser.TypeReferenceContext ctx) {
+        return visit(ctx.referenceType());
+    }
 
+    @Override
+    public List<Ast> visitMethodTypeType(@NotNull JavaliParser.MethodTypeTypeContext ctx) {
         List<Ast> result = new ArrayList<>();
-        String type;
-        if (ctx.getChild(0).toString().equals(VOID)) {
-            type = VOID;
-        } else {
-            // get type from typed VarDecl
-            Ast.VarDecl typedVarDecl = (Ast.VarDecl) visit(ctx.getChild(0)).get(0);
-            type = typedVarDecl.type;
-        }
-        result.add(new Ast.MethodDecl(type, null, null, null, null, null));
+
+        assert ctx.getChildCount() == 1;
+
+        Ast.VarDecl typedVarDecl = (Ast.VarDecl) visit(ctx.type()).get(0);
+
+        result.add(new Ast.MethodDecl(typedVarDecl.type, null, null, null, null, null));
+        return result;
+    }
+
+    @Override
+    public List<Ast> visitMethodTypeVoid(@NotNull JavaliParser.MethodTypeVoidContext ctx) {
+        List<Ast> result = new ArrayList<>();
+
+        assert ctx.getChildCount() == 1;
+
+        result.add(new Ast.MethodDecl(VOID, null, null, null, null, null));
         return result;
     }
 
     @Override
     public List<Ast> visitPrimitiveType(@NotNull JavaliParser.PrimitiveTypeContext ctx) {
         List<Ast> result = new ArrayList<>();
-        result.add(new Ast.VarDecl(ctx.getChild(0).toString(), null)); // We don't know the name of the variable yet
+        result.add(new Ast.VarDecl(ctx.getText(), null)); // We don't know the name of the variable yet
         return result;
     }
 
     @Override
     public List<Ast> visitReferenceTypeId(@NotNull JavaliParser.ReferenceTypeIdContext ctx) {
         List<Ast> result = new ArrayList<>();
-        result.add(new Ast.VarDecl(ctx.getChild(0).toString(), null)); // We don't know the name of the variable yet
+        result.add(new Ast.VarDecl(ctx.Identifier().toString(), null)); // We don't know the name of the variable yet
         return result;
     }
 
     @Override
     public List<Ast> visitReferenceTypeAr(@NotNull JavaliParser.ReferenceTypeArContext ctx) {
-        return visit(ctx.getChild(0));
+        return visit(ctx.arrayType());
     }
 
     @Override
     public List<Ast> visitArrayTypeId(@NotNull JavaliParser.ArrayTypeIdContext ctx) {
         List<Ast> result = new ArrayList<>();
-        result.add(new Ast.VarDecl(String.format("%s[]", ctx.getChild(0).toString()), null)); // We don't know the name of the variable yet
+        result.add(new Ast.VarDecl(String.format("%s[]", ctx.Identifier().toString()), null)); // We don't know the name of the variable yet
         return result;
     }
 
     @Override
     public List<Ast> visitArrayTypePr(@NotNull JavaliParser.ArrayTypePrContext ctx) {
         List<Ast> result = new ArrayList<>();
-        Ast.VarDecl typedVarDecl = (Ast.VarDecl) visit(ctx.getChild(0)).get(0);
+        Ast.VarDecl typedVarDecl = (Ast.VarDecl) visit(ctx.primitiveType()).get(0);
         typedVarDecl.type = String.format("%s[]", typedVarDecl.type);
         result.add(typedVarDecl);
         return result;
@@ -97,23 +111,22 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 
 	@Override
 	public List<Ast> visitClassDecl(JavaliParser.ClassDeclContext ctx) {
-        ClassDecl classDecl;
-        if (ctx.children.size() <= 5) { // ClassDecl without an Extends
-            // check whether MemberList is empty
-            if (ctx.getChild(3).getChildCount() == 0) {
-                classDecl = new ClassDecl(ctx.getChild(1).toString(), OBJECT, new ArrayList<>());
-            } else {
-                classDecl = new ClassDecl(ctx.getChild(1).toString(), OBJECT, visit(ctx.getChild(3)));
-            }
-        } else { // ClassDecl with an Extends
-            // check whether MemberList is empty
-            if (ctx.getChild(5).getChildCount() == 0) {
-                classDecl = new ClassDecl(ctx.getChild(1).toString(), ctx.getChild(3).toString(), new ArrayList<>());
-            } else {
-                classDecl = new ClassDecl(ctx.getChild(1).toString(), ctx.getChild(3).toString(), visit(ctx.getChild(5)));
-            }
+        String superClass;
+        List<Ast> members = new ArrayList<>();
+
+        if (ctx.getChildCount() <= 5) {
+            // ClassDecl without an Extends
+            superClass = OBJECT;
+        } else {
+            // ClassDecl with an Extends
+            superClass = ctx.Identifier(1).toString();
         }
-        classDecls.add(classDecl);
+
+        if (ctx.memberList().getChildCount() != 0) { // check that MemberList is non-empty before call
+            members = visit(ctx.memberList());
+        }
+
+        classDecls.add(new ClassDecl(ctx.Identifier(0).toString(), superClass, members));
 		return null;
 	}
 
@@ -126,28 +139,29 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 	public List<Ast> visitVarDecl(@NotNull JavaliParser.VarDeclContext ctx) {
 		List<Ast> result = new ArrayList<>();
 
-		for (int i = 1; i < ctx.children.size(); i += 2) {
-			Ast.VarDecl typedVarDecl = (Ast.VarDecl) visit(ctx.getChild(0)).get(0);
+		for (int i = 0; i < ctx.Identifier().size(); i++) {
+			Ast.VarDecl typedVarDecl = (Ast.VarDecl) visit(ctx.type()).get(0);
 			assert typedVarDecl.name == null;
 
-			typedVarDecl.name = ctx.getChild(i).toString(); // fill in name of variable
+			typedVarDecl.name = ctx.Identifier(i).toString(); // fill in name of variable
 			result.add(typedVarDecl);
 		}
+
 		return result;
 	}
 
 	@Override
 	public List<Ast> visitMethodDecl(@NotNull JavaliParser.MethodDeclContext ctx) {
-		Ast.MethodDecl typedMethodDecl = (Ast.MethodDecl) visit(ctx.getChild(0)).get(0);
+		Ast.MethodDecl typedMethodDecl = (Ast.MethodDecl) visit(ctx.methodType()).get(0);
 
-		typedMethodDecl.name = ctx.getChild(1).toString();
+		typedMethodDecl.name = ctx.Identifier().toString();
 
 		List<String> argumentTypes = new ArrayList<>();
 		List<String> argumentNames = new ArrayList<>();
 
-		ParseTree formalParamsOrNothing = ctx.getChild(3);
+		ParseTree formalParamsOrNothing = ctx.formalParamList();
 		if (! formalParamsOrNothing.toString().equals(")")) {
-			for (Ast ast : visit(ctx.getChild(3))) {
+			for (Ast ast : visit(ctx.formalParamList())) {
 				Ast.VarDecl varDecl = (Ast.VarDecl) ast;
 				argumentTypes.add(varDecl.type);
 				argumentNames.add(varDecl.name);
@@ -160,14 +174,12 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 		List<Ast> decls = new ArrayList<>();
 		List<Ast> body = new ArrayList<>();
 
-		int i = ctx.getChild(5).toString().equals("{") ? 6 : 5;
-		for (; i < ctx.children.size() - 1; i++) {
-			if (ctx.getChild(i) instanceof JavaliParser.VarDeclContext) {
-				decls.addAll(visit(ctx.getChild(i)));
-			} else {
-				body.addAll(visit(ctx.getChild(i)));
-			}
-		}
+        for (JavaliParser.VarDeclContext varDecl : ctx.varDecl()) {
+            decls.addAll(visit(varDecl));
+        }
+        for (JavaliParser.StatementContext statement : ctx.statement()) {
+            body.addAll(visit(statement));
+        }
 
 		typedMethodDecl.setDecls(new Ast.Seq(decls));
 		typedMethodDecl.setBody(new Ast.Seq(body)); // TODO
@@ -180,14 +192,18 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
     @Override
     public List<Ast> visitFormalParamList(@NotNull JavaliParser.FormalParamListContext ctx) {
         List<Ast> result = new ArrayList<>();
-        for (int i = 0; i < ctx.children.size(); i += 3) {
-            Ast.VarDecl typedVarDecl = (Ast.VarDecl) visit(ctx.getChild(i)).get(0);
+
+        assert ctx.type().size() == ctx.Identifier().size();
+
+        for (int i = 0; i < ctx.type().size(); i++) {
+            Ast.VarDecl typedVarDecl = (Ast.VarDecl) visit(ctx.type(i)).get(0);
 
             assert typedVarDecl.name == null;
 
-            typedVarDecl.name = ctx.getChild(i + 1).toString(); // fill in name of parameter
+            typedVarDecl.name = ctx.Identifier(i).toString(); // fill in name of parameter
             result.add(typedVarDecl);
         }
+
         return result;
     }
 
@@ -195,19 +211,65 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 // statements
 
     @Override
-    public List<Ast> visitStatement(@NotNull JavaliParser.StatementContext ctx) {
-        return visitChildren(ctx); // TODO maybe implement this using labels?
+    public List<Ast> visitStmtAssignment(@NotNull JavaliParser.StmtAssignmentContext ctx) {
+        return visit(ctx.assignmentStatement());
+    }
+
+    @Override
+    public List<Ast> visitStmtMethodCall(@NotNull JavaliParser.StmtMethodCallContext ctx) {
+        return visit(ctx.methodCallStatement());
+    }
+
+    @Override
+    public List<Ast> visitStmtIf(@NotNull JavaliParser.StmtIfContext ctx) {
+        return visit(ctx.ifStatement());
+    }
+
+    @Override
+    public List<Ast> visitStmtWhile(@NotNull JavaliParser.StmtWhileContext ctx) {
+        return visit(ctx.whileStatement());
+    }
+
+    @Override
+    public List<Ast> visitStmtReturn(@NotNull JavaliParser.StmtReturnContext ctx) {
+        return visit(ctx.returnStatement());
+    }
+
+    @Override
+    public List<Ast> visitStmtWrite(@NotNull JavaliParser.StmtWriteContext ctx) {
+        return visit(ctx.writeStatement());
     }
 
     @Override
     public List<Ast> visitStatementBlock(@NotNull JavaliParser.StatementBlockContext ctx) {
-        return super.visitStatementBlock(ctx);
+        return visitChildren(ctx);
     }
 
     @Override
-    public List<Ast> visitAssignmentStatement(@NotNull JavaliParser.AssignmentStatementContext ctx) {
-        Ast.Var left = (Ast.Var) visit(ctx.getChild(0)).get(0);
-        Ast.Expr right = (Ast.Expr) visit(ctx.getChild(2)).get(0); // TODO readExpression?
+    public List<Ast> visitAssignmentStmtExpr(@NotNull JavaliParser.AssignmentStmtExprContext ctx) {
+        Ast.Var left = (Ast.Var) visit(ctx.identAccess()).get(0);
+        Ast.Expr right = (Ast.Expr) visit(ctx.expression()).get(0);
+
+        List<Ast> result = new ArrayList<>();
+        result.add(new Ast.Assign(left, right));
+        return result;
+    }
+
+    @Override
+    public List<Ast> visitAssignmentStmtNew(@NotNull JavaliParser.AssignmentStmtNewContext ctx) {
+        Ast.Var left = (Ast.Var) visit(ctx.identAccess()).get(0);
+        Ast.Expr right = (Ast.Expr) visit(ctx.newExpression()).get(0);
+
+        List<Ast> result = new ArrayList<>();
+        result.add(new Ast.Assign(left, right));
+        return result;
+    }
+
+    @Override
+    public List<Ast> visitAssignmentStmtRead(@NotNull JavaliParser.AssignmentStmtReadContext ctx) {
+        Ast.Var left = (Ast.Var) visit(ctx.identAccess()).get(0);
+        Ast.Expr right = (Ast.Expr) visit(ctx.readExpression()).get(0);
+
         List<Ast> result = new ArrayList<>();
         result.add(new Ast.Assign(left, right));
         return result;

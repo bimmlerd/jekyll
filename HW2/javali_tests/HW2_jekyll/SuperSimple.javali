@@ -3,8 +3,7 @@ class Main {
 
     void method(int a, int b) {
         // primitive types
-        int c;
-        int d;
+        int c, d;
         boolean e;
 
         // reference types
@@ -13,8 +12,13 @@ class Main {
         boolean[] h;
         list[] i;
 
-//        c = 0;
-//        d = c + 1;
+/*
+        c = 0;
+        d = c + 1;
+        e = read();
+        write(0);
+        writeln();
+*/
     }
 
     int method2(boolean a, point[] b) {

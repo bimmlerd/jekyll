@@ -10,13 +10,13 @@ grammar Javali; // parser grammar, parses streams of tokens
 
 // types
 type
-	:   primitiveType
-	|   referenceType
+	:   primitiveType   #typePrimitive
+	|   referenceType   #typeReference
 	;
 
 methodType
-	:   type
-	|   'void'
+	:   type     #methodTypeType
+	|   'void'   #methodTypeVoid
 	;
 
 primitiveType
@@ -61,7 +61,12 @@ formalParamList
 
 // statements
 statement
-	:   assignmentStatement | methodCallStatement | ifStatement | whileStatement | returnStatement | writeStatement
+	:   assignmentStatement   # stmtAssignment
+	|   methodCallStatement   # stmtMethodCall
+	|   ifStatement           # stmtIf
+	|   whileStatement        # stmtWhile
+	|   returnStatement       # stmtReturn
+	|   writeStatement        # stmtWrite
 	;
 
 statementBlock
@@ -69,7 +74,9 @@ statementBlock
 	;
 
 assignmentStatement
-	:   identAccess '=' ( expression | newExpression | readExpression ) ';'
+	:   identAccess '=' expression ';'       # assignmentStmtExpr
+	|   identAccess '=' newExpression ';'    # assignmentStmtNew
+	|   identAccess '=' readExpression ';'   # assignmentStmtRead
 	;
 
 methodCallStatement
