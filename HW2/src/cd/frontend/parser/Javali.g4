@@ -8,6 +8,7 @@ grammar Javali; // parser grammar, parses streams of tokens
 
 // PARSER RULES
 
+// types
 type
 	:   primitiveType
 	|   referenceType
@@ -33,7 +34,7 @@ arrayType
 	|   primitiveType '[' ']'
 	;
 
-
+// program structure
 unit
  	: classDecl+ EOF
  	;
@@ -58,6 +59,7 @@ formalParamList
 	:   type Identifier (',' type Identifier)*
 	;
 
+// statements
 statement
 	:   assignmentStatement | methodCallStatement | ifStatement | whileStatement | returnStatement | writeStatement
 	;
@@ -66,16 +68,12 @@ statementBlock
 	:   '{' statement* '}'
 	;
 
-methodCallStatement
-	:	(identAccess '.')? Identifier '(' actualParamList? ')' ';'
-	;
-
 assignmentStatement
 	:   identAccess '=' ( expression | newExpression | readExpression ) ';'
 	;
 
-writeStatement
-	:   ( 'write' '(' expression ')' | 'writeln' '(' ')') ';'
+methodCallStatement
+	:	(identAccess '.')? Identifier '(' actualParamList? ')' ';'
 	;
 
 ifStatement
@@ -90,6 +88,11 @@ returnStatement
 	:   'return' expression? ';'
 	;
 
+writeStatement
+	:   ( 'write' '(' expression ')' | 'writeln' '(' ')') ';'
+	;
+
+// expressions
 newExpression
 	:   'new' ( Identifier '(' ')'
 			| Identifier '[' expression ']'
@@ -130,29 +133,23 @@ expression
 
 // LEXER RULES
 
-Identifier
-	:	Letter (Letter|Digit)*
-	;
-
-Literal
-	:   Integer
-	|   Boolean
-	|   'null'
+fragment
+Letter
+	:	'\u0041'..'\u005a'
+	|	'\u0061'..'\u007a'
 	;
 
 fragment
-Boolean
-	:   'true'
-	|   'false'
+Digit
+	:   '\u0030'..'\u0039' // '0'..'9'
 	;
 
 fragment
-Integer
-	:   Decimal
-	|   Hex
+HexDigit
+	:   Digit
+	|   '\u0041'..'\u0046'
+	|   '\u0061'..'\u0066'
 	;
-
-
 
 fragment
 Decimal
@@ -166,21 +163,25 @@ Hex
 	;
 
 fragment
-HexDigit
-	:   Digit
-	|   '\u0041'..'\u0046'
-	|   '\u0061'..'\u0066'
+Integer
+	:   Decimal
+	|   Hex
 	;
 
 fragment
-Letter
-	:	'\u0041'..'\u005a'
-	|	'\u0061'..'\u007a'
+Boolean
+	:   'true'
+	|   'false'
 	;
 
-fragment
-Digit
-	:   '\u0030'..'\u0039' // '0'..'9'
+Identifier
+	:	Letter (Letter|Digit)*
+	;
+
+Literal
+	:   Integer
+	|   Boolean
+	|   'null'
 	;
 
 // comments and white space does not produce tokens:
