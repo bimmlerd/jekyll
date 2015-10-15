@@ -1259,16 +1259,32 @@ public class JavaliParser extends Parser {
 	}
 
 	public static class WriteStatementContext extends ParserRuleContext {
-		public ExpressionContext expression() {
-			return getRuleContext(ExpressionContext.class,0);
-		}
 		public WriteStatementContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_writeStatement; }
+	 
+		public WriteStatementContext() { }
+		public void copyFrom(WriteStatementContext ctx) {
+			super.copyFrom(ctx);
+		}
+	}
+	public static class WriteLnStmtContext extends WriteStatementContext {
+		public WriteLnStmtContext(WriteStatementContext ctx) { copyFrom(ctx); }
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof JavaliVisitor ) return ((JavaliVisitor<? extends T>)visitor).visitWriteStatement(this);
+			if ( visitor instanceof JavaliVisitor ) return ((JavaliVisitor<? extends T>)visitor).visitWriteLnStmt(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+	public static class WriteStmtContext extends WriteStatementContext {
+		public ExpressionContext expression() {
+			return getRuleContext(ExpressionContext.class,0);
+		}
+		public WriteStmtContext(WriteStatementContext ctx) { copyFrom(ctx); }
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof JavaliVisitor ) return ((JavaliVisitor<? extends T>)visitor).visitWriteStmt(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1277,29 +1293,31 @@ public class JavaliParser extends Parser {
 		WriteStatementContext _localctx = new WriteStatementContext(_ctx, getState());
 		enterRule(_localctx, 36, RULE_writeStatement);
 		try {
-			enterOuterAlt(_localctx, 1);
-			{
-			setState(215);
+			setState(217);
 			switch (_input.LA(1)) {
 			case T__14:
+				_localctx = new WriteStmtContext(_localctx);
+				enterOuterAlt(_localctx, 1);
 				{
 				setState(207); match(T__14);
 				setState(208); match(T__20);
 				setState(209); expression(0);
 				setState(210); match(T__2);
+				setState(211); match(T__30);
 				}
 				break;
 			case T__12:
+				_localctx = new WriteLnStmtContext(_localctx);
+				enterOuterAlt(_localctx, 2);
 				{
-				setState(212); match(T__12);
-				setState(213); match(T__20);
-				setState(214); match(T__2);
+				setState(213); match(T__12);
+				setState(214); match(T__20);
+				setState(215); match(T__2);
+				setState(216); match(T__30);
 				}
 				break;
 			default:
 				throw new NoViableAltException(this);
-			}
-			setState(217); match(T__30);
 			}
 		}
 		catch (RecognitionException re) {
@@ -1466,23 +1484,83 @@ public class JavaliParser extends Parser {
 	}
 
 	public static class IdentAccessContext extends ParserRuleContext {
+		public IdentAccessContext(ParserRuleContext parent, int invokingState) {
+			super(parent, invokingState);
+		}
+		@Override public int getRuleIndex() { return RULE_identAccess; }
+	 
+		public IdentAccessContext() { }
+		public void copyFrom(IdentAccessContext ctx) {
+			super.copyFrom(ctx);
+		}
+	}
+	public static class IdentAccessMethodContext extends IdentAccessContext {
 		public TerminalNode Identifier() { return getToken(JavaliParser.Identifier, 0); }
 		public ActualParamListContext actualParamList() {
 			return getRuleContext(ActualParamListContext.class,0);
 		}
+		public IdentAccessMethodContext(IdentAccessContext ctx) { copyFrom(ctx); }
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof JavaliVisitor ) return ((JavaliVisitor<? extends T>)visitor).visitIdentAccessMethod(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+	public static class IdentAccessFieldMethodContext extends IdentAccessContext {
+		public TerminalNode Identifier() { return getToken(JavaliParser.Identifier, 0); }
+		public ActualParamListContext actualParamList() {
+			return getRuleContext(ActualParamListContext.class,0);
+		}
+		public IdentAccessContext identAccess() {
+			return getRuleContext(IdentAccessContext.class,0);
+		}
+		public IdentAccessFieldMethodContext(IdentAccessContext ctx) { copyFrom(ctx); }
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof JavaliVisitor ) return ((JavaliVisitor<? extends T>)visitor).visitIdentAccessFieldMethod(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+	public static class IdentAccessIdContext extends IdentAccessContext {
+		public TerminalNode Identifier() { return getToken(JavaliParser.Identifier, 0); }
+		public IdentAccessIdContext(IdentAccessContext ctx) { copyFrom(ctx); }
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof JavaliVisitor ) return ((JavaliVisitor<? extends T>)visitor).visitIdentAccessId(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+	public static class IdentAccessFieldContext extends IdentAccessContext {
+		public TerminalNode Identifier() { return getToken(JavaliParser.Identifier, 0); }
+		public IdentAccessContext identAccess() {
+			return getRuleContext(IdentAccessContext.class,0);
+		}
+		public IdentAccessFieldContext(IdentAccessContext ctx) { copyFrom(ctx); }
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof JavaliVisitor ) return ((JavaliVisitor<? extends T>)visitor).visitIdentAccessField(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+	public static class IdentAccessThisContext extends IdentAccessContext {
+		public IdentAccessThisContext(IdentAccessContext ctx) { copyFrom(ctx); }
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof JavaliVisitor ) return ((JavaliVisitor<? extends T>)visitor).visitIdentAccessThis(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+	public static class IdentAccessArrayContext extends IdentAccessContext {
 		public ExpressionContext expression() {
 			return getRuleContext(ExpressionContext.class,0);
 		}
 		public IdentAccessContext identAccess() {
 			return getRuleContext(IdentAccessContext.class,0);
 		}
-		public IdentAccessContext(ParserRuleContext parent, int invokingState) {
-			super(parent, invokingState);
-		}
-		@Override public int getRuleIndex() { return RULE_identAccess; }
+		public IdentAccessArrayContext(IdentAccessContext ctx) { copyFrom(ctx); }
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof JavaliVisitor ) return ((JavaliVisitor<? extends T>)visitor).visitIdentAccess(this);
+			if ( visitor instanceof JavaliVisitor ) return ((JavaliVisitor<? extends T>)visitor).visitIdentAccessArray(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -1507,16 +1585,26 @@ public class JavaliParser extends Parser {
 			switch ( getInterpreter().adaptivePredict(_input,24,_ctx) ) {
 			case 1:
 				{
+				_localctx = new IdentAccessIdContext(_localctx);
+				_ctx = _localctx;
+				_prevctx = _localctx;
+
 				setState(248); match(Identifier);
 				}
 				break;
 			case 2:
 				{
+				_localctx = new IdentAccessThisContext(_localctx);
+				_ctx = _localctx;
+				_prevctx = _localctx;
 				setState(249); match(T__18);
 				}
 				break;
 			case 3:
 				{
+				_localctx = new IdentAccessMethodContext(_localctx);
+				_ctx = _localctx;
+				_prevctx = _localctx;
 				setState(250); match(Identifier);
 				setState(251); match(T__20);
 				setState(253);
@@ -1544,7 +1632,7 @@ public class JavaliParser extends Parser {
 					switch ( getInterpreter().adaptivePredict(_input,26,_ctx) ) {
 					case 1:
 						{
-						_localctx = new IdentAccessContext(_parentctx, _parentState);
+						_localctx = new IdentAccessFieldContext(new IdentAccessContext(_parentctx, _parentState));
 						pushNewRecursionContext(_localctx, _startState, RULE_identAccess);
 						setState(258);
 						if (!(precpred(_ctx, 4))) throw new FailedPredicateException(this, "precpred(_ctx, 4)");
@@ -1554,7 +1642,7 @@ public class JavaliParser extends Parser {
 						break;
 					case 2:
 						{
-						_localctx = new IdentAccessContext(_parentctx, _parentState);
+						_localctx = new IdentAccessArrayContext(new IdentAccessContext(_parentctx, _parentState));
 						pushNewRecursionContext(_localctx, _startState, RULE_identAccess);
 						setState(261);
 						if (!(precpred(_ctx, 3))) throw new FailedPredicateException(this, "precpred(_ctx, 3)");
@@ -1565,7 +1653,7 @@ public class JavaliParser extends Parser {
 						break;
 					case 3:
 						{
-						_localctx = new IdentAccessContext(_parentctx, _parentState);
+						_localctx = new IdentAccessFieldMethodContext(new IdentAccessContext(_parentctx, _parentState));
 						pushNewRecursionContext(_localctx, _startState, RULE_identAccess);
 						setState(266);
 						if (!(precpred(_ctx, 1))) throw new FailedPredicateException(this, "precpred(_ctx, 1)");
@@ -1981,7 +2069,7 @@ public class JavaliParser extends Parser {
 		"\3\20\5\20\u00b3\n\20\3\20\3\20\3\20\5\20\u00b8\n\20\3\20\3\20\3\20\3"+
 		"\21\3\21\3\21\3\21\3\21\3\21\3\21\5\21\u00c4\n\21\3\22\3\22\3\22\3\22"+
 		"\3\22\3\22\3\23\3\23\5\23\u00ce\n\23\3\23\3\23\3\24\3\24\3\24\3\24\3\24"+
-		"\3\24\3\24\3\24\5\24\u00da\n\24\3\24\3\24\3\25\3\25\3\25\3\25\3\25\3\25"+
+		"\3\24\3\24\3\24\3\24\3\24\5\24\u00dc\n\24\3\25\3\25\3\25\3\25\3\25\3\25"+
 		"\3\25\3\25\3\25\3\25\3\25\3\25\3\25\3\25\5\25\u00ec\n\25\3\26\3\26\3\26"+
 		"\3\26\3\27\3\27\3\27\7\27\u00f5\n\27\f\27\16\27\u00f8\13\27\3\30\3\30"+
 		"\3\30\3\30\3\30\3\30\5\30\u0100\n\30\3\30\5\30\u0103\n\30\3\30\3\30\3"+
@@ -1995,7 +2083,7 @@ public class JavaliParser extends Parser {
 		"\u0156\2\64\3\2\2\2\48\3\2\2\2\6:\3\2\2\2\b>\3\2\2\2\nG\3\2\2\2\fJ\3\2"+
 		"\2\2\16P\3\2\2\2\20^\3\2\2\2\22a\3\2\2\2\24l\3\2\2\2\26\u0082\3\2\2\2"+
 		"\30\u0093\3\2\2\2\32\u0095\3\2\2\2\34\u00ad\3\2\2\2\36\u00b2\3\2\2\2 "+
-		"\u00bc\3\2\2\2\"\u00c5\3\2\2\2$\u00cb\3\2\2\2&\u00d9\3\2\2\2(\u00dd\3"+
+		"\u00bc\3\2\2\2\"\u00c5\3\2\2\2$\u00cb\3\2\2\2&\u00db\3\2\2\2(\u00dd\3"+
 		"\2\2\2*\u00ed\3\2\2\2,\u00f1\3\2\2\2.\u0102\3\2\2\2\60\u0127\3\2\2\2\62"+
 		"\65\5\6\4\2\63\65\5\b\5\2\64\62\3\2\2\2\64\63\3\2\2\2\65\3\3\2\2\2\66"+
 		"9\5\2\2\2\679\7\f\2\28\66\3\2\2\28\67\3\2\2\29\5\3\2\2\2:;\t\2\2\2;\7"+
@@ -2038,9 +2126,9 @@ public class JavaliParser extends Parser {
 		"\32\16\2\u00ca#\3\2\2\2\u00cb\u00cd\7\5\2\2\u00cc\u00ce\5\60\31\2\u00cd"+
 		"\u00cc\3\2\2\2\u00cd\u00ce\3\2\2\2\u00ce\u00cf\3\2\2\2\u00cf\u00d0\7\n"+
 		"\2\2\u00d0%\3\2\2\2\u00d1\u00d2\7\32\2\2\u00d2\u00d3\7\24\2\2\u00d3\u00d4"+
-		"\5\60\31\2\u00d4\u00d5\7&\2\2\u00d5\u00da\3\2\2\2\u00d6\u00d7\7\34\2\2"+
-		"\u00d7\u00d8\7\24\2\2\u00d8\u00da\7&\2\2\u00d9\u00d1\3\2\2\2\u00d9\u00d6"+
-		"\3\2\2\2\u00da\u00db\3\2\2\2\u00db\u00dc\7\n\2\2\u00dc\'\3\2\2\2\u00dd"+
+		"\5\60\31\2\u00d4\u00d5\7&\2\2\u00d5\u00d6\7\n\2\2\u00d6\u00dc\3\2\2\2"+
+		"\u00d7\u00d8\7\34\2\2\u00d8\u00d9\7\24\2\2\u00d9\u00da\7&\2\2\u00da\u00dc"+
+		"\7\n\2\2\u00db\u00d1\3\2\2\2\u00db\u00d7\3\2\2\2\u00dc\'\3\2\2\2\u00dd"+
 		"\u00eb\7\4\2\2\u00de\u00df\7)\2\2\u00df\u00e0\7\24\2\2\u00e0\u00ec\7&"+
 		"\2\2\u00e1\u00e2\7)\2\2\u00e2\u00e3\7\35\2\2\u00e3\u00e4\5\60\31\2\u00e4"+
 		"\u00e5\7 \2\2\u00e5\u00ec\3\2\2\2\u00e6\u00e7\5\6\4\2\u00e7\u00e8\7\35"+
@@ -2075,7 +2163,7 @@ public class JavaliParser extends Parser {
 		"\u013b\u012c\3\2\2\2\u013b\u012f\3\2\2\2\u013b\u0132\3\2\2\2\u013b\u0135"+
 		"\3\2\2\2\u013b\u0138\3\2\2\2\u013c\u013f\3\2\2\2\u013d\u013b\3\2\2\2\u013d"+
 		"\u013e\3\2\2\2\u013e\61\3\2\2\2\u013f\u013d\3\2\2\2!\648>GLT\\^gpw}\u008a"+
-		"\u0093\u0099\u00ad\u00b2\u00b7\u00c3\u00cd\u00d9\u00eb\u00f6\u00ff\u0102"+
+		"\u0093\u0099\u00ad\u00b2\u00b7\u00c3\u00cd\u00db\u00eb\u00f6\u00ff\u0102"+
 		"\u0111\u0114\u0116\u0127\u013b\u013d";
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());

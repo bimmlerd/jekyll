@@ -152,6 +152,8 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 
 	@Override
 	public List<Ast> visitMethodDecl(@NotNull JavaliParser.MethodDeclContext ctx) {
+        // TODO handle empty argument list (currently throws NullPoniterException
+
 		Ast.MethodDecl typedMethodDecl = (Ast.MethodDecl) visit(ctx.methodType()).get(0);
 
 		typedMethodDecl.name = ctx.Identifier().toString();
@@ -295,10 +297,27 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
         return super.visitReturnStatement(ctx);
     }
 
+    @Override
+    public List<Ast> visitWriteStmt(@NotNull JavaliParser.WriteStmtContext ctx) {
+        Ast.Expr expr = (Ast.Expr) visit(ctx.expression()).get(0);
+
+        List<Ast> result = new ArrayList<>();
+        result.add(new Ast.BuiltInWrite(expr));
+        return result;
+    }
+
+    @Override
+    public List<Ast> visitWriteLnStmt(@NotNull JavaliParser.WriteLnStmtContext ctx) {
+        List<Ast> result = new ArrayList<>();
+        result.add(new Ast.BuiltInWriteln());
+        return result;
+    }
+/*
 	@Override
 	public List<Ast> visitWriteStatement(@NotNull JavaliParser.WriteStatementContext ctx) {
 		return super.visitWriteStatement(ctx);
 	}
+*/
 
 
 // expressions
@@ -319,6 +338,36 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
     }
 
     @Override
+    public List<Ast> visitIdentAccessId(@NotNull JavaliParser.IdentAccessIdContext ctx) {
+        return super.visitIdentAccessId(ctx);
+    }
+
+    @Override
+    public List<Ast> visitIdentAccessThis(@NotNull JavaliParser.IdentAccessThisContext ctx) {
+        return super.visitIdentAccessThis(ctx);
+    }
+
+    @Override
+    public List<Ast> visitIdentAccessField(@NotNull JavaliParser.IdentAccessFieldContext ctx) {
+        return super.visitIdentAccessField(ctx);
+    }
+
+    @Override
+    public List<Ast> visitIdentAccessArray(@NotNull JavaliParser.IdentAccessArrayContext ctx) {
+        return super.visitIdentAccessArray(ctx);
+    }
+
+    @Override
+    public List<Ast> visitIdentAccessMethod(@NotNull JavaliParser.IdentAccessMethodContext ctx) {
+        return super.visitIdentAccessMethod(ctx);
+    }
+
+    @Override
+    public List<Ast> visitIdentAccessFieldMethod(@NotNull JavaliParser.IdentAccessFieldMethodContext ctx) {
+        return super.visitIdentAccessFieldMethod(ctx);
+    }
+/*
+    @Override
     public List<Ast> visitIdentAccess(@NotNull JavaliParser.IdentAccessContext ctx) {
         List<Ast> result = new ArrayList<>();
         ParseTree child = ctx.getChild(0);
@@ -328,10 +377,17 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
         result.add(new Ast.Var(child.toString())); // TODO handle all cases, not just Identifier
         return result;
     }
+*/
 
     @Override
     public List<Ast> visitLIT(@NotNull JavaliParser.LITContext ctx) {
-        return super.visitLIT(ctx);
+        // TODO parseInt throws NumberFormatException if out of bound (?)
+        // should throw ParseFailure according to homework sheet
+        Ast.IntConst intConst = new Ast.IntConst(Integer.parseInt(ctx.Literal().toString()));
+
+        List<Ast> result = new ArrayList<>();
+        result.add(intConst);
+        return result;
     }
 
 	@Override

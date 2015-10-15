@@ -16,15 +16,18 @@ class Main {
         c = 0;
         d = c + 1;
         e = read();
-        write(0);
-        writeln();
 */
+        write(24);
+        writeln();
     }
 
     int method2(boolean a, point[] b) {
     }
 
     boolean[] method3(int[] a) {
+    }
+
+    void main() {
     }
 }
 

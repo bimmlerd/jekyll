@@ -96,7 +96,8 @@ returnStatement
 	;
 
 writeStatement
-	:   ( 'write' '(' expression ')' | 'writeln' '(' ')') ';'
+	:   'write' '(' expression ')' ';'   # writeStmt
+	|   'writeln' '(' ')' ';'            # writeLnStmt
 	;
 
 // expressions
@@ -115,12 +116,12 @@ actualParamList
 	;
 
 identAccess
-	:   Identifier
-	|   'this'
-	|   identAccess '.' Identifier
-	|   identAccess '[' expression ']'
-	|	Identifier '(' actualParamList? ')'
-	|	identAccess '.' Identifier '(' actualParamList? ')'
+	:   Identifier                                            # identAccessId
+	|   'this'                                                # identAccessThis
+	|   identAccess '.' Identifier                            # identAccessField
+	|   identAccess '[' expression ']'                        # identAccessArray
+	|	Identifier '(' actualParamList? ')'                   # identAccessMethod
+	|	identAccess '.' Identifier '(' actualParamList? ')'   # identAccessFieldMethod
 	;
 
 expression
