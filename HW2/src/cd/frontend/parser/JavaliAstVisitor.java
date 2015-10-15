@@ -19,6 +19,7 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 	static final String THIS = "this";
 
 	public List<Ast> visitChildren(ParserRuleContext ctx) {
+        // TODO check for ctx.children == null ?
 		List<Ast> result = new ArrayList<>();
 		for (ParseTree child: ctx.children) {
 			result.addAll(visit(child));
@@ -91,17 +92,28 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 
     @Override
     public List<Ast> visitUnit(@NotNull JavaliParser.UnitContext ctx) {
-    return super.visitUnit(ctx);
-}
+        return super.visitUnit(ctx);
+    }
 
 	@Override
 	public List<Ast> visitClassDecl(JavaliParser.ClassDeclContext ctx) {
-		{
-			List<Ast> memberList = new ArrayList<>();
-			memberList.addAll(visit(ctx.getChild(3)));
-			ClassDecl classDecl = new ClassDecl(ctx.getChild(1).toString(), OBJECT, memberList);
-			classDecls.add(classDecl);
-		}
+        ClassDecl classDecl;
+        if (ctx.children.size() <= 5) { // ClassDecl without an Extends
+            // check whether MemberList is empty
+            if (ctx.getChild(3).getChildCount() == 0) {
+                classDecl = new ClassDecl(ctx.getChild(1).toString(), OBJECT, new ArrayList<>());
+            } else {
+                classDecl = new ClassDecl(ctx.getChild(1).toString(), OBJECT, visit(ctx.getChild(3)));
+            }
+        } else { // ClassDecl with an Extends
+            // check whether MemberList is empty
+            if (ctx.getChild(5).getChildCount() == 0) {
+                classDecl = new ClassDecl(ctx.getChild(1).toString(), ctx.getChild(3).toString(), new ArrayList<>());
+            } else {
+                classDecl = new ClassDecl(ctx.getChild(1).toString(), ctx.getChild(3).toString(), visit(ctx.getChild(5)));
+            }
+        }
+        classDecls.add(classDecl);
 		return null;
 	}
 

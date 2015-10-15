@@ -23,3 +23,9 @@ class Main {
     boolean[] method3(int[] a) {
     }
 }
+
+class Base {
+}
+
+class Extends extends Base {
+}
