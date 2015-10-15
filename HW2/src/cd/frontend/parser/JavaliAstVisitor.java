@@ -455,7 +455,10 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 
     @Override
     public List<Ast> visitIdentAccessThis(@NotNull JavaliParser.IdentAccessThisContext ctx) {
-        return super.visitIdentAccessThis(ctx);
+        List<Ast> result = new ArrayList<>();
+
+        result.add(new Ast.ThisRef());
+        return result;
     }
 
     @Override
@@ -523,12 +526,12 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 
 	@Override
 	public List<Ast> visitIDACC(@NotNull JavaliParser.IDACCContext ctx) {
-		return super.visitIDACC(ctx);
+		return visit(ctx.identAccess());
 	}
 
     @Override
     public List<Ast> visitPARS(@NotNull JavaliParser.PARSContext ctx) {
-        return super.visitPARS(ctx);
+        return visit(ctx.expression());
     }
 
     @Override
