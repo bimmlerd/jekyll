@@ -15,6 +15,13 @@ import org.antlr.v4.runtime.tree.ParseTreeVisitor;
  */
 public interface JavaliVisitor<T> extends ParseTreeVisitor<T> {
 	/**
+	 * Visit a parse tree produced by the {@code arrayTypeId}
+	 * labeled alternative in {@link JavaliParser#arrayType}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitArrayTypeId(@NotNull JavaliParser.ArrayTypeIdContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code ADD}
 	 * labeled alternative in {@link JavaliParser#expression}.
 	 * @param ctx the parse tree
@@ -65,12 +72,6 @@ public interface JavaliVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitLAND(@NotNull JavaliParser.LANDContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link JavaliParser#referenceType}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitReferenceType(@NotNull JavaliParser.ReferenceTypeContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link JavaliParser#methodDecl}.
 	 * @param ctx the parse tree
@@ -155,11 +156,12 @@ public interface JavaliVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitCAST(@NotNull JavaliParser.CASTContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link JavaliParser#arrayType}.
+	 * Visit a parse tree produced by the {@code referenceTypeAr}
+	 * labeled alternative in {@link JavaliParser#referenceType}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitArrayType(@NotNull JavaliParser.ArrayTypeContext ctx);
+	T visitReferenceTypeAr(@NotNull JavaliParser.ReferenceTypeArContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link JavaliParser#classDecl}.
 	 * @param ctx the parse tree
@@ -223,6 +225,20 @@ public interface JavaliVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitLIT(@NotNull JavaliParser.LITContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code referenceTypeId}
+	 * labeled alternative in {@link JavaliParser#referenceType}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitReferenceTypeId(@NotNull JavaliParser.ReferenceTypeIdContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code arrayTypePr}
+	 * labeled alternative in {@link JavaliParser#arrayType}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitArrayTypePr(@NotNull JavaliParser.ArrayTypePrContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link JavaliParser#varDecl}.
 	 * @param ctx the parse tree

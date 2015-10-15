@@ -2,12 +2,24 @@ class Main {
     int a,b;
 
     void method(int a, int b) {
+        // primitive types
         int c;
         int d;
+        boolean e;
 
-        c = 0;
-        d = c + 1;
+        // reference types
+        list f;
+        int[] g;
+        boolean[] h;
+        list[] i;
+
+//        c = 0;
+//        d = c + 1;
     }
 
-    int c;
+    int method2(boolean a, point[] b) {
+    }
+
+    boolean[] method3(int[] a) {
+    }
 }

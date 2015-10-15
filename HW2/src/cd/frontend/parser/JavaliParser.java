@@ -207,17 +207,33 @@ public class JavaliParser extends Parser {
 	}
 
 	public static class ReferenceTypeContext extends ParserRuleContext {
-		public TerminalNode Identifier() { return getToken(JavaliParser.Identifier, 0); }
-		public ArrayTypeContext arrayType() {
-			return getRuleContext(ArrayTypeContext.class,0);
-		}
 		public ReferenceTypeContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_referenceType; }
+	 
+		public ReferenceTypeContext() { }
+		public void copyFrom(ReferenceTypeContext ctx) {
+			super.copyFrom(ctx);
+		}
+	}
+	public static class ReferenceTypeArContext extends ReferenceTypeContext {
+		public ArrayTypeContext arrayType() {
+			return getRuleContext(ArrayTypeContext.class,0);
+		}
+		public ReferenceTypeArContext(ReferenceTypeContext ctx) { copyFrom(ctx); }
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof JavaliVisitor ) return ((JavaliVisitor<? extends T>)visitor).visitReferenceType(this);
+			if ( visitor instanceof JavaliVisitor ) return ((JavaliVisitor<? extends T>)visitor).visitReferenceTypeAr(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+	public static class ReferenceTypeIdContext extends ReferenceTypeContext {
+		public TerminalNode Identifier() { return getToken(JavaliParser.Identifier, 0); }
+		public ReferenceTypeIdContext(ReferenceTypeContext ctx) { copyFrom(ctx); }
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof JavaliVisitor ) return ((JavaliVisitor<? extends T>)visitor).visitReferenceTypeId(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -229,12 +245,14 @@ public class JavaliParser extends Parser {
 			setState(60);
 			switch ( getInterpreter().adaptivePredict(_input,2,_ctx) ) {
 			case 1:
+				_localctx = new ReferenceTypeIdContext(_localctx);
 				enterOuterAlt(_localctx, 1);
 				{
 				setState(58); match(Identifier);
 				}
 				break;
 			case 2:
+				_localctx = new ReferenceTypeArContext(_localctx);
 				enterOuterAlt(_localctx, 2);
 				{
 				setState(59); arrayType();
@@ -254,17 +272,33 @@ public class JavaliParser extends Parser {
 	}
 
 	public static class ArrayTypeContext extends ParserRuleContext {
-		public TerminalNode Identifier() { return getToken(JavaliParser.Identifier, 0); }
-		public PrimitiveTypeContext primitiveType() {
-			return getRuleContext(PrimitiveTypeContext.class,0);
-		}
 		public ArrayTypeContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_arrayType; }
+	 
+		public ArrayTypeContext() { }
+		public void copyFrom(ArrayTypeContext ctx) {
+			super.copyFrom(ctx);
+		}
+	}
+	public static class ArrayTypeIdContext extends ArrayTypeContext {
+		public TerminalNode Identifier() { return getToken(JavaliParser.Identifier, 0); }
+		public ArrayTypeIdContext(ArrayTypeContext ctx) { copyFrom(ctx); }
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof JavaliVisitor ) return ((JavaliVisitor<? extends T>)visitor).visitArrayType(this);
+			if ( visitor instanceof JavaliVisitor ) return ((JavaliVisitor<? extends T>)visitor).visitArrayTypeId(this);
+			else return visitor.visitChildren(this);
+		}
+	}
+	public static class ArrayTypePrContext extends ArrayTypeContext {
+		public PrimitiveTypeContext primitiveType() {
+			return getRuleContext(PrimitiveTypeContext.class,0);
+		}
+		public ArrayTypePrContext(ArrayTypeContext ctx) { copyFrom(ctx); }
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof JavaliVisitor ) return ((JavaliVisitor<? extends T>)visitor).visitArrayTypePr(this);
 			else return visitor.visitChildren(this);
 		}
 	}
@@ -276,6 +310,7 @@ public class JavaliParser extends Parser {
 			setState(69);
 			switch (_input.LA(1)) {
 			case Identifier:
+				_localctx = new ArrayTypeIdContext(_localctx);
 				enterOuterAlt(_localctx, 1);
 				{
 				setState(62); match(Identifier);
@@ -285,6 +320,7 @@ public class JavaliParser extends Parser {
 				break;
 			case T__21:
 			case T__15:
+				_localctx = new ArrayTypePrContext(_localctx);
 				enterOuterAlt(_localctx, 2);
 				{
 				setState(65); primitiveType();

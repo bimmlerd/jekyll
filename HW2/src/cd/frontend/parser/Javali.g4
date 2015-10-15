@@ -25,13 +25,13 @@ primitiveType
 	;
 
 referenceType
-	:   Identifier
-	|   arrayType
+	:   Identifier   # referenceTypeId
+	|   arrayType    # referenceTypeAr
 	;
 
 arrayType
-	:   Identifier '[' ']'
-	|   primitiveType '[' ']'
+	:   Identifier '[' ']'      # arrayTypeId
+	|   primitiveType '[' ']'   # arrayTypePr
 	;
 
 // program structure

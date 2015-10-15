@@ -56,17 +56,34 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
         List<Ast> result = new ArrayList<>();
         result.add(new Ast.VarDecl(ctx.getChild(0).toString(), null)); // We don't know the name of the variable yet
         return result;
-
     }
 
     @Override
-    public List<Ast> visitReferenceType(@NotNull JavaliParser.ReferenceTypeContext ctx) {
-        return super.visitReferenceType(ctx);
+    public List<Ast> visitReferenceTypeId(@NotNull JavaliParser.ReferenceTypeIdContext ctx) {
+        List<Ast> result = new ArrayList<>();
+        result.add(new Ast.VarDecl(ctx.getChild(0).toString(), null)); // We don't know the name of the variable yet
+        return result;
     }
 
     @Override
-    public List<Ast> visitArrayType(@NotNull JavaliParser.ArrayTypeContext ctx) {
-        return super.visitArrayType(ctx);
+    public List<Ast> visitReferenceTypeAr(@NotNull JavaliParser.ReferenceTypeArContext ctx) {
+        return visit(ctx.getChild(0));
+    }
+
+    @Override
+    public List<Ast> visitArrayTypeId(@NotNull JavaliParser.ArrayTypeIdContext ctx) {
+        List<Ast> result = new ArrayList<>();
+        result.add(new Ast.VarDecl(String.format("%s[]", ctx.getChild(0).toString()), null)); // We don't know the name of the variable yet
+        return result;
+    }
+
+    @Override
+    public List<Ast> visitArrayTypePr(@NotNull JavaliParser.ArrayTypePrContext ctx) {
+        List<Ast> result = new ArrayList<>();
+        Ast.VarDecl typedVarDecl = (Ast.VarDecl) visit(ctx.getChild(0)).get(0);
+        typedVarDecl.type = String.format("%s[]", typedVarDecl.type);
+        result.add(typedVarDecl);
+        return result;
     }
 
 
