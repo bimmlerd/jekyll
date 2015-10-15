@@ -50,9 +50,9 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 
         assert ctx.getChildCount() == 1;
 
-        Ast.VarDecl typedVarDecl = (Ast.VarDecl) visit(ctx.type()).get(0);
+        String returnType = ((Ast.VarDecl) visit(ctx.type()).get(0)).type;
 
-        result.add(new Ast.MethodDecl(typedVarDecl.type, null, null, null, null, null));
+        result.add(new Ast.MethodDecl(returnType, null, null, null, null, null));
         return result;
     }
 
@@ -69,14 +69,20 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
     @Override
     public List<Ast> visitPrimitiveType(@NotNull JavaliParser.PrimitiveTypeContext ctx) {
         List<Ast> result = new ArrayList<>();
-        result.add(new Ast.VarDecl(ctx.getText(), null)); // We don't know the name of the variable yet
+
+        String type = ctx.getText();
+
+        result.add(new Ast.VarDecl(type, null)); // We don't know the name of the variable yet
         return result;
     }
 
     @Override
     public List<Ast> visitReferenceTypeId(@NotNull JavaliParser.ReferenceTypeIdContext ctx) {
         List<Ast> result = new ArrayList<>();
-        result.add(new Ast.VarDecl(ctx.Identifier().toString(), null)); // We don't know the name of the variable yet
+
+        String type = ctx.Identifier().toString();
+
+        result.add(new Ast.VarDecl(type, null)); // We don't know the name of the variable yet
         return result;
     }
 
@@ -88,15 +94,20 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
     @Override
     public List<Ast> visitArrayTypeId(@NotNull JavaliParser.ArrayTypeIdContext ctx) {
         List<Ast> result = new ArrayList<>();
-        result.add(new Ast.VarDecl(String.format("%s[]", ctx.Identifier().toString()), null)); // We don't know the name of the variable yet
+
+        String type = String.format("%s[]", ctx.Identifier().toString());
+
+        result.add(new Ast.VarDecl(type, null)); // We don't know the name of the variable yet
         return result;
     }
 
     @Override
     public List<Ast> visitArrayTypePr(@NotNull JavaliParser.ArrayTypePrContext ctx) {
         List<Ast> result = new ArrayList<>();
+
         Ast.VarDecl typedVarDecl = (Ast.VarDecl) visit(ctx.primitiveType()).get(0);
         typedVarDecl.type = String.format("%s[]", typedVarDecl.type);
+
         result.add(typedVarDecl);
         return result;
     }
@@ -141,6 +152,7 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 
 		for (int i = 0; i < ctx.Identifier().size(); i++) {
 			Ast.VarDecl typedVarDecl = (Ast.VarDecl) visit(ctx.type()).get(0);
+
 			assert typedVarDecl.name == null;
 
 			typedVarDecl.name = ctx.Identifier(i).toString(); // fill in name of variable
@@ -152,6 +164,8 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 
 	@Override
 	public List<Ast> visitMethodDecl(@NotNull JavaliParser.MethodDeclContext ctx) {
+        List<Ast> result = new ArrayList<>();
+
 		Ast.MethodDecl typedMethodDecl = (Ast.MethodDecl) visit(ctx.methodType()).get(0);
 
 		typedMethodDecl.name = ctx.Identifier().toString();
@@ -181,9 +195,8 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
         }
 
 		typedMethodDecl.setDecls(new Ast.Seq(decls));
-		typedMethodDecl.setBody(new Ast.Seq(body)); // TODO
+		typedMethodDecl.setBody(new Ast.Seq(body));
 
-		List<Ast> result = new ArrayList<>();
 		result.add(typedMethodDecl);
 		return result;
 	}
@@ -252,84 +265,125 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 
     @Override
     public List<Ast> visitAssignmentStmtExpr(@NotNull JavaliParser.AssignmentStmtExprContext ctx) {
+        List<Ast> result = new ArrayList<>();
+
         Ast.Var left = (Ast.Var) visit(ctx.identAccess()).get(0);
         Ast.Expr right = (Ast.Expr) visit(ctx.expression()).get(0);
 
-        List<Ast> result = new ArrayList<>();
         result.add(new Ast.Assign(left, right));
         return result;
     }
 
     @Override
     public List<Ast> visitAssignmentStmtNew(@NotNull JavaliParser.AssignmentStmtNewContext ctx) {
+        List<Ast> result = new ArrayList<>();
+
         Ast.Var left = (Ast.Var) visit(ctx.identAccess()).get(0);
         Ast.Expr right = (Ast.Expr) visit(ctx.newExpression()).get(0);
 
-        List<Ast> result = new ArrayList<>();
         result.add(new Ast.Assign(left, right));
         return result;
     }
 
     @Override
     public List<Ast> visitAssignmentStmtRead(@NotNull JavaliParser.AssignmentStmtReadContext ctx) {
+        List<Ast> result = new ArrayList<>();
+
         Ast.Var left = (Ast.Var) visit(ctx.identAccess()).get(0);
         Ast.Expr right = (Ast.Expr) visit(ctx.readExpression()).get(0);
 
-        List<Ast> result = new ArrayList<>();
         result.add(new Ast.Assign(left, right));
         return result;
     }
 
     @Override
     public List<Ast> visitMethodCallStatement(@NotNull JavaliParser.MethodCallStatementContext ctx) {
-        return super.visitMethodCallStatement(ctx);
+        List<Ast> result = new ArrayList<>();
+
+        Ast.Expr rcvr;
+        String methodName = ctx.Identifier().toString();
+        List<Ast.Expr> arguments = new ArrayList<>();
+
+        if (ctx.identAccess() == null) {
+            // implicit function call: add ThisRef as first argument
+            rcvr = new Ast.ThisRef();
+        } else {
+            // explicit function call: add identAccess expression as first argument
+            rcvr = (Ast.Expr) visit(ctx.identAccess()).get(0);
+        }
+
+        if (ctx.actualParamList() != null) {
+            for (Ast ast : visit(ctx.actualParamList())) {
+                Ast.Expr expr = (Ast.Expr) ast;
+                arguments.add(expr);
+            }
+        }
+
+        Ast.MethodCallExpr mce = new Ast.MethodCallExpr(rcvr, methodName, arguments);
+
+        result.add(new Ast.MethodCall(mce));
+        return result;
     }
 
     @Override
     public List<Ast> visitIfStatement(@NotNull JavaliParser.IfStatementContext ctx) {
-        Ast.Expr expr = (Ast.Expr) visit(ctx.expression()).get(0);
-        Ast.Seq ifBody = new Ast.Seq(visit(ctx.statementBlock(0)));
-        Ast elseBody;
+        List<Ast> result = new ArrayList<>();
+
+        Ast.Expr condition = (Ast.Expr) visit(ctx.expression()).get(0);
+        Ast.Seq then = new Ast.Seq(visit(ctx.statementBlock(0)));
+        Ast otherwise;
 
         if (ctx.statementBlock().size() == 1) {
             // no else block
-            elseBody = new Ast.Nop();
+            otherwise = new Ast.Nop();
         } else {
             // visit else block
-            elseBody = new Ast.Seq(visit(ctx.statementBlock(1)));
+            otherwise = new Ast.Seq(visit(ctx.statementBlock(1)));
         }
 
-        List<Ast> result = new ArrayList<>();
-        result.add(new Ast.IfElse(expr, ifBody, elseBody));
+        result.add(new Ast.IfElse(condition, then, otherwise));
         return result;
     }
 
     @Override
     public List<Ast> visitWhileStatement(@NotNull JavaliParser.WhileStatementContext ctx) {
-        return super.visitWhileStatement(ctx);
+        List<Ast> result = new ArrayList<>();
+
+        Ast.Expr condition = (Ast.Expr) visit(ctx.expression()).get(0);
+        Ast body = new Ast.Seq(visit(ctx.statementBlock()));
+
+        result.add(new Ast.WhileLoop(condition, body));
+        return result;
     }
 
     @Override
     public List<Ast> visitReturnStatement(@NotNull JavaliParser.ReturnStatementContext ctx) {
-        Ast.Expr expr = (Ast.Expr) visit(ctx.expression()).get(0);
-
         List<Ast> result = new ArrayList<>();
-        result.add(new Ast.ReturnStmt(expr));
+
+        if (ctx.expression() != null) {
+            Ast.Expr arg = (Ast.Expr) visit(ctx.expression()).get(0);
+            result.add(new Ast.ReturnStmt(arg));
+        } else {
+            result.add(new Ast.ReturnStmt(null));
+        }
+
         return result;
     }
 
     @Override
     public List<Ast> visitWriteStmt(@NotNull JavaliParser.WriteStmtContext ctx) {
-        Ast.Expr expr = (Ast.Expr) visit(ctx.expression()).get(0);
-
         List<Ast> result = new ArrayList<>();
-        result.add(new Ast.BuiltInWrite(expr));
+
+        Ast.Expr arg = (Ast.Expr) visit(ctx.expression()).get(0);
+
+        result.add(new Ast.BuiltInWrite(arg));
         return result;
     }
 
     @Override
     public List<Ast> visitWriteLnStmt(@NotNull JavaliParser.WriteLnStmtContext ctx) {
         List<Ast> result = new ArrayList<>();
+
         result.add(new Ast.BuiltInWriteln());
         return result;
     }
@@ -338,28 +392,64 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 // expressions
 
     @Override
-    public List<Ast> visitNewExpression(@NotNull JavaliParser.NewExpressionContext ctx) {
-        return super.visitNewExpression(ctx);
+    public List<Ast> visitNewIdentifier(@NotNull JavaliParser.NewIdentifierContext ctx) {
+        List<Ast> result = new ArrayList<>();
+
+        String typeName = ctx.Identifier().toString();
+
+        result.add(new Ast.NewObject(typeName));
+        return result;
+    }
+
+    @Override
+    public List<Ast> visitNewArrayId(@NotNull JavaliParser.NewArrayIdContext ctx) {
+        List<Ast> result = new ArrayList<>();
+
+        String typeName = ctx.Identifier().toString();
+        Ast.Expr capacity = (Ast.Expr) visit(ctx.expression()).get(0);
+
+        result.add(new Ast.NewArray(String.format("%s[]", typeName), capacity));
+        return result;
+    }
+
+    @Override
+    public List<Ast> visitNewArrayPr(@NotNull JavaliParser.NewArrayPrContext ctx) {
+        List<Ast> result = new ArrayList<>();
+
+        String typeName = ((Ast.VarDecl) visit(ctx.primitiveType()).get(0)).type;
+        Ast.Expr capacity = (Ast.Expr) visit(ctx.expression()).get(0);
+
+        result.add(new Ast.NewArray(String.format("%s[]", typeName), capacity));
+        return result;
     }
 
     @Override
     public List<Ast> visitReadExpression(@NotNull JavaliParser.ReadExpressionContext ctx) {
         List<Ast> result = new ArrayList<>();
+
         result.add(new Ast.BuiltInRead());
         return result;
     }
 
     @Override
     public List<Ast> visitActualParamList(@NotNull JavaliParser.ActualParamListContext ctx) {
-        return super.visitActualParamList(ctx);
+        List<Ast> result = new ArrayList<>();
+
+        for (int i = 0; i < ctx.expression().size(); i++) {
+            result.add(visit(ctx.expression(i)).get(0));
+        }
+
+        return result;
     }
 
     @Override
     public List<Ast> visitIdentAccessId(@NotNull JavaliParser.IdentAccessIdContext ctx) {
-        // TODO Identifier is not necessarily an AST.Var
-
         List<Ast> result = new ArrayList<>();
-        result.add(new Ast.Var(ctx.Identifier().toString()));
+
+        // TODO Identifier is not necessarily an AST.Var
+        String name = ctx.Identifier().toString();
+
+        result.add(new Ast.Var(name));
         return result;
     }
 
@@ -380,23 +470,53 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 
     @Override
     public List<Ast> visitIdentAccessMethod(@NotNull JavaliParser.IdentAccessMethodContext ctx) {
-        return super.visitIdentAccessMethod(ctx);
+        List<Ast> result = new ArrayList<>();
+
+        Ast.Expr rcvr = new Ast.ThisRef();
+        String methodName = ctx.Identifier().toString();
+        List<Ast.Expr> arguments = new ArrayList<>();
+
+        if (ctx.actualParamList() != null) {
+            for (Ast ast : visit(ctx.actualParamList())) {
+                Ast.Expr expr = (Ast.Expr) ast;
+                arguments.add(expr);
+            }
+        }
+
+        result.add(new Ast.MethodCallExpr(rcvr, methodName, arguments));
+        return result;
     }
 
     @Override
     public List<Ast> visitIdentAccessFieldMethod(@NotNull JavaliParser.IdentAccessFieldMethodContext ctx) {
-        return super.visitIdentAccessFieldMethod(ctx);
+        List<Ast> result = new ArrayList<>();
+
+        Ast.Expr rcvr = (Ast.Expr) visit(ctx.identAccess()).get(0);
+        String methodName = ctx.Identifier().toString();
+        List<Ast.Expr> arguments = new ArrayList<>();
+
+        if (ctx.actualParamList() != null) {
+            for (Ast ast : visit(ctx.actualParamList())) {
+                Ast.Expr expr = (Ast.Expr) ast;
+                arguments.add(expr);
+            }
+        }
+
+        result.add(new Ast.MethodCallExpr(rcvr, methodName, arguments));
+        return result;
     }
 
     @Override
     public List<Ast> visitLIT(@NotNull JavaliParser.LITContext ctx) {
+        List<Ast> result = new ArrayList<>();
+
         // TODO parseInt throws NumberFormatException if out of bound (?)
         // should throw ParseFailure according to homework sheet
 
         // TODO handle different kinds of Literals
-        Ast.IntConst intConst = new Ast.IntConst(Integer.parseInt(ctx.Literal().toString())); // works for decimal integers
+        int value = Integer.parseInt(ctx.Literal().toString());
+        Ast.IntConst intConst = new Ast.IntConst(value); // works for decimal integers
 
-        List<Ast> result = new ArrayList<>();
         result.add(intConst);
         return result;
     }

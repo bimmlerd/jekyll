@@ -80,7 +80,8 @@ assignmentStatement
 	;
 
 methodCallStatement
-	:	(identAccess '.')? Identifier '(' actualParamList? ')' ';'
+	:	Identifier '(' actualParamList? ')' ';'
+    |	identAccess '.' Identifier '(' actualParamList? ')' ';'
 	;
 
 ifStatement
@@ -102,9 +103,9 @@ writeStatement
 
 // expressions
 newExpression
-	:   'new' ( Identifier '(' ')'
-			| Identifier '[' expression ']'
-			| primitiveType '[' expression ']' )
+	:   'new' Identifier '(' ')'				 # newIdentifier
+	|	'new' Identifier '[' expression ']'		 # newArrayId
+	|	'new' primitiveType '[' expression ']'   # newArrayPr
 	;
 
 readExpression

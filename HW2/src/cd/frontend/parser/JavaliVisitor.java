@@ -102,12 +102,6 @@ public interface JavaliVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitReadExpression(@NotNull JavaliParser.ReadExpressionContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link JavaliParser#newExpression}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitNewExpression(@NotNull JavaliParser.NewExpressionContext ctx);
-	/**
 	 * Visit a parse tree produced by the {@code EQ}
 	 * labeled alternative in {@link JavaliParser#expression}.
 	 * @param ctx the parse tree
@@ -148,6 +142,13 @@ public interface JavaliVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitIdentAccessField(@NotNull JavaliParser.IdentAccessFieldContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code newArrayId}
+	 * labeled alternative in {@link JavaliParser#newExpression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitNewArrayId(@NotNull JavaliParser.NewArrayIdContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code identAccessThis}
 	 * labeled alternative in {@link JavaliParser#identAccess}.
@@ -236,6 +237,13 @@ public interface JavaliVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitStmtIf(@NotNull JavaliParser.StmtIfContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code newArrayPr}
+	 * labeled alternative in {@link JavaliParser#newExpression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitNewArrayPr(@NotNull JavaliParser.NewArrayPrContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code PARS}
 	 * labeled alternative in {@link JavaliParser#expression}.
 	 * @param ctx the parse tree
@@ -275,6 +283,13 @@ public interface JavaliVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitIdentAccessMethod(@NotNull JavaliParser.IdentAccessMethodContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code newIdentifier}
+	 * labeled alternative in {@link JavaliParser#newExpression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitNewIdentifier(@NotNull JavaliParser.NewIdentifierContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link JavaliParser#ifStatement}.
 	 * @param ctx the parse tree

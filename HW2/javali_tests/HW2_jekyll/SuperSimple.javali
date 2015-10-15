@@ -6,7 +6,6 @@ class Main {
         int c, d;
         boolean e;
 
-/*
         // reference type declarations
         list f;
         int[] g;
@@ -17,7 +16,12 @@ class Main {
         c = 0;
 //        d = c + 1;
         e = read();
-*/
+
+        // method calls
+        f(b, c);
+        a = g(a);
+        c = e.d();
+        b.h();
 
         // if statement
         if (true) {
@@ -28,12 +32,23 @@ class Main {
         } else {
         }
 
+        // while statements
+        while (false) {
+            g = h;
+        }
+
         // write statements
         write(24);
         writeln();
     }
 
     int method2(boolean a, point[] b) {
+        // newExpressions
+        a = new f();
+        f = new g[5];
+        g = new int[a];
+
+        // return statement
         return 1;
     }
 
@@ -41,6 +56,8 @@ class Main {
     }
 
     void main() {
+        // return statement without return value
+        return;
     }
 }
 
