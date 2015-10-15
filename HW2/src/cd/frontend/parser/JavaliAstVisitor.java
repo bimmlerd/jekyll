@@ -23,7 +23,7 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 
         // Check that ctx.children is not null
         if (ctx.getChildCount() != 0) {
-            for (ParseTree child: ctx.children) {
+            for (ParseTree child : ctx.children) {
                 result.addAll(visit(child));
             }
         }
@@ -152,8 +152,6 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 
 	@Override
 	public List<Ast> visitMethodDecl(@NotNull JavaliParser.MethodDeclContext ctx) {
-        // TODO handle empty argument list (currently throws NullPoniterException
-
 		Ast.MethodDecl typedMethodDecl = (Ast.MethodDecl) visit(ctx.methodType()).get(0);
 
 		typedMethodDecl.name = ctx.Identifier().toString();
@@ -161,16 +159,15 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 		List<String> argumentTypes = new ArrayList<>();
 		List<String> argumentNames = new ArrayList<>();
 
-		ParseTree formalParamsOrNothing = ctx.formalParamList();
-		if (! formalParamsOrNothing.toString().equals(")")) {
-			for (Ast ast : visit(ctx.formalParamList())) {
-				Ast.VarDecl varDecl = (Ast.VarDecl) ast;
-				argumentTypes.add(varDecl.type);
-				argumentNames.add(varDecl.name);
-			}
-		}
+        if (ctx.formalParamList() != null) {
+            for (Ast ast : visit(ctx.formalParamList())) {
+                Ast.VarDecl varDecl = (Ast.VarDecl) ast;
+                argumentTypes.add(varDecl.type);
+                argumentNames.add(varDecl.name);
+            }
+        }
 
-		typedMethodDecl.argumentTypes = argumentTypes;
+        typedMethodDecl.argumentTypes = argumentTypes;
 		typedMethodDecl.argumentNames = argumentNames;
 
 		List<Ast> decls = new ArrayList<>();
@@ -244,7 +241,13 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 
     @Override
     public List<Ast> visitStatementBlock(@NotNull JavaliParser.StatementBlockContext ctx) {
-        return visitChildren(ctx);
+        List<Ast> result = new ArrayList<>();
+
+        for (JavaliParser.StatementContext stmt : ctx.statement()) {
+            result.addAll(visit(stmt));
+        }
+
+        return result;
     }
 
     @Override
@@ -284,7 +287,21 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 
     @Override
     public List<Ast> visitIfStatement(@NotNull JavaliParser.IfStatementContext ctx) {
-        return super.visitIfStatement(ctx);
+        Ast.Expr expr = (Ast.Expr) visit(ctx.expression()).get(0);
+        Ast.Seq ifBody = new Ast.Seq(visit(ctx.statementBlock(0)));
+        Ast elseBody;
+
+        if (ctx.statementBlock().size() == 1) {
+            // no else block
+            elseBody = new Ast.Nop();
+        } else {
+            // visit else block
+            elseBody = new Ast.Seq(visit(ctx.statementBlock(1)));
+        }
+
+        List<Ast> result = new ArrayList<>();
+        result.add(new Ast.IfElse(expr, ifBody, elseBody));
+        return result;
     }
 
     @Override
@@ -294,7 +311,11 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 
     @Override
     public List<Ast> visitReturnStatement(@NotNull JavaliParser.ReturnStatementContext ctx) {
-        return super.visitReturnStatement(ctx);
+        Ast.Expr expr = (Ast.Expr) visit(ctx.expression()).get(0);
+
+        List<Ast> result = new ArrayList<>();
+        result.add(new Ast.ReturnStmt(expr));
+        return result;
     }
 
     @Override
@@ -312,12 +333,6 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
         result.add(new Ast.BuiltInWriteln());
         return result;
     }
-/*
-	@Override
-	public List<Ast> visitWriteStatement(@NotNull JavaliParser.WriteStatementContext ctx) {
-		return super.visitWriteStatement(ctx);
-	}
-*/
 
 
 // expressions
@@ -329,7 +344,9 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 
     @Override
     public List<Ast> visitReadExpression(@NotNull JavaliParser.ReadExpressionContext ctx) {
-        return super.visitReadExpression(ctx);
+        List<Ast> result = new ArrayList<>();
+        result.add(new Ast.BuiltInRead());
+        return result;
     }
 
     @Override
@@ -339,7 +356,11 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 
     @Override
     public List<Ast> visitIdentAccessId(@NotNull JavaliParser.IdentAccessIdContext ctx) {
-        return super.visitIdentAccessId(ctx);
+        // TODO Identifier is not necessarily an AST.Var
+
+        List<Ast> result = new ArrayList<>();
+        result.add(new Ast.Var(ctx.Identifier().toString()));
+        return result;
     }
 
     @Override
@@ -366,24 +387,14 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
     public List<Ast> visitIdentAccessFieldMethod(@NotNull JavaliParser.IdentAccessFieldMethodContext ctx) {
         return super.visitIdentAccessFieldMethod(ctx);
     }
-/*
-    @Override
-    public List<Ast> visitIdentAccess(@NotNull JavaliParser.IdentAccessContext ctx) {
-        List<Ast> result = new ArrayList<>();
-        ParseTree child = ctx.getChild(0);
-        if (child.toString().equals(THIS)) {
-
-        }
-        result.add(new Ast.Var(child.toString())); // TODO handle all cases, not just Identifier
-        return result;
-    }
-*/
 
     @Override
     public List<Ast> visitLIT(@NotNull JavaliParser.LITContext ctx) {
         // TODO parseInt throws NumberFormatException if out of bound (?)
         // should throw ParseFailure according to homework sheet
-        Ast.IntConst intConst = new Ast.IntConst(Integer.parseInt(ctx.Literal().toString()));
+
+        // TODO handle different kinds of Literals
+        Ast.IntConst intConst = new Ast.IntConst(Integer.parseInt(ctx.Literal().toString())); // works for decimal integers
 
         List<Ast> result = new ArrayList<>();
         result.add(intConst);
