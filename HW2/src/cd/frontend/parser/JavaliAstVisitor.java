@@ -3,6 +3,7 @@ package cd.frontend.parser;
 import java.util.ArrayList;
 import java.util.List;
 
+import cd.ToDoException;
 import cd.ir.Ast;
 import cd.ir.Ast.ClassDecl;
 import cd.util.Pair;
@@ -463,12 +464,24 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 
     @Override
     public List<Ast> visitIdentAccessField(@NotNull JavaliParser.IdentAccessFieldContext ctx) {
-        return super.visitIdentAccessField(ctx);
+        List<Ast> result = new ArrayList<>();
+
+        Ast.Expr arg = (Ast.Expr) visit(ctx.identAccess()).get(0);
+        String fieldName = ctx.Identifier().toString();
+
+        result.add(new Ast.Field(arg, fieldName));
+        return result;
     }
 
     @Override
     public List<Ast> visitIdentAccessArray(@NotNull JavaliParser.IdentAccessArrayContext ctx) {
-        return super.visitIdentAccessArray(ctx);
+        List<Ast> result = new ArrayList<>();
+
+        Ast.Expr array = (Ast.Expr) visit(ctx.identAccess()).get(0);
+        Ast.Expr index = (Ast.Expr) visit(ctx.expression()).get(0);
+
+        result.add(new Ast.Index(array, index));
+        return result;
     }
 
     @Override
@@ -517,6 +530,7 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
         // should throw ParseFailure according to homework sheet
 
         // TODO handle different kinds of Literals
+        /* Literal = Integer | Boolean | 'null' */
         int value = Integer.parseInt(ctx.Literal().toString());
         Ast.IntConst intConst = new Ast.IntConst(value); // works for decimal integers
 
@@ -536,17 +550,68 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 
     @Override
     public List<Ast> visitUNARY(@NotNull JavaliParser.UNARYContext ctx) {
-        return super.visitUNARY(ctx);
+        List<Ast> result = new ArrayList<>();
+
+        String op = ctx.getChild(0).toString();
+        Ast.UnaryOp.UOp operator;
+
+        switch (op) {
+            case"+":
+                operator = Ast.UnaryOp.UOp.U_PLUS;
+                break;
+            case "-":
+                operator = Ast.UnaryOp.UOp.U_MINUS;
+                break;
+            case "!":
+                operator = Ast.UnaryOp.UOp.U_BOOL_NOT;
+                break;
+            default:
+                throw new ToDoException();
+        }
+
+        Ast.Expr arg = (Ast.Expr) visit(ctx.expression()).get(0);
+
+        result.add(new Ast.UnaryOp(operator, arg));
+        return result;
     }
 
     @Override
     public List<Ast> visitCAST(@NotNull JavaliParser.CASTContext ctx) {
-        return super.visitCAST(ctx);
+        List<Ast> result = new ArrayList<>();
+
+        Ast.Expr arg = (Ast.Expr) visit(ctx.expression()).get(0);
+        String typeName = ((Ast.VarDecl) visit(ctx.referenceType()).get(0)).type;
+
+        result.add(new Ast.Cast(arg, typeName));
+        return result;
     }
 
     @Override
     public List<Ast> visitMULT(@NotNull JavaliParser.MULTContext ctx) {
-        return super.visitMULT(ctx);
+        List<Ast> result = new ArrayList<>();
+
+        String op = ctx.getChild(1).toString();
+        Ast.BinaryOp.BOp operator;
+
+        switch (op) {
+            case"*":
+                operator = Ast.BinaryOp.BOp.B_TIMES;
+                break;
+            case "/":
+                operator = Ast.BinaryOp.BOp.B_DIV;
+                break;
+            case "%":
+                operator = Ast.BinaryOp.BOp.B_MOD;
+                break;
+            default:
+                throw new ToDoException();
+        }
+
+        Ast.Expr left = (Ast.Expr) visit(ctx.expression(0)).get(0);
+        Ast.Expr right = (Ast.Expr) visit(ctx.expression(1)).get(0);
+
+        result.add(new Ast.BinaryOp(left, operator, right));
+        return result;
     }
 
     @Override

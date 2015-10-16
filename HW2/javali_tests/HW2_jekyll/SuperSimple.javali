@@ -22,6 +22,8 @@ class Main {
         a = g(a);
         c = e.d();
         b.h();
+        e = f.g;
+        a = b[9];
 
         // if statement
         if (true) {
@@ -56,6 +58,21 @@ class Main {
     }
 
     void main() {
+        // unary operators
+        a = +b;
+        a = -b;
+        f = !g;
+
+        // casts
+        i0 = (list) b;
+        i1 = (point[]) -3;
+        i2 = (int[]) true;
+
+        // mult
+        i3 = i0 * a;
+        i4 = b / 4;
+        i5 = z % 2;
+
         // return statement without return value
         return;
     }
