@@ -616,26 +616,108 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 
     @Override
     public List<Ast> visitADD(@NotNull JavaliParser.ADDContext ctx) {
-        return super.visitADD(ctx);
+        List<Ast> result = new ArrayList<>();
+
+        String op = ctx.getChild(1).toString();
+        Ast.BinaryOp.BOp operator;
+
+        switch (op) {
+            case"+":
+                operator = Ast.BinaryOp.BOp.B_PLUS;
+                break;
+            case "-":
+                operator = Ast.BinaryOp.BOp.B_MINUS;
+                break;
+            default:
+                throw new ToDoException();
+        }
+
+        Ast.Expr left = (Ast.Expr) visit(ctx.expression(0)).get(0);
+        Ast.Expr right = (Ast.Expr) visit(ctx.expression(1)).get(0);
+
+        result.add(new Ast.BinaryOp(left, operator, right));
+        return result;
     }
 
     @Override
     public List<Ast> visitCOMP(@NotNull JavaliParser.COMPContext ctx) {
-        return super.visitCOMP(ctx);
+        List<Ast> result = new ArrayList<>();
+
+        String op = ctx.getChild(1).toString();
+        Ast.BinaryOp.BOp operator;
+
+        switch (op) {
+            case"<":
+                operator = Ast.BinaryOp.BOp.B_LESS_THAN;
+                break;
+            case "<=":
+                operator = Ast.BinaryOp.BOp.B_LESS_OR_EQUAL;
+                break;
+            case ">":
+                operator = Ast.BinaryOp.BOp.B_GREATER_THAN;
+                break;
+            case ">=":
+                operator = Ast.BinaryOp.BOp.B_GREATER_OR_EQUAL;
+                break;
+            default:
+                throw new ToDoException();
+        }
+
+        Ast.Expr left = (Ast.Expr) visit(ctx.expression(0)).get(0);
+        Ast.Expr right = (Ast.Expr) visit(ctx.expression(1)).get(0);
+
+        result.add(new Ast.BinaryOp(left, operator, right));
+        return result;
     }
 
     @Override
     public List<Ast> visitEQ(@NotNull JavaliParser.EQContext ctx) {
-        return super.visitEQ(ctx);
+        List<Ast> result = new ArrayList<>();
+
+        String op = ctx.getChild(1).toString();
+        Ast.BinaryOp.BOp operator;
+
+        switch (op) {
+            case"==":
+                operator = Ast.BinaryOp.BOp.B_EQUAL;
+                break;
+            case "!=":
+                operator = Ast.BinaryOp.BOp.B_NOT_EQUAL;
+                break;
+            default:
+                throw new ToDoException();
+        }
+
+        Ast.Expr left = (Ast.Expr) visit(ctx.expression(0)).get(0);
+        Ast.Expr right = (Ast.Expr) visit(ctx.expression(1)).get(0);
+
+        result.add(new Ast.BinaryOp(left, operator, right));
+        return result;
     }
 
 	@Override
 	public List<Ast> visitLAND(@NotNull JavaliParser.LANDContext ctx) {
-		return super.visitLAND(ctx);
+        List<Ast> result = new ArrayList<>();
+
+        Ast.BinaryOp.BOp operator = Ast.BinaryOp.BOp.B_AND;
+
+        Ast.Expr left = (Ast.Expr) visit(ctx.expression(0)).get(0);
+        Ast.Expr right = (Ast.Expr) visit(ctx.expression(1)).get(0);
+
+        result.add(new Ast.BinaryOp(left, operator, right));
+        return result;
 	}
 
     @Override
     public List<Ast> visitLOR(@NotNull JavaliParser.LORContext ctx) {
-        return super.visitLOR(ctx);
+        List<Ast> result = new ArrayList<>();
+
+        Ast.BinaryOp.BOp operator = Ast.BinaryOp.BOp.B_OR;
+
+        Ast.Expr left = (Ast.Expr) visit(ctx.expression(0)).get(0);
+        Ast.Expr right = (Ast.Expr) visit(ctx.expression(1)).get(0);
+
+        result.add(new Ast.BinaryOp(left, operator, right));
+        return result;
     }
 }

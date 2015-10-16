@@ -55,6 +55,25 @@ class Main {
     }
 
     boolean[] method3(int[] a) {
+        // comparison
+        if (a < b) {
+        }
+        if (a <= b) {
+        }
+        if (a > b) {
+        }
+        if (a >= b) {
+        }
+
+        // equal
+        d = a == b;
+        e = 2 != d;
+
+        // and
+        f = 1 && d;
+
+        // or
+        g = i4 || w;
     }
 
     void main() {
@@ -72,6 +91,10 @@ class Main {
         i3 = i0 * a;
         i4 = b / 4;
         i5 = z % 2;
+
+        // add
+        i6 = 2 + i4;
+        i7 = (i3 - i1) + 3;
 
         // return statement without return value
         return;
