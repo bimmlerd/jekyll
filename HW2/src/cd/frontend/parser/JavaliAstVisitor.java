@@ -447,7 +447,6 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
     public List<Ast> visitIdentAccessId(@NotNull JavaliParser.IdentAccessIdContext ctx) {
         List<Ast> result = new ArrayList<>();
 
-        // TODO Identifier is not necessarily an AST.Var
         String name = ctx.Identifier().toString();
 
         result.add(new Ast.Var(name));
@@ -526,15 +525,37 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
     public List<Ast> visitLIT(@NotNull JavaliParser.LITContext ctx) {
         List<Ast> result = new ArrayList<>();
 
-        // TODO parseInt throws NumberFormatException if out of bound (?)
-        // should throw ParseFailure according to homework sheet
+        String lit = ctx.Literal().toString();
+        Ast ast;
 
-        // TODO handle different kinds of Literals
-        /* Literal = Integer | Boolean | 'null' */
-        int value = Integer.parseInt(ctx.Literal().toString());
-        Ast.IntConst intConst = new Ast.IntConst(value); // works for decimal integers
+        switch (lit) {
+            case"true":
+                ast = new Ast.BooleanConst(true);
+                break;
+            case "false":
+                ast = new Ast.BooleanConst(false);
+                break;
+            case "null":
+                ast = new Ast.NullConst();
+                break;
+            default:
+                int value;
 
-        result.add(intConst);
+                try {
+                    if (lit.startsWith("0x")) {
+                        value = Integer.parseInt(lit.substring(2), 16); // hex integers
+                    } else {
+                        value = Integer.parseInt(lit); // decimal integers
+                    }
+                } catch (NumberFormatException e) {
+                    throw new ParseFailure(ctx.start.getLine(), "Literal is out of bound");
+                }
+
+                ast = new Ast.IntConst(value);
+                break;
+        }
+
+        result.add(ast);
         return result;
     }
 

@@ -183,14 +183,14 @@ Boolean
 	|   'false'
 	;
 
-Identifier
-	:	Letter (Letter|Digit)*
-	;
-
 Literal
 	:   Integer
 	|   Boolean
 	|   'null'
+	;
+
+Identifier
+	:	Letter (Letter|Digit)*
 	;
 
 // comments and white space does not produce tokens:

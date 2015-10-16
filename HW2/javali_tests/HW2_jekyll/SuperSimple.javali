@@ -14,7 +14,7 @@ class Main {
 
         // assignment statements
         c = 0;
-//        d = c + 1;
+        d = c + 1;
         e = read();
 
         // method calls
@@ -24,6 +24,16 @@ class Main {
         b.h();
         e = f.g;
         a = b[9];
+
+        // literals vs identifiers
+        a = true;
+        c = 0x3a;
+        d = null;
+
+        // out of bound -> parse failure
+//        e = 2147483648;
+//        f = -2147483648;
+        g = 0x80000000;
 
         // if statement
         if (true) {
