@@ -17,7 +17,6 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 
 	static final String OBJECT = "Object";
 	static final String VOID = "void";
-	static final String THIS = "this";
 
 	public List<Ast> visitChildren(ParserRuleContext ctx) {
 		List<Ast> result = new ArrayList<>();
@@ -268,7 +267,7 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
     public List<Ast> visitAssignmentStmtExpr(@NotNull JavaliParser.AssignmentStmtExprContext ctx) {
         List<Ast> result = new ArrayList<>();
 
-        Ast.Var left = (Ast.Var) visit(ctx.identAccess()).get(0);
+        Ast.Expr left = (Ast.Expr) visit(ctx.identAccess()).get(0);
         Ast.Expr right = (Ast.Expr) visit(ctx.expression()).get(0);
 
         result.add(new Ast.Assign(left, right));
@@ -279,7 +278,7 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
     public List<Ast> visitAssignmentStmtNew(@NotNull JavaliParser.AssignmentStmtNewContext ctx) {
         List<Ast> result = new ArrayList<>();
 
-        Ast.Var left = (Ast.Var) visit(ctx.identAccess()).get(0);
+        Ast.Expr left = (Ast.Expr) visit(ctx.identAccess()).get(0);
         Ast.Expr right = (Ast.Expr) visit(ctx.newExpression()).get(0);
 
         result.add(new Ast.Assign(left, right));
@@ -290,7 +289,7 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
     public List<Ast> visitAssignmentStmtRead(@NotNull JavaliParser.AssignmentStmtReadContext ctx) {
         List<Ast> result = new ArrayList<>();
 
-        Ast.Var left = (Ast.Var) visit(ctx.identAccess()).get(0);
+        Ast.Expr left = (Ast.Expr) visit(ctx.identAccess()).get(0);
         Ast.Expr right = (Ast.Expr) visit(ctx.readExpression()).get(0);
 
         result.add(new Ast.Assign(left, right));

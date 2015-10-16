@@ -33,7 +33,7 @@ class Main {
         // out of bound -> parse failure
 //        e = 2147483648;
 //        f = -2147483648;
-        g = 0x80000000;
+//        g = 0x80000000;
 
         // if statement
         if (true) {
@@ -59,6 +59,14 @@ class Main {
         a = new f();
         f = new g[5];
         g = new int[a];
+
+        // identAccess & assignments
+        this = new point[f];
+        this.g = 3;
+        g[4] = i0;
+        f.g() = 2;
+        g() = x;
+        g(x+y, j) = 0x235;
 
         // return statement
         return 1;
