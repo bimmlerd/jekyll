@@ -1,5 +1,10 @@
 64-ia-32-architectures-software-developer-manual-325462.pdf
 
+HW*/bin
+HW*/gen
+
+HW2/src/cd/frontend/parser/Javali.tokens
+HW2/src/cd/frontend/parser/JavaliLexer.tokens
 *.svn
 
 *.class
