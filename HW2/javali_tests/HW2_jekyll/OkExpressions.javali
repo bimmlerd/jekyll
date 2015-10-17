@@ -1,0 +1,41 @@
+class Main {
+    void method() {
+        // unary operators
+        i0 = +12345;
+        i0 = -i0;
+        i1 = !(true);
+
+        // casts
+        i2 = (list) i1;
+        i3 = (point[]) -3;
+        i4 = (int[]) true;
+
+        // multiplicative operators
+        i5 = i0 * null;
+        i6 = 100 / i1;
+        i7 = i2 % 2;
+
+        // additive operators
+        i8 = 2 + i3;
+        i9 = (i4 - i5) + 3;
+
+        // comparative operators
+        i0 = i6 < 9;
+        i1 = i7 <= i8;
+        i2 = 100 > i9;
+        i3 = 23 >= 0;
+
+        // equality operators
+        i4 = i0 == i1;
+        i5 = 2 != i2;
+
+        // logical and
+        i6 = 1 && i3;
+
+        // logical or
+        i7 = i4 || true;
+
+        // return statement without return value
+        return;
+    }
+}

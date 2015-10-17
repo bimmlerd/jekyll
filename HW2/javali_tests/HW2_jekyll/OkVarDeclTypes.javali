@@ -1,0 +1,23 @@
+class Main {
+    // primitive type declarations
+    int i0, i1;
+    boolean b0;
+
+    void main() {
+    }
+
+    // reference type declarations
+    list l0, l1, l2;
+    int[] i2;
+    boolean[] b1, b2;
+    list[] l3;
+
+    list method(boolean a, point[] b) {
+        i0 = true;
+        i1 = 0x3a;
+        i2 = null;
+    }
+
+    boolean[] method(int[] a) {
+    }
+}

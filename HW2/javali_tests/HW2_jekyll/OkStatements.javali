@@ -1,0 +1,50 @@
+class Main {
+    int f(int arg) {
+        // return statement
+        return arg + 1;
+    }
+
+    int main() {
+        int i0, i1, i2;
+
+        // assignment statements including READ and NEW expressions
+        i0 = 0;
+        i1 = i0 + 1;
+        i2 = read();
+        i3 = new m();
+        i4 = new int[523];
+        i5 = new point[i2 - 2];
+
+        // methodCall statements
+        f(i0, i1);
+        List.f();
+
+        // if statement
+        if (true) {
+            i0 = 300;
+            i1 = (point) i0;
+        }
+
+        if (i0 <= i0) {
+            writeln();
+        } else {
+            i0 = (i0 * i0) + i1;
+        }
+
+        // while statement
+        while (i0 != 0) {
+            i0 = i0 - 1;
+        }
+
+        // write statement
+        write(i0);
+        writeln();
+
+
+    }
+}
+
+class List {
+    void f() {
+    }
+}

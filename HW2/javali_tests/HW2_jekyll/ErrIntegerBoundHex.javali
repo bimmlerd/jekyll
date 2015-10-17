@@ -1,0 +1,6 @@
+class Main {
+    void main() {
+        // ParseFailure in case a literal is outside the range [−2147483647, 2147483647]
+        i0 = 0x80000000;
+    }
+}

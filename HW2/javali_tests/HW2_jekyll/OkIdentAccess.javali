@@ -1,0 +1,19 @@
+class Main {
+    void main() {
+        // identAccess to the left of an assignment
+        i0 = read();
+        this = new point[i0];
+        this.i1 = true;
+        array[i0] = 210;
+        i2.f() = 2;
+        g() = i3;
+        g(i0+i1, 4).x = 0x235;
+
+        // identAccess as an expression (including methodCall expressions)
+        i4 = this;
+        i5 = c.i3;
+        i6 = this.array[i4];
+        i7 = f(i2 - i3);
+        i8 = c.f();
+    }
+}
