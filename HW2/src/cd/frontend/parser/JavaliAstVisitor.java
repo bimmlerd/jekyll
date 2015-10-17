@@ -541,7 +541,7 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
                 int value;
 
                 try {
-                    if (lit.startsWith("0x")) {
+                    if (lit.startsWith("0x") || lit.startsWith("0X")) {
                         value = Integer.parseInt(lit.substring(2), 16); // hex integers
                     } else {
                         value = Integer.parseInt(lit); // decimal integers
