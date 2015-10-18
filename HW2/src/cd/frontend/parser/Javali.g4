@@ -40,7 +40,11 @@ unit
  	;
 
 classDecl
-	:   'class' Identifier ('extends' Identifier)? '{' memberList '}'
+	:   'class' Identifier ('extends' superClass)? '{' memberList '}'
+	;
+
+superClass
+	: Identifier
 	;
 
 memberList

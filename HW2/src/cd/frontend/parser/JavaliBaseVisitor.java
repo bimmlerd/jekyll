@@ -1,4 +1,4 @@
-// Generated from /Users/andrina/Sources/jekyll/HW2/src/cd/frontend/parser/Javali.g4 by ANTLR 4.4
+// Generated from /Users/david/Documents/ETH/3/cd/e/jekyll/HW2/src/cd/frontend/parser/Javali.g4 by ANTLR 4.4
 
 	// Java header
 	package cd.frontend.parser;
@@ -141,6 +141,13 @@ public class JavaliBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
 	@Override public T visitMethodTypeType(@NotNull JavaliParser.MethodTypeTypeContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitSuperClass(@NotNull JavaliParser.SuperClassContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *

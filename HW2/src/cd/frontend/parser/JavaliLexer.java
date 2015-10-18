@@ -1,4 +1,4 @@
-// Generated from /Users/andrina/Sources/jekyll/HW2/src/cd/frontend/parser/Javali.g4 by ANTLR 4.4
+// Generated from /Users/david/Documents/ETH/3/cd/e/jekyll/HW2/src/cd/frontend/parser/Javali.g4 by ANTLR 4.4
 
 	// Java header
 	package cd.frontend.parser;

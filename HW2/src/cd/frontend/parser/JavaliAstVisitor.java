@@ -21,8 +21,7 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 	public List<Ast> visitChildren(ParserRuleContext ctx) {
 		List<Ast> result = new ArrayList<>();
 
-        // Check that ctx.children is not null
-        if (ctx.getChildCount() != 0) {
+        if (ctx.children != null) {
             for (ParseTree child : ctx.children) {
                 result.addAll(visit(child));
             }
@@ -123,21 +122,16 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
 	@Override
 	public List<Ast> visitClassDecl(JavaliParser.ClassDeclContext ctx) {
         String superClass;
-        List<Ast> members = new ArrayList<>();
 
-        if (ctx.getChildCount() <= 5) {
+        if (ctx.superClass() == null) {
             // ClassDecl without an Extends
             superClass = OBJECT;
         } else {
             // ClassDecl with an Extends
-            superClass = ctx.Identifier(1).toString();
+            superClass = ctx.superClass().getText();
         }
 
-        if (ctx.memberList().getChildCount() != 0) { // check that MemberList is non-empty before call
-            members = visit(ctx.memberList());
-        }
-
-        classDecls.add(new ClassDecl(ctx.Identifier(0).toString(), superClass, members));
+        classDecls.add(new ClassDecl(ctx.Identifier().toString(), superClass, visit(ctx.memberList())));
 		return null;
 	}
 
@@ -528,7 +522,7 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
         Ast ast;
 
         switch (lit) {
-            case"true":
+            case "true":
                 ast = new Ast.BooleanConst(true);
                 break;
             case "false":
@@ -715,16 +709,19 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
         return result;
     }
 
-	@Override
+    @Override
+    public List<Ast> visitSuperClass(@NotNull JavaliParser.SuperClassContext ctx) {
+        return visit(ctx.Identifier());
+    }
+
+    @Override
 	public List<Ast> visitLAND(@NotNull JavaliParser.LANDContext ctx) {
         List<Ast> result = new ArrayList<>();
-
-        Ast.BinaryOp.BOp operator = Ast.BinaryOp.BOp.B_AND;
 
         Ast.Expr left = (Ast.Expr) visit(ctx.expression(0)).get(0);
         Ast.Expr right = (Ast.Expr) visit(ctx.expression(1)).get(0);
 
-        result.add(new Ast.BinaryOp(left, operator, right));
+        result.add(new Ast.BinaryOp(left, Ast.BinaryOp.BOp.B_AND, right));
         return result;
 	}
 
@@ -732,12 +729,10 @@ public final class JavaliAstVisitor extends JavaliBaseVisitor<List<Ast>> {
     public List<Ast> visitLOR(@NotNull JavaliParser.LORContext ctx) {
         List<Ast> result = new ArrayList<>();
 
-        Ast.BinaryOp.BOp operator = Ast.BinaryOp.BOp.B_OR;
-
         Ast.Expr left = (Ast.Expr) visit(ctx.expression(0)).get(0);
         Ast.Expr right = (Ast.Expr) visit(ctx.expression(1)).get(0);
 
-        result.add(new Ast.BinaryOp(left, operator, right));
+        result.add(new Ast.BinaryOp(left, Ast.BinaryOp.BOp.B_OR, right));
         return result;
     }
 }
