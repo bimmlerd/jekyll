@@ -172,7 +172,7 @@ Decimal
 
 fragment
 Hex
-	:   ('0x'|'0X') HexDigit+ // TODO unicodify
+	:   ('0x'|'0X') HexDigit+
 	;
 
 fragment
