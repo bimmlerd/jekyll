@@ -1,0 +1,5 @@
+class Main {
+    void main() {
+        // ParseFailure, unmatched method brace
+    void main2() {}
+}

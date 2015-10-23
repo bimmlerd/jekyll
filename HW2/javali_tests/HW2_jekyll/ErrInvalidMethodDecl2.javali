@@ -1,0 +1,4 @@
+class Main {
+    // ParseFailure, invalid formal param list
+    void main(int i, j, Main main) {}
+}

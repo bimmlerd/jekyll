@@ -1,0 +1,2 @@
+// ParseFailure, . is not allowed as part of an identifier
+class Main.mean {}

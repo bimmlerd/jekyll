@@ -1,0 +1,4 @@
+class Main {
+    void main() {
+        // ParseFailure, unmatched class brace
+}

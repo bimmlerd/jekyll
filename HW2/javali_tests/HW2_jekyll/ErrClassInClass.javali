@@ -1,0 +1,10 @@
+class Main {
+
+    void main() {}
+
+    int i;
+
+    // ParseFailure, class in class
+    class Main2 {}
+
+}

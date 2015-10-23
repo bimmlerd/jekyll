@@ -1,0 +1,6 @@
+class Main {
+    void main() {
+        // ParseFailure, method decl in method
+        int main2() {}
+    }
+}

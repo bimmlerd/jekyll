@@ -1,0 +1,15 @@
+class ComplexType {
+    int complex;
+    int real;
+}
+
+class Main {
+    void main() {
+        ComplexType compl;
+        this.method_call(compl);
+    }
+
+    int method_call(ComplexType compl) {
+        return compl;
+    }
+}

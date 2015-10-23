@@ -1,0 +1,123 @@
+// Just a largeish file of syntactically valid javali code to generate a complex parse tree
+
+class Main {
+    int f(int arg) {
+        // return statement
+        return arg + 1;
+    }
+
+    // primitive type declarations
+    int i0, i1;
+    boolean b0;
+
+    void main() {
+    }
+
+    // reference type declarations
+    list l0, l1, l2;
+    int[] i2;
+    boolean[] b1, b2;
+    list[] l3;
+
+    list method(boolean a, point[] b) {
+        i0 = true;
+        i1 = 0x3a;
+        i2 = null;
+    }
+
+    boolean[] method(int[] a) {
+    }
+
+    int main() {
+        int i0, i1, i2;
+
+        // assignment statements including READ and NEW expressions
+        i0 = 0;
+        i1 = i0 + 1;
+        i2 = read();
+        i3 = new m();
+        i4 = new int[523];
+        i5 = new point[i2 - 2];
+
+        // methodCall statements
+        f(i0, i1);
+        List.f();
+
+        // if statement
+        if (true) {
+            i0 = 300;
+            i1 = (point) i0;
+        }
+
+        if (i0 <= i0) {
+            writeln();
+        } else {
+            i0 = (i0 * i0) + i1;
+        }
+
+        if (this.array[1000].method(2).complex.field % 2 == 0) {
+            return;
+        } else {
+            this.method();
+        }
+
+        // while statement
+        while (i0 != 0) {
+            i0 = i0 - 1;
+        }
+
+        // write statement
+        write(i0);
+        writeln();
+
+
+    }
+}
+
+class List {
+    void f() {
+    }
+
+    // primitive type declarations
+    int i0, i1;
+    boolean b0;
+
+    void main() {
+    }
+
+    // reference type declarations
+    list l0, l1, l2;
+    int[] i2;
+    boolean[] b1, b2;
+    list[] l3;
+
+    list method(boolean a, point[] b) {
+        i0 = true;
+        i1 = 0x3a;
+        i2 = null;
+    }
+
+    boolean[] method(int[] a) {
+        // identAccess to the left of an assignment
+        int i0, i10, i1010001000000000;
+        i0 = read();
+        this = new point[i0];
+        this.i1 = true;
+        array[i0] = 210;
+        i2.f() = 2;
+        g() = i3;
+        g(i0+i1, 4).x = 0x235;
+
+        // identAccess as an expression (including methodCall expressions)
+        i4 = this;
+        i5 = c.i3;
+        i6 = this.array[i4];
+        i7 = f(i2 - i3);
+        i8 = c.f();
+
+        // deep nesting
+        i10 = this.method(this.method(this.array[i0]));
+        i101000 = i0.i2.i120.complex.array[2].i0.method(this.i0);
+        return this.array[this.array[this.array[this.array[this.array[this.array[i6]]]]]];
+    }
+}

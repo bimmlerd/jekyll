@@ -1,0 +1,6 @@
+class Main {}
+
+// ParseFailure, field outside of class
+int i;
+
+class Main2 {}
