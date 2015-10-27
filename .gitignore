@@ -1,12 +1,11 @@
-64-ia-32-architectures-software-developer-manual-325462.pdf
-
+# GENERAL
 HW*/bin
 HW*/gen
 
-HW2/src/cd/frontend/parser/Javali.tokens
-HW2/src/cd/frontend/parser/JavaliLexer.tokens
+# SVN crap
 *.svn
 
+# GITHUB gitignore
 *.class
 
 # Mobile Tools for Java (J2ME)

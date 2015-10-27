@@ -1,0 +1,19 @@
+jekyll: 21/25
+Code generation for AST: 10/10
+Registers usage: 3/6
+Track used registers: 3/3
+Print used registers: 3/3
+Test-cases: 2/3
+
+
+Comments:
+
+* Your register counting algorithm is wrong.
+  You have to traverse the Ast node children correctly.
+  (-3.0 pts)  
+
+* You could have provided more test-case. For example
+  the case above could have been caught with a test-case
+  exercising more complicated ASTs for mixed expressions
+  (e.g., expressions with binary and unary operators).
+  (-1.0 pts) 
