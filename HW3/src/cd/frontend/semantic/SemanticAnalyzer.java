@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 public class SemanticAnalyzer {
 
@@ -22,19 +24,32 @@ public class SemanticAnalyzer {
 
 	public void check(List<ClassDecl> classDecls) throws SemanticFailure {
 		{
-            classSymbolTable.put(Symbol.ClassSymbol.objectType);
-			for (ClassDecl classDecl : classDecls) {
-                if (classDeclMap.containsKey(classDecl.name)) {
+
+            SymbolTableBuilderVisitor symTableBuilder = new SymbolTableBuilderVisitor(classSymbolTable);
+
+            Map<String, List<ClassDecl>> blah = classDecls
+                    .stream()
+                    .sorted((d1, d2) -> d1.name.compareTo(d2.name))
+                    .collect(Collectors.groupingBy(d -> d.name));
+
+            for (List<ClassDecl> sameNameDecls : blah.values()) {
+                if (sameNameDecls.size() != 1) {
                     throw new SemanticFailure(SemanticFailure.Cause.DOUBLE_DECLARATION,
-                            "Already declared: Class %s", classDecl.name);
-                } else {
-                    classDeclMap.put(classDecl.name, classDecl);
+                            "Multiple declarations for class %s", sameNameDecls.get(0).name);
                 }
+            }
+
+            blah.values().stream().
+
+            for (ClassDecl classDecl : classDecls) {
+                symTableBuilder.visit(classDecl, null);
             }
 
             for (ClassDecl classDecl : classDecls) {
                 fillInClassSymbolTable(classDecl);
             }
+
+
 
 		}
 	}
@@ -42,7 +57,8 @@ public class SemanticAnalyzer {
     private void fillInClassSymbolTable(ClassDecl classDecl, List<String> alreadyChecked) {
         // TODO reimplement as visitor
         if (alreadyChecked.contains(classDecl.name)) {
-            throw new SemanticFailure(SemanticFailure.Cause.CIRCULAR_INHERITANCE);
+            throw new SemanticFailure(SemanticFailure.Cause.CIRCULAR_INHERITANCE,
+                    "Circular inheritance detected, involving at least %s", classDecl.name);
         }
 
         if (classSymbolTable.contains(classDecl.superClass)) {
@@ -51,7 +67,6 @@ public class SemanticAnalyzer {
             classSymbol.superClass = classSymbolTable.get(classDecl.superClass);
             classSymbolTable.put(classSymbol);
             classDecl.sym = classSymbol;
-            classDeclMap.remove(classDecl.name);
         } else {
             // we don't have the class symbol of the parent yet, so we 'visit' that first
             alreadyChecked.add(classDecl.name);
