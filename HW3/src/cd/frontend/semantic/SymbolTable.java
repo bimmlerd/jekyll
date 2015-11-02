@@ -7,7 +7,7 @@ import java.util.Map;
 
 public class SymbolTable<S extends Symbol> {
 
-    private Map<String, S> symbolMap = new HashMap<>();
+    protected Map<String, S> symbolMap = new HashMap<>();
     private SymbolTable outerScope;
 
     public SymbolTable(SymbolTable outerScope) {
