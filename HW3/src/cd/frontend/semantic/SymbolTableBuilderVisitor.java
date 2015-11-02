@@ -21,10 +21,12 @@ public class SymbolTableBuilderVisitor extends AstVisitor<Void, Void> {
     public Void classDecl(Ast.ClassDecl ast, Void arg) {
         // visit method and field decls
         classScope = this.sa.classSymbolTable;
+/*
         ast.sym.fields.setOuterScope(classScope);
         fieldScope = ast.sym.fields;
         ast.sym.methods.setOuterScope(classScope);
         methodScope = ast.sym.methods;
+*/
         visitChildren(ast, arg);
         classScope = null;
         fieldScope = null;
@@ -36,11 +38,15 @@ public class SymbolTableBuilderVisitor extends AstVisitor<Void, Void> {
     public Void methodDecl(Ast.MethodDecl ast, Void arg) {
 
         ast.sym = new Symbol.MethodSymbol(ast);
+/*
         ast.sym.locals.setOuterScope(methodScope);
+*/
         for (Ast decl : ast.decls().rwChildren()) {
             Ast.VarDecl varDecl = (Ast.VarDecl) decl;
             Symbol.VariableSymbol sym = new Symbol.VariableSymbol(varDecl.name, this.sa.typeSymbolTable.get(varDecl.type));
+/*
             ast.sym.locals.put(sym);
+*/
         }
 
         // TODO parameters?

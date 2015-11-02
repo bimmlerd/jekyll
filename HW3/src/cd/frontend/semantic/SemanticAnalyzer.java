@@ -18,6 +18,10 @@ public class SemanticAnalyzer {
 
     protected SymbolTable<Symbol.TypeSymbol> typeSymbolTable = new SymbolTable<>(null); // types are in a global scope
 
+    // TODO: Union of classSymbolTable and typeSymbolTable
+    // as typeSymbolTable contains lots of redundant information
+    private Map<String, Symbol.TypeSymbol> globalSymbolTable = new HashMap<>();
+
 	public SemanticAnalyzer(Main main) {
 		this.main = main;
 	}
@@ -41,11 +45,19 @@ public class SemanticAnalyzer {
 
             buildTypeSymbolTable();
 
+            // TODO: set up the globalSymbolTable
+            InformationCollectorVisitor informationCollectorVisitor = new InformationCollectorVisitor(globalSymbolTable);
+
+            for (ClassDecl classDecl : classDecls) {
+                informationCollectorVisitor.visit(classDecl, null);
+            }
+/*
             SymbolTableBuilderVisitor symbolTableBuilderVisitor = new SymbolTableBuilderVisitor(this);
 
             for (ClassDecl classDecl: classDecls) {
                 symbolTableBuilderVisitor.visit(classDecl, null);
             }
+*/
 
 
 		}
