@@ -1,5 +1,7 @@
 package cd.ir;
 
+import cd.frontend.semantic.SymbolTable;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -43,7 +45,7 @@ public abstract class Symbol {
 		public final TypeSymbol elementType;
 		
 		public ArrayTypeSymbol(TypeSymbol elementType) {
-			super(elementType.name+"[]");
+			super(elementType.name + "[]");
 			this.elementType = elementType;
 		}
 		
@@ -56,12 +58,9 @@ public abstract class Symbol {
 	public static class ClassSymbol extends TypeSymbol {
 		public final Ast.ClassDecl ast;
 		public ClassSymbol superClass;
-		public final VariableSymbol thisSymbol =
-			new VariableSymbol("this", this);
-		public final Map<String, VariableSymbol> fields = 
-			new HashMap<String, VariableSymbol>();
-		public final Map<String, MethodSymbol> methods =
-			new HashMap<String, MethodSymbol>();
+		public final VariableSymbol thisSymbol = new VariableSymbol("this", this);
+		public final SymbolTable<VariableSymbol> fields = new SymbolTable<>();
+		public final SymbolTable<MethodSymbol> methods = new SymbolTable<>();
 
 		/** Symbols for the built-in Object and null types */
 		public static final ClassSymbol nullType = new ClassSymbol("<null>");
@@ -101,10 +100,8 @@ public abstract class Symbol {
 	public static class MethodSymbol extends Symbol {
 		
 		public final Ast.MethodDecl ast;
-		public final Map<String, VariableSymbol> locals =
-			new HashMap<String, VariableSymbol>();
-		public final List<VariableSymbol> parameters =
-			new ArrayList<VariableSymbol>();
+		public final SymbolTable<VariableSymbol> locals = new SymbolTable<>();
+		public final List<VariableSymbol> parameters = new ArrayList<VariableSymbol>(); // TODO
 		
 		public TypeSymbol returnType;
 		

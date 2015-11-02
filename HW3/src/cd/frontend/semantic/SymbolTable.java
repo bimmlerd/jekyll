@@ -1,5 +1,6 @@
 package cd.frontend.semantic;
 
+import cd.ToDoException;
 import cd.ir.Symbol;
 
 import java.util.HashMap;
@@ -13,6 +14,11 @@ public class SymbolTable<S extends Symbol> {
     public SymbolTable(SymbolTable outerScope) {
         this.outerScope = outerScope;
     }
+    public SymbolTable() {};
+
+    public void setOuterScope(SymbolTable outerScope) {
+        this.outerScope = outerScope;
+    }
 
     public void put(S symbol) {
         // TODO only check local, otherwise method overrides are broken, right?
@@ -24,7 +30,11 @@ public class SymbolTable<S extends Symbol> {
     }
 
     public S get(String key) {
-        return symbolMap.get(key);
+        S res = symbolMap.get(key);
+        if (res == null) {
+            throw new ToDoException();
+        }
+        return res;
     }
 
     public boolean contains(String key) {
