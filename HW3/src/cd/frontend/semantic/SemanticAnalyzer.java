@@ -65,11 +65,8 @@ public class SemanticAnalyzer {
                 // Main has no method main().
                 throw new SemanticFailure(SemanticFailure.Cause.INVALID_START_POINT,
                         "There is no method main() defined in Main.");
-            } else if (!((Symbol.ClassSymbol) symbolManager.get("Main")).getMethod("main").returnType.equals(Symbol.PrimitiveTypeSymbol.voidType)) {
-                // main() has an invalid signature.
-                throw new SemanticFailure(SemanticFailure.Cause.INVALID_START_POINT,
-                        "The method main() has an invalid signature.");
-            } else if (!((Symbol.ClassSymbol) symbolManager.get("Main")).getMethod("main").parameters.isEmpty()) {
+            } else if (!((Symbol.ClassSymbol) symbolManager.get("Main")).getMethod("main").returnType.equals(Symbol.PrimitiveTypeSymbol.voidType)
+                    || !((Symbol.ClassSymbol) symbolManager.get("Main")).getMethod("main").parameters.isEmpty()) {
                 // main() has an invalid signature.
                 throw new SemanticFailure(SemanticFailure.Cause.INVALID_START_POINT,
                         "The method main() has an invalid signature.");
@@ -78,6 +75,20 @@ public class SemanticAnalyzer {
             // Test for circular inheritance.
             for (ClassDecl classDecl : classDecls) {
                 checkForCircularInheritance(classDecl);
+            }
+
+            // Check for correct method overrides.
+            for (ClassDecl classDecl : classDecls) {
+                for (Symbol.MethodSymbol methodSymbol : classDecl.sym.methods.values()) {
+                    if (classDecl.sym.superClass.getMethod(methodSymbol.name) != null) {
+                        if (!methodSymbol.returnType.equals(classDecl.sym.superClass.getMethod(methodSymbol.name).returnType)
+                                || !methodSymbol.parameters.equals(classDecl.sym.superClass.getMethod(methodSymbol.name).parameters)) {
+                            // The overriding method does not have the same signature as the method in the super class.
+                            throw new SemanticFailure(SemanticFailure.Cause.INVALID_OVERRIDE,
+                                    "Invalid signature: Method %s", methodSymbol.name);
+                        }
+                    }
+                }
             }
 		}
 	}

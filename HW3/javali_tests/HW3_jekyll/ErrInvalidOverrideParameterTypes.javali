@@ -1,0 +1,15 @@
+// Invalid_Override: The overriding method does not have the same types for all parameters as the method in the super class.
+class Main {
+    void main() {}
+}
+
+class A {
+    int method(int a) {
+        return a;
+    }
+}
+class B extends A {
+    int method(boolean a) {
+        return 0;
+    }
+}

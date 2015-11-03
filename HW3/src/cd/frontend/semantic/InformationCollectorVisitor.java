@@ -4,7 +4,7 @@ import cd.ir.Ast;
 import cd.ir.AstVisitor;
 import cd.ir.Symbol;
 
-import java.util.Map;
+import java.util.List;
 
 public class InformationCollectorVisitor extends AstVisitor<Symbol, Symbol.VariableSymbol.Kind> {
 
@@ -76,7 +76,7 @@ public class InformationCollectorVisitor extends AstVisitor<Symbol, Symbol.Varia
 
         // Visit all parameters in our current method and add them to our MethodSymbol. Handle duplicate parameter declarations.
         for (int i = 0; i < ast.argumentNames.size(); i++) {
-            if (ast.sym.parameters.containsKey(ast.argumentNames.get(i))) {
+            if (nameContainedInList(ast.argumentNames.get(i), ast.sym.parameters)) {
                 // Two parameters with the same name.
                 throw new SemanticFailure(SemanticFailure.Cause.DOUBLE_DECLARATION,
                         "Already declared: Parameter %s", ast.argumentNames.get(i));
@@ -94,7 +94,7 @@ public class InformationCollectorVisitor extends AstVisitor<Symbol, Symbol.Varia
                 }
                 // Create symbol for our current parameter.
                 Symbol.VariableSymbol variableSymbol = new Symbol.VariableSymbol(ast.argumentNames.get(i), typeSymbol, Symbol.VariableSymbol.Kind.PARAM);
-                ast.sym.parameters.put(variableSymbol.name, variableSymbol);
+                ast.sym.parameters.add(variableSymbol);
             }
         }
 
@@ -125,4 +125,14 @@ public class InformationCollectorVisitor extends AstVisitor<Symbol, Symbol.Varia
 
         return ast.sym;
     }
+
+    private boolean nameContainedInList(String name, List<Symbol.VariableSymbol> list) {
+        for (Symbol.VariableSymbol variableSymbol : list) {
+            if (variableSymbol.name.equals(name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

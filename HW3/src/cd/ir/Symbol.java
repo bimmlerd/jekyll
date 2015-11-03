@@ -1,6 +1,8 @@
 package cd.ir;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public abstract class Symbol {
@@ -95,7 +97,7 @@ public abstract class Symbol {
 
         public final Ast.MethodDecl ast;
         public final Map<String, VariableSymbol> locals = new HashMap<>();
-        public final Map<String, VariableSymbol> parameters = new HashMap<>();
+        public final List<VariableSymbol> parameters = new ArrayList<>();
 
         public TypeSymbol returnType;
 
