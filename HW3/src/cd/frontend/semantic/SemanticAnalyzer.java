@@ -14,13 +14,10 @@ public class SemanticAnalyzer {
 	public final Main main;
 
     private Map<String, Symbol.ClassSymbol> classSymbolMap = new HashMap<>();
-    private Map<String, Symbol.TypeSymbol> globalSymbolTable = new HashMap<>();
+    private SymbolManager symbolManager = new SymbolManager();
 
     private void addToClassSymbolMap(Symbol.ClassSymbol sym) {
         classSymbolMap.put(sym.name, sym);
-    }
-    private void addToGlobalSymbolTable(Symbol.TypeSymbol sym) {
-        globalSymbolTable.put(sym.name, sym);
     }
 
 	public SemanticAnalyzer(Main main) {
@@ -54,25 +51,25 @@ public class SemanticAnalyzer {
             buildGlobalSymbolTable();
 
             // Collect information from the AST and store it in the sym field of each ast node.
-            InformationCollectorVisitor informationCollectorVisitor = new InformationCollectorVisitor(globalSymbolTable);
+            InformationCollectorVisitor informationCollectorVisitor = new InformationCollectorVisitor(symbolManager);
             for (ClassDecl classDecl : classDecls) {
                 informationCollectorVisitor.visit(classDecl, null);
             }
 
             // Test for a valid start point.
-            if (!globalSymbolTable.containsKey("Main")) {
+            if (!symbolManager.contains("Main")) {
                 // No class Main is defined.
                 throw new SemanticFailure(SemanticFailure.Cause.INVALID_START_POINT,
                         "There is no class Main defined.");
-            } else if (!((Symbol.ClassSymbol) globalSymbolTable.get("Main")).methods.containsKey("main")) {
+            } else if (((Symbol.ClassSymbol) symbolManager.get("Main")).getMethod("main") == null) {
                 // Main has no method main().
                 throw new SemanticFailure(SemanticFailure.Cause.INVALID_START_POINT,
                         "There is no method main() defined in Main.");
-            } else if (!((Symbol.ClassSymbol) globalSymbolTable.get("Main")).getMethod("main").returnType.equals(Symbol.PrimitiveTypeSymbol.voidType)) {
+            } else if (!((Symbol.ClassSymbol) symbolManager.get("Main")).getMethod("main").returnType.equals(Symbol.PrimitiveTypeSymbol.voidType)) {
                 // main() has an invalid signature.
                 throw new SemanticFailure(SemanticFailure.Cause.INVALID_START_POINT,
                         "The method main() has an invalid signature.");
-            } else if (!((Symbol.ClassSymbol) globalSymbolTable.get("Main")).getMethod("main").parameters.isEmpty()) {
+            } else if (!((Symbol.ClassSymbol) symbolManager.get("Main")).getMethod("main").parameters.isEmpty()) {
                 // main() has an invalid signature.
                 throw new SemanticFailure(SemanticFailure.Cause.INVALID_START_POINT,
                         "The method main() has an invalid signature.");
@@ -82,30 +79,22 @@ public class SemanticAnalyzer {
             for (ClassDecl classDecl : classDecls) {
                 checkForCircularInheritance(classDecl);
             }
-
-/*
-            SymbolTableBuilderVisitor symbolTableBuilderVisitor = new SymbolTableBuilderVisitor(this);
-
-            for (ClassDecl classDecl: classDecls) {
-                symbolTableBuilderVisitor.visit(classDecl, null);
-            }
-*/
 		}
 	}
 
     private void buildGlobalSymbolTable() {
         // Add built-in primitive types.
-        addToGlobalSymbolTable(Symbol.TypeSymbol.PrimitiveTypeSymbol.intType);
-        addToGlobalSymbolTable(new Symbol.ArrayTypeSymbol(Symbol.TypeSymbol.PrimitiveTypeSymbol.intType));
-        addToGlobalSymbolTable(Symbol.TypeSymbol.PrimitiveTypeSymbol.voidType); // no void[]
-        addToGlobalSymbolTable(Symbol.TypeSymbol.PrimitiveTypeSymbol.booleanType);
-        addToGlobalSymbolTable(new Symbol.ArrayTypeSymbol(Symbol.TypeSymbol.PrimitiveTypeSymbol.booleanType));
+        symbolManager.put(Symbol.TypeSymbol.PrimitiveTypeSymbol.intType);
+        symbolManager.put(new Symbol.ArrayTypeSymbol(Symbol.TypeSymbol.PrimitiveTypeSymbol.intType));
+        symbolManager.put(Symbol.TypeSymbol.PrimitiveTypeSymbol.voidType); // no void[]
+        symbolManager.put(Symbol.TypeSymbol.PrimitiveTypeSymbol.booleanType);
+        symbolManager.put(new Symbol.ArrayTypeSymbol(Symbol.TypeSymbol.PrimitiveTypeSymbol.booleanType));
 
         // Add reference types.
-        addToGlobalSymbolTable(Symbol.TypeSymbol.ClassSymbol.nullType);
+        symbolManager.put(Symbol.TypeSymbol.ClassSymbol.nullType);
         for (Symbol.ClassSymbol classSymbol: classSymbolMap.values()) {
-            addToGlobalSymbolTable(classSymbol);
-            addToGlobalSymbolTable(new Symbol.ArrayTypeSymbol(classSymbol)); // TODO: There should probably be no Main[].
+            symbolManager.put(classSymbol);
+            symbolManager.put(new Symbol.ArrayTypeSymbol(classSymbol)); // TODO: There should probably be no Main[].
         }
     }
 

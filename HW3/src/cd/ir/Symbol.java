@@ -1,10 +1,6 @@
 package cd.ir;
 
-import cd.frontend.semantic.SymbolTable;
-
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public abstract class Symbol {
@@ -57,8 +53,8 @@ public abstract class Symbol {
         public final Ast.ClassDecl ast;
         public ClassSymbol superClass;
         public final VariableSymbol thisSymbol = new VariableSymbol("this", this);
-        public final Map<String, VariableSymbol> fields = new HashMap<>(); // public final SymbolTable<VariableSymbol> fields = new SymbolTable<>();
-        public final Map<String, MethodSymbol> methods = new HashMap<>(); // public final SymbolTable<MethodSymbol> methods = new SymbolTable<>();
+        public final Map<String, VariableSymbol> fields = new HashMap<>();
+        public final Map<String, MethodSymbol> methods = new HashMap<>();
 
         /** Symbols for the built-in Object and null types */
         public static final ClassSymbol nullType = new ClassSymbol("<null>");
@@ -98,7 +94,7 @@ public abstract class Symbol {
     public static class MethodSymbol extends Symbol {
 
         public final Ast.MethodDecl ast;
-        public final Map<String, VariableSymbol> locals = new HashMap<>(); // public final SymbolTable<VariableSymbol> locals = new SymbolTable<>();
+        public final Map<String, VariableSymbol> locals = new HashMap<>();
         public final Map<String, VariableSymbol> parameters = new HashMap<>();
 
         public TypeSymbol returnType;

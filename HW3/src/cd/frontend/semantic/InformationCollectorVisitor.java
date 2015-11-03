@@ -8,10 +8,10 @@ import java.util.Map;
 
 public class InformationCollectorVisitor extends AstVisitor<Symbol, Symbol.VariableSymbol.Kind> {
 
-    private final Map<String, Symbol.TypeSymbol> st;
+    private final SymbolManager sm;
 
-    public InformationCollectorVisitor(Map<String, Symbol.TypeSymbol> globalSymbolTable) {
-        this.st = globalSymbolTable;
+    public InformationCollectorVisitor(SymbolManager symbolManager) {
+        this.sm = symbolManager;
     }
 
     @Override
@@ -20,7 +20,7 @@ public class InformationCollectorVisitor extends AstVisitor<Symbol, Symbol.Varia
         // Symbol for our current classDecl already exists.
 
         // Add superClass to our ClassSymbol. Handle undefined types.
-        Symbol.TypeSymbol typeSymbol = st.get(ast.superClass);
+        Symbol.TypeSymbol typeSymbol = sm.get(ast.superClass);
         if (typeSymbol == null) {
             // The type name does neither refer to a class nor to a predefined type.
             throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_TYPE,
@@ -86,7 +86,7 @@ public class InformationCollectorVisitor extends AstVisitor<Symbol, Symbol.Varia
                         "Already declared as local variable: Parameter %s", ast.argumentNames.get(i));
             } else {
                 // Handle undefined types.
-                Symbol.TypeSymbol typeSymbol = st.get(ast.argumentTypes.get(i));
+                Symbol.TypeSymbol typeSymbol = sm.get(ast.argumentTypes.get(i));
                 if (typeSymbol == null) {
                     // The type name does neither refer to a class nor to a predefined type.
                     throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_TYPE,
@@ -99,7 +99,7 @@ public class InformationCollectorVisitor extends AstVisitor<Symbol, Symbol.Varia
         }
 
         // Add returnType to our MethodSymbol. Handle undefined types.
-        Symbol.TypeSymbol typeSymbol = st.get(ast.returnType);
+        Symbol.TypeSymbol typeSymbol = sm.get(ast.returnType);
         if (typeSymbol == null) {
             // The type name does neither refer to a class nor to a predefined type.
             throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_TYPE,
@@ -114,7 +114,7 @@ public class InformationCollectorVisitor extends AstVisitor<Symbol, Symbol.Varia
     public Symbol varDecl(Ast.VarDecl ast, Symbol.VariableSymbol.Kind arg) {
 
         // Handle undefined types.
-        Symbol.TypeSymbol typeSymbol = st.get(ast.type);
+        Symbol.TypeSymbol typeSymbol = sm.get(ast.type);
         if (typeSymbol == null) {
             // The type name does neither refer to a class nor to a predefined type.
             throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_TYPE,
