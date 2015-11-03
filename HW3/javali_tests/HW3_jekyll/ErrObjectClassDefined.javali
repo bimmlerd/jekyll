@@ -1,0 +1,7 @@
+// Object_Class_Defined: Class with name Object is not allowed.
+class Object {}
+
+class Main {
+    void main() {
+    }
+}

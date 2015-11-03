@@ -99,7 +99,7 @@ public abstract class Symbol {
 
         public final Ast.MethodDecl ast;
         public final Map<String, VariableSymbol> locals = new HashMap<>(); // public final SymbolTable<VariableSymbol> locals = new SymbolTable<>();
-        public final List<VariableSymbol> parameters = new ArrayList<>();
+        public final Map<String, VariableSymbol> parameters = new HashMap<>();
 
         public TypeSymbol returnType;
 

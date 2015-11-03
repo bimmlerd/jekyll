@@ -1,0 +1,5 @@
+// Invalid_Start_Point: main() has an invalid signature.
+
+class Main {
+    int main() {}
+}

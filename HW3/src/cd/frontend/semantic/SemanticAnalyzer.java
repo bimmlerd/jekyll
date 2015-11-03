@@ -13,14 +13,15 @@ public class SemanticAnalyzer {
 
 	public final Main main;
 
-    private Map<String, ClassDecl> classDeclMap = new HashMap<>();
-    protected SymbolTable<Symbol.ClassSymbol> classSymbolTable = new SymbolTable<>(null); // null for outermost scope
-
-    protected SymbolTable<Symbol.TypeSymbol> typeSymbolTable = new SymbolTable<>(null); // types are in a global scope
-
-    // TODO: Union of classSymbolTable and typeSymbolTable
-    // as typeSymbolTable contains lots of redundant information
+    private Map<String, Symbol.ClassSymbol> classSymbolMap = new HashMap<>();
     private Map<String, Symbol.TypeSymbol> globalSymbolTable = new HashMap<>();
+
+    private void addToClassSymbolMap(Symbol.ClassSymbol sym) {
+        classSymbolMap.put(sym.name, sym);
+    }
+    private void addToGlobalSymbolTable(Symbol.TypeSymbol sym) {
+        globalSymbolTable.put(sym.name, sym);
+    }
 
 	public SemanticAnalyzer(Main main) {
 		this.main = main;
@@ -28,29 +29,60 @@ public class SemanticAnalyzer {
 
 	public void check(List<ClassDecl> classDecls) throws SemanticFailure {
 		{
-            // handle duplicate class declarations
-            classSymbolTable.put(Symbol.ClassSymbol.objectType);
+            // List of all ClassSymbols. Handle duplicate class declarations in classDecls.
 			for (ClassDecl classDecl : classDecls) {
-                if (classDeclMap.containsKey(classDecl.name)) {
+                if (classSymbolMap.containsKey(classDecl.name)) {
+                    // Two classes with the same name.
                     throw new SemanticFailure(SemanticFailure.Cause.DOUBLE_DECLARATION,
                             "Already declared: Class %s", classDecl.name);
                 } else {
-                    classDeclMap.put(classDecl.name, classDecl);
+                    // Create symbol for our current classDecl.
+                    Symbol.ClassSymbol sym = new Symbol.ClassSymbol(classDecl);
+                    classDecl.sym = sym; // Store information in the AST.
+                    addToClassSymbolMap(sym);
                 }
             }
 
-            for (ClassDecl classDecl : classDecls) {
-                buildClassSymbolTable(classDecl);
+            // Check for correct root of the inheritance hierarchy.
+            if (classSymbolMap.containsKey(Symbol.ClassSymbol.objectType.name)) {
+                // A class with the name Object is defined.
+                throw new SemanticFailure(SemanticFailure.Cause.OBJECT_CLASS_DEFINED);
             }
+            addToClassSymbolMap(Symbol.ClassSymbol.objectType);
 
-            buildTypeSymbolTable();
+            // Add all possible types to our globalSymbolTable.
+            buildGlobalSymbolTable();
 
-            // TODO: set up the globalSymbolTable
+            // Collect information from the AST and store it in the sym field of each ast node.
             InformationCollectorVisitor informationCollectorVisitor = new InformationCollectorVisitor(globalSymbolTable);
-
             for (ClassDecl classDecl : classDecls) {
                 informationCollectorVisitor.visit(classDecl, null);
             }
+
+            // Test for a valid start point.
+            if (!globalSymbolTable.containsKey("Main")) {
+                // No class Main is defined.
+                throw new SemanticFailure(SemanticFailure.Cause.INVALID_START_POINT,
+                        "There is no class Main defined.");
+            } else if (!((Symbol.ClassSymbol) globalSymbolTable.get("Main")).methods.containsKey("main")) {
+                // Main has no method main().
+                throw new SemanticFailure(SemanticFailure.Cause.INVALID_START_POINT,
+                        "There is no method main() defined in Main.");
+            } else if (!((Symbol.ClassSymbol) globalSymbolTable.get("Main")).getMethod("main").returnType.equals(Symbol.PrimitiveTypeSymbol.voidType)) {
+                // main() has an invalid signature.
+                throw new SemanticFailure(SemanticFailure.Cause.INVALID_START_POINT,
+                        "The method main() has an invalid signature.");
+            } else if (!((Symbol.ClassSymbol) globalSymbolTable.get("Main")).getMethod("main").parameters.isEmpty()) {
+                // main() has an invalid signature.
+                throw new SemanticFailure(SemanticFailure.Cause.INVALID_START_POINT,
+                        "The method main() has an invalid signature.");
+            }
+
+            // Test for circular inheritance.
+            for (ClassDecl classDecl : classDecls) {
+                checkForCircularInheritance(classDecl);
+            }
+
 /*
             SymbolTableBuilderVisitor symbolTableBuilderVisitor = new SymbolTableBuilderVisitor(this);
 
@@ -58,49 +90,37 @@ public class SemanticAnalyzer {
                 symbolTableBuilderVisitor.visit(classDecl, null);
             }
 */
-
-
 		}
 	}
 
-    private void buildClassSymbolTable(ClassDecl classDecl, List<String> alreadyChecked) {
-        if (alreadyChecked.contains(classDecl.name)) {
+    private void buildGlobalSymbolTable() {
+        // Add built-in primitive types.
+        addToGlobalSymbolTable(Symbol.TypeSymbol.PrimitiveTypeSymbol.intType);
+        addToGlobalSymbolTable(new Symbol.ArrayTypeSymbol(Symbol.TypeSymbol.PrimitiveTypeSymbol.intType));
+        addToGlobalSymbolTable(Symbol.TypeSymbol.PrimitiveTypeSymbol.voidType); // no void[]
+        addToGlobalSymbolTable(Symbol.TypeSymbol.PrimitiveTypeSymbol.booleanType);
+        addToGlobalSymbolTable(new Symbol.ArrayTypeSymbol(Symbol.TypeSymbol.PrimitiveTypeSymbol.booleanType));
+
+        // Add reference types.
+        addToGlobalSymbolTable(Symbol.TypeSymbol.ClassSymbol.nullType);
+        for (Symbol.ClassSymbol classSymbol: classSymbolMap.values()) {
+            addToGlobalSymbolTable(classSymbol);
+            addToGlobalSymbolTable(new Symbol.ArrayTypeSymbol(classSymbol)); // TODO: There should probably be no Main[].
+        }
+    }
+
+    private void checkForCircularInheritance(Symbol.ClassSymbol sym, List<String> alreadyChecked) {
+        if (alreadyChecked.contains(sym.name)) {
+            // Inheritance relationships between classes contain a cycle.
             throw new SemanticFailure(SemanticFailure.Cause.CIRCULAR_INHERITANCE,
-                    "Circular inheritance detected, involving %s", classDecl.name);
+                    "Circular inheritance detected, involving Class %s", sym.name);
+        } else if (!sym.superClass.name.equals("Object")) {
+            alreadyChecked.add(sym.name);
+            checkForCircularInheritance(classSymbolMap.get(sym.superClass.name), alreadyChecked);
         }
-
-        if (classSymbolTable.contains(classDecl.name)) {
-            // Already handled this class, and we assume no duplicates
-            return;
-        }
-
-        if (!classSymbolTable.contains(classDecl.superClass)) {
-            // we don't have the class symbol of the parent yet, so we 'visit' that first
-            alreadyChecked.add(classDecl.name);
-            buildClassSymbolTable(classDeclMap.get(classDecl.superClass), alreadyChecked);
-        }
-        // the class symbol of the parent now exists, we're good.
-        Symbol.ClassSymbol classSymbol = new Symbol.ClassSymbol(classDecl);
-        classSymbol.superClass = classSymbolTable.get(classDecl.superClass);
-        classSymbolTable.put(classSymbol);
-        classDecl.sym = classSymbol;
     }
 
-    private void buildClassSymbolTable(ClassDecl classDecl) {
-        buildClassSymbolTable(classDecl, new ArrayList<>());
-    }
-
-    private void buildTypeSymbolTable() {
-        typeSymbolTable.put(Symbol.TypeSymbol.PrimitiveTypeSymbol.booleanType);
-        typeSymbolTable.put(new Symbol.ArrayTypeSymbol(Symbol.TypeSymbol.PrimitiveTypeSymbol.booleanType));
-        typeSymbolTable.put(Symbol.TypeSymbol.PrimitiveTypeSymbol.intType);
-        typeSymbolTable.put(new Symbol.ArrayTypeSymbol(Symbol.TypeSymbol.PrimitiveTypeSymbol.intType));
-        typeSymbolTable.put(Symbol.TypeSymbol.PrimitiveTypeSymbol.voidType); // no void[]
-        typeSymbolTable.put(Symbol.TypeSymbol.ClassSymbol.nullType);
-        // TODO
-        for (Symbol.ClassSymbol classSymbol: classSymbolTable.symbolMap.values()) {
-            typeSymbolTable.put(classSymbol);
-            typeSymbolTable.put(new Symbol.ArrayTypeSymbol(classSymbol));
-        }
+    private void checkForCircularInheritance(ClassDecl classDecl) {
+        checkForCircularInheritance(classDecl.sym, new ArrayList<>());
     }
 }

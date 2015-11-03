@@ -1,0 +1,5 @@
+// Invalid_Start_Point: Main has no method main().
+
+class Main {
+    int method() {}
+}

@@ -1,0 +1,8 @@
+// Double_Declaration: Multiple classes with the same name are declared.
+
+class Main {
+    void main() {}
+}
+class Main {
+    void main() {}
+}

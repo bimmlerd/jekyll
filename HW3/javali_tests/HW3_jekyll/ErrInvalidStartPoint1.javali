@@ -1,0 +1,7 @@
+// Invalid_Start_Point: No class Main is defined.
+
+class A {
+    void main() {}
+
+    int method(int a) {}
+}

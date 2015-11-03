@@ -1,3 +1,0 @@
-// should throw a double declaration
-class Main {}
-class Main {}

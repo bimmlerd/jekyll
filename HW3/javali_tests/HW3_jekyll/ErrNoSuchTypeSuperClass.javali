@@ -1,0 +1,8 @@
+// No_Such_Type: The class declaration does not extend from an existing class type.
+
+class Main {
+    void main() {}
+}
+
+class A extends B {
+}

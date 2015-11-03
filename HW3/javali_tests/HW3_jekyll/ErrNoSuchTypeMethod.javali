@@ -1,0 +1,8 @@
+// No_Such_Type: The method declaration does not refer to an existing type.
+
+class Main {
+    void main() {}
+
+    A method() {}
+    boolean f() {}
+}

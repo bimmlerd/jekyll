@@ -1,0 +1,7 @@
+// Double_Declaration: Multiple parameters with the same name are declared.
+
+class Main {
+    void main() {}
+
+    int method(int a, boolean a) {}
+}

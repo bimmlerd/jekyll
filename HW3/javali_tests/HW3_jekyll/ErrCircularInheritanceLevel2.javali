@@ -1,0 +1,9 @@
+// Circular_Inheritance: Circular inheritance a bit more complicated
+class Main {
+    void main() {}
+}
+
+class B extends A {}
+class C extends B {}
+class D extends C {}
+class A extends D {}

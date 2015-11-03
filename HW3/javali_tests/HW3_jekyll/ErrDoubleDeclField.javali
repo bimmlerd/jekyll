@@ -1,0 +1,8 @@
+// Double_Declaration: Multiple fields with the same name are declared.
+
+class Main {
+    void main() {}
+
+    int a;
+    boolean a;
+}

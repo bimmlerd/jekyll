@@ -1,0 +1,9 @@
+// Double_Declaration: A parameter with the same name as a local variable is declared.
+
+class Main {
+    void main() {}
+
+    void method(int a) {
+        int a;
+    }
+}

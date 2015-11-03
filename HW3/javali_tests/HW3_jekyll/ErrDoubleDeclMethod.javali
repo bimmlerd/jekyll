@@ -1,0 +1,8 @@
+// Double_Declaration: Multiple methods with the same name are declared.
+
+class Main {
+    void main() {}
+
+    int method() {}
+    int method() {}
+}
