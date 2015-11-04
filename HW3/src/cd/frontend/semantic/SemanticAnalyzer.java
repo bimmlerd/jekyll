@@ -19,11 +19,12 @@ public class SemanticAnalyzer {
         // fill symbol manager with all available info
         (new SymbolCollector(symbolManager)).fillSymbolManager(classDecls);
 
-        // check for a valid start point
         (new StartPointChecker()).check();
 
-        // check inheritance tree
         (new InheritanceChecker(symbolManager)).check();
+
+        (new TypeChecker(symbolManager)).check();
+
     }
 
     protected class StartPointChecker {

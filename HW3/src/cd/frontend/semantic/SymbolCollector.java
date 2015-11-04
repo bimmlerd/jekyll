@@ -55,6 +55,7 @@ public class SymbolCollector {
             classDecl.sym = sym;
             sm.put(sym);
             sm.put(new Symbol.ArrayTypeSymbol(sym)); // also put class[] into the symbol manager
+            // TODO superclass of ArrayTypeSymbols??
         }
 
         InformationCollectorVisitor visitor = new InformationCollectorVisitor();

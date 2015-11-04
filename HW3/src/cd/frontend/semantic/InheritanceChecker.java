@@ -17,8 +17,7 @@ public class InheritanceChecker {
     }
 
     public void check() {
-        for (Symbol.TypeSymbol typeSymbol : sm.getClassSymbols()) {
-            Symbol.ClassSymbol classSym = (Symbol.ClassSymbol) typeSymbol;
+        for (Symbol.ClassSymbol classSym : sm.getClassSymbols()) {
 
             // check for circular inheritance
             Set<String> alreadyChecked = new HashSet<>();

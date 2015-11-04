@@ -4,9 +4,9 @@ import cd.ir.Symbol;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.stream.Collector;
 
 public class SymbolManager {
 
@@ -32,8 +32,15 @@ public class SymbolManager {
         return symbolTable.values();
     }
 
-    public List<Symbol.TypeSymbol> getClassSymbols() { // TODO make this return ClassSymbols by implementing a casting collector?
-        return getSymbols().stream().filter(s -> s instanceof Symbol.ClassSymbol).collect(Collectors.toList());
+    Collector<Symbol.TypeSymbol, Collection<Symbol.ClassSymbol>, Collection<Symbol.ClassSymbol>> castingCollector =
+            Collector.of(
+                    HashSet::new,                                   // supplier
+                    (c, sym) -> c.add((Symbol.ClassSymbol) sym),    // accumulator
+                    (j1, j2) -> {j1.addAll(j2); return j1;},        // combiner
+                    (c) -> (c));                                    // finisher
+
+    public Collection<Symbol.ClassSymbol> getClassSymbols() {
+        return getSymbols().stream().filter(s -> s instanceof Symbol.ClassSymbol).collect(castingCollector);
     }
 
 }
