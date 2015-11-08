@@ -43,7 +43,8 @@ public abstract class Symbol {
 
         @Override
         public boolean isSubtypeOf(TypeSymbol type) {
-            throw new UnsupportedOperationException("isSubtypeOf does not make sense for primitive types.");
+            // TODO this currently returns true when the types are equal.
+            return type == this;
         }
     }
 
@@ -52,7 +53,7 @@ public abstract class Symbol {
 
         @Override
         public boolean isSubtypeOf(TypeSymbol type) {
-            throw new UnsupportedOperationException("isSubtypeOf on array type, apparently we need this"); // TODO
+            throw new UnsupportedOperationException("isSubtypeOf does not make sense for array types");
         }
 
         public ArrayTypeSymbol(TypeSymbol elementType) {
@@ -94,6 +95,7 @@ public abstract class Symbol {
 
         @Override
         public boolean isSubtypeOf(TypeSymbol type) {
+            // TODO this should return true when the types are equal.
             throw new ToDoException(); //TODO
         }
 

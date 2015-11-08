@@ -23,7 +23,7 @@ public class SemanticAnalyzer {
 
         (new InheritanceChecker(symbolManager)).check();
 
-        (new TypeChecker(symbolManager)).check();
+        (new TypeChecker(symbolManager)).check(classDecls);
 
     }
 
