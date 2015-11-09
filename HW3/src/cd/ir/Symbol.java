@@ -1,7 +1,5 @@
 package cd.ir;
 
-import cd.ToDoException;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -53,8 +51,7 @@ public abstract class Symbol {
 
         @Override
         public boolean isSubtypeOf(TypeSymbol type) {
-            // TODO or this? return type == ClassSymbol.objectType;
-            throw new UnsupportedOperationException("isSubtypeOf does not make sense for array types");
+            return type == ClassSymbol.objectType;
         }
 
         public ArrayTypeSymbol(TypeSymbol elementType) {
@@ -96,8 +93,18 @@ public abstract class Symbol {
 
         @Override
         public boolean isSubtypeOf(TypeSymbol type) {
-            // TODO this should return true when the types are equal.
-            throw new ToDoException(); //TODO
+            // this also returns true when the types are equal.
+            if (this.equals(ClassSymbol.nullType)) {
+                return true;
+            }
+            ClassSymbol current = this;
+            while (current.superClass != null) {
+                if (current.equals(type)) {
+                    return true;
+                }
+                current = current.superClass;
+            }
+            return false;
         }
 
         public VariableSymbol getField(String name) {

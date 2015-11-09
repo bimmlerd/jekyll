@@ -10,14 +10,14 @@ import java.util.Set;
  */
 public class InheritanceChecker {
 
-    private final SymbolManager sm;
+    private final SymbolTable<Symbol.TypeSymbol> st;
 
-    public InheritanceChecker(SymbolManager sm) {
-        this.sm = sm;
+    public InheritanceChecker(SymbolTable<Symbol.TypeSymbol> symbolTable) {
+        this.st = symbolTable;
     }
 
     public void check() {
-        for (Symbol.ClassSymbol classSym : sm.getClassSymbols()) {
+        for (Symbol.ClassSymbol classSym : st.getClassSymbols()) {
 
             // check for circular inheritance
             Set<String> alreadyChecked = new HashSet<>();

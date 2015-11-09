@@ -3,43 +3,46 @@ package cd.frontend.semantic;
 import cd.ToDoException;
 import cd.ir.Symbol;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.stream.Collector;
 
 public class SymbolTable<S extends Symbol> {
 
-    public SymbolTable(SymbolTable<S> outerScope) {
+    public SymbolTable(SymbolTable<? extends Symbol> outerScope) {
         this.outerScope = outerScope;
     }
 
-    protected Map<String, S> symbolMap = new HashMap<>();
-    private SymbolTable<S> outerScope;
+    public SymbolTable() { this.outerScope = null; }
 
-    public SymbolTable() {}
-
-    public void setOuterScope(SymbolTable<S> outerScope) {
-        this.outerScope = outerScope;
-    }
+    private SymbolTable<? extends Symbol> outerScope;
+    protected Map<String, S> symbolTable = new HashMap<>();
 
     public void put(S symbol) {
         if (containsInLocalScope(symbol)) {
             throw new ToDoException();
         }
-        symbolMap.put(symbol.name, symbol);
+        symbolTable.put(symbol.name, symbol);
     }
 
     public void putIfAbsent(S symbol) {
         if (!contains(symbol)) {
-            symbolMap.put(symbol.name, symbol);
+            symbolTable.put(symbol.name, symbol);
         }
     }
 
-    public S get(String key) {
-        S res = symbolMap.get(key);
+    public Symbol get(String key) {
+        S res = symbolTable.get(key);
         if (res == null && outerScope != null) {
             return outerScope.get(key);
         }
         return res;
+    }
+
+    public Symbol get(Symbol symbol) {
+        return get(symbol.name);
     }
 
     public boolean contains(String key) {
@@ -50,12 +53,26 @@ public class SymbolTable<S extends Symbol> {
         }
     }
 
-    public boolean contains(S symbol) { return contains(symbol.name); }
+    public boolean contains(Symbol symbol) { return contains(symbol.name); }
 
     public boolean containsInLocalScope(String key) {
-        return symbolMap.containsKey(key);
+        return symbolTable.containsKey(key);
     }
 
-    public boolean containsInLocalScope(S symbol) { return containsInLocalScope(symbol.name); }
+    public boolean containsInLocalScope(Symbol symbol) { return containsInLocalScope(symbol.name); }
 
+    public Collection<S> getSymbols() {
+        return symbolTable.values();
+    }
+
+    private Collector<S, Collection<Symbol.ClassSymbol>, Collection<Symbol.ClassSymbol>> castingCollector =
+            Collector.of(
+                    HashSet::new,                                   // supplier
+                    (c, sym) -> c.add((Symbol.ClassSymbol) sym),    // accumulator
+                    (j1, j2) -> {j1.addAll(j2); return j1;},        // combiner
+                    (c) -> (c));                                    // finisher
+
+    public Collection<Symbol.ClassSymbol> getClassSymbols() {
+        return getSymbols().stream().filter(s -> s instanceof Symbol.ClassSymbol).collect(castingCollector);
+    }
 }

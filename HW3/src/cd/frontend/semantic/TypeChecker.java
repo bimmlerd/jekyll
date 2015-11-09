@@ -11,28 +11,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * Checks for the following type violations:
- *
- * TODO:
- *  - erroneous method invocations
- *  - missing returns?
- *  - invalid binary operations
- *  - invalid unary operations
- *  - ...
- */
 public class TypeChecker {
 
-    private final SymbolManager sm;
+    private final SymbolTable<Symbol.TypeSymbol> st;
 
-    public TypeChecker(SymbolManager symbolManager) {
-        this.sm = symbolManager;
+    public TypeChecker(SymbolTable<Symbol.TypeSymbol> symbolTable) {
+        this.st = symbolTable;
     }
 
     public void check(List<Ast.ClassDecl> classDecls) {
 
         for (Ast.ClassDecl classDecl : classDecls) {
-            StatementTypeCheckerVisitor checker = new StatementTypeCheckerVisitor((Symbol.ClassSymbol) sm.get(classDecl.name));
+            StatementTypeCheckerVisitor checker = new StatementTypeCheckerVisitor((Symbol.ClassSymbol) st.get(classDecl.name));
             checker.visit(classDecl, null);
         }
 
@@ -50,13 +40,17 @@ public class TypeChecker {
         }
     }
 
-    private void assertBoolean(Symbol.TypeSymbol type) { assertTypeEquality(type, Symbol.PrimitiveTypeSymbol.booleanType); }
+    private void assertBoolean(Symbol.TypeSymbol type) {
+        assertTypeEquality(type, Symbol.PrimitiveTypeSymbol.booleanType);
+    }
 
-    private void assertInteger(Symbol.TypeSymbol type) { assertTypeEquality(type, Symbol.PrimitiveTypeSymbol.intType); }
+    private void assertInteger(Symbol.TypeSymbol type) {
+        assertTypeEquality(type, Symbol.PrimitiveTypeSymbol.intType);
+    }
 
     protected class StatementTypeCheckerVisitor extends AstVisitor<Void, Void> {
         private final ExpressionTypingVisitor expressionTyper = new ExpressionTypingVisitor();
-        private final Map<String, Symbol.MethodSymbol> methods;
+        private Map<String, Symbol.MethodSymbol> methods;
         private final SymbolTable<Symbol.VariableSymbol> classScope;
         private SymbolTable<cd.ir.Symbol.VariableSymbol> localScope;
 
@@ -67,7 +61,7 @@ public class TypeChecker {
             classScope = new SymbolTable<>();
             do {
                 // put if absent to not overwrite hidden fields
-                classSymbol.fields.values().forEach(classScope::putIfAbsent);
+                current.fields.values().forEach(classScope::putIfAbsent);
 
                 current = current.superClass;
             } while (current != null);
@@ -76,7 +70,8 @@ public class TypeChecker {
 
         @Override
         public Void assign(Ast.Assign ast, Void arg) {
-            // The two sides of an assignment statement must have identical types, or the right-hand side's type must be a subtype of the left-hand side's type.
+            // The two sides of an assignment statement must have identical types,
+            // or the right-hand side's type must be a subtype of the left-hand side's type.
             Symbol.TypeSymbol left = expressionTyper.visit(ast.left(), localScope);
             Symbol.TypeSymbol right = expressionTyper.visit(ast.right(), localScope);
             if (!left.equals(right)) {
@@ -112,14 +107,16 @@ public class TypeChecker {
         @Override
         public Void ifElse(Ast.IfElse ast, Void arg) {
             assertBoolean(expressionTyper.visit(ast.condition(), localScope));
-            // TODO visit children?
-            throw new ToDoException();
+            visit(ast.then(), arg);
+            return visit(ast.otherwise(), arg);
         }
 
         @Override
         public Void returnStmt(Ast.ReturnStmt ast, Void arg) {
             // TODO set return type of method here to make checking for returns easier?
-            Symbol.TypeSymbol returnType = expressionTyper.visit(ast.arg(), localScope);
+            if (!(ast.arg() == null)) {
+                ast.arg().type = expressionTyper.visit(ast.arg(), localScope);
+            }
             return null;
         }
 
@@ -131,7 +128,8 @@ public class TypeChecker {
 
         @Override
         public Void whileLoop(Ast.WhileLoop ast, Void arg) {
-            throw new ToDoException();
+            assertBoolean(expressionTyper.visit(ast.condition(), localScope));
+            return visit(ast.body(), arg);
         }
     }
 
@@ -203,17 +201,23 @@ public class TypeChecker {
         }
 
         @Override
-        public Symbol.TypeSymbol booleanConst(Ast.BooleanConst ast, SymbolTable<Symbol.VariableSymbol> localScope) { return Symbol.PrimitiveTypeSymbol.booleanType; }
+        public Symbol.TypeSymbol booleanConst(Ast.BooleanConst ast, SymbolTable<Symbol.VariableSymbol> localScope) {
+            return Symbol.PrimitiveTypeSymbol.booleanType;
+        }
 
         @Override
-        public Symbol.TypeSymbol intConst(Ast.IntConst ast, SymbolTable<Symbol.VariableSymbol> localScope) { return Symbol.PrimitiveTypeSymbol.intType; }
+        public Symbol.TypeSymbol intConst(Ast.IntConst ast, SymbolTable<Symbol.VariableSymbol> localScope) {
+            return Symbol.PrimitiveTypeSymbol.intType;
+        }
 
         @Override
-        public Symbol.TypeSymbol builtInRead(Ast.BuiltInRead ast, SymbolTable<Symbol.VariableSymbol> localScope) { return Symbol.PrimitiveTypeSymbol.intType; }
+        public Symbol.TypeSymbol builtInRead(Ast.BuiltInRead ast, SymbolTable<Symbol.VariableSymbol> localScope) {
+            return Symbol.PrimitiveTypeSymbol.intType;
+        }
 
         @Override
         public Symbol.TypeSymbol cast(Ast.Cast ast, SymbolTable<Symbol.VariableSymbol> localScope) {
-            assertSubtype(visit(ast, localScope), sm.get(ast.typeName));
+            assertSubtype(visit(ast.arg(), localScope), (Symbol.TypeSymbol) st.get(ast.typeName));
             throw new ToDoException();
         }
 
@@ -221,13 +225,14 @@ public class TypeChecker {
         public Symbol.TypeSymbol field(Ast.Field ast, SymbolTable<Symbol.VariableSymbol> localScope) {
             // TODO refactor into getClassSymbol?
             // localScope.get("this").type.getField(ast.fieldName)
-            Symbol.TypeSymbol classType = visit(ast.arg(), localScope); //TODO this is broken for not "this", need to move sm into a symtable and pass it here
+            Symbol.TypeSymbol classType = visit(ast.arg(), localScope);
             if (!(classType instanceof Symbol.ClassSymbol)) {
                 throw new SemanticFailure(SemanticFailure.Cause.TYPE_ERROR);
             }
             Symbol.VariableSymbol symbol = ((Symbol.ClassSymbol) classType).getField(ast.fieldName);
             if (symbol == null) {
-                throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_FIELD, "Can't find %s anywhere, must've misplaced it. Sorry.", ast.fieldName);
+                throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_FIELD,
+                        "Can't find field %s anywhere, must've misplaced it. Sorry.", ast.fieldName);
             }
             return symbol.type;
         }
@@ -248,17 +253,26 @@ public class TypeChecker {
             }
             Symbol.MethodSymbol method = ((Symbol.ClassSymbol) calledOn).getMethod(ast.methodName);
             if (method == null) {
-                throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_METHOD, "no method %s on type %s", ast.methodName, calledOn);
+                throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_METHOD,
+                        "no method %s on type %s", ast.methodName, calledOn);
             }
 
-            // verify formal parameter types match actual argument types
-            List<Symbol.TypeSymbol> argTypes = ast.argumentsWithoutReceiver().stream().map((a)->(visit(a, localScope))).collect(Collectors.toList());
-            List<Symbol.TypeSymbol> paramTypes = method.parameters.stream().map((a)->(a.type)).collect(Collectors.toList());
+            List<Symbol.TypeSymbol> argTypes = ast.argumentsWithoutReceiver().stream()
+                    .map((a)->(visit(a, localScope)))
+                    .collect(Collectors.toList());
+            List<Symbol.TypeSymbol> paramTypes = method.parameters.stream()
+                    .map((a)->(a.type))
+                    .collect(Collectors.toList());
 
             if (argTypes.size() != paramTypes.size()) {
-                throw new SemanticFailure(SemanticFailure.Cause.WRONG_NUMBER_OF_ARGUMENTS, "wrong number of arguments for %s", ast.methodName);
-            } else if (!Pair.zip(argTypes, paramTypes).stream().map((p) -> (p.a.isSubtypeOf(p.b))).reduce(true, (acc, t) -> (acc && t))) {
-                throw new SemanticFailure(SemanticFailure.Cause.TYPE_ERROR, "formal params of %s don't match arguments", ast.methodName);
+                throw new SemanticFailure(SemanticFailure.Cause.WRONG_NUMBER_OF_ARGUMENTS,
+                        "wrong number of arguments for %s", ast.methodName);
+            // verify formal parameter types match actual argument types
+            } else if (!Pair.zip(argTypes, paramTypes).stream()
+                    .map((p) -> (p.a.isSubtypeOf(p.b)))
+                    .reduce(true, (acc, t) -> (acc && t))) {
+                throw new SemanticFailure(SemanticFailure.Cause.TYPE_ERROR,
+                        "formal params of %s don't match arguments", ast.methodName);
             }
 
             return method.returnType;
@@ -266,17 +280,17 @@ public class TypeChecker {
 
         @Override
         public Symbol.TypeSymbol newObject(Ast.NewObject ast, SymbolTable<Symbol.VariableSymbol> localScope) {
-            // TODO fix breakage when converting the sm
-            Symbol.TypeSymbol classSymbol = sm.get(ast.typeName);
+            Symbol.TypeSymbol classSymbol = (Symbol.TypeSymbol) st.get(ast.typeName);
             if (!(classSymbol instanceof Symbol.ClassSymbol)) {
-                throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_TYPE, "Tried to instantiate %s which doesn't exist", classSymbol.name);
+                throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_TYPE,
+                        "Tried to instantiate %s which doesn't exist", classSymbol.name);
             }
             return classSymbol;
         }
 
         @Override
         public Symbol.TypeSymbol newArray(Ast.NewArray ast, SymbolTable<Symbol.VariableSymbol> localScope) {
-            throw new ToDoException();
+            return (Symbol.TypeSymbol) st.get(ast.typeName);
         }
 
         @Override
@@ -286,14 +300,15 @@ public class TypeChecker {
 
         @Override
         public Symbol.TypeSymbol thisRef(Ast.ThisRef ast, SymbolTable<Symbol.VariableSymbol> localScope) {
-            return localScope.get("this").type;
+            return ((Symbol.VariableSymbol) localScope.get("this")).type;
         }
 
         @Override
         public Symbol.TypeSymbol var(Ast.Var ast, SymbolTable<Symbol.VariableSymbol> localScope) {
-            Symbol.VariableSymbol symbol = localScope.get(ast.name);
+            Symbol.VariableSymbol symbol = (Symbol.VariableSymbol) localScope.get(ast.name);
             if (symbol == null) {
-                throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_VARIABLE, "Can't find %s anywhere, must've misplaced it. Sorry.", ast.name);
+                throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_VARIABLE,
+                        "Can't find variable %s anywhere, must've misplaced it. Sorry.", ast.name);
             }
             return symbol.type;
         }
