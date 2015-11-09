@@ -35,6 +35,10 @@ public class TypeChecker {
     }
 
     private void assertSubtype(Symbol.TypeSymbol type, Symbol.TypeSymbol subType) {
+        if (type == null || subType == null) {
+            throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_TYPE);
+        }
+
         if (!subType.isSubtypeOf(type)) {
             throw new SemanticFailure(SemanticFailure.Cause.TYPE_ERROR, "%s is not a subtype of %s", subType, type);
         }
@@ -46,6 +50,12 @@ public class TypeChecker {
 
     private void assertInteger(Symbol.TypeSymbol type) {
         assertTypeEquality(type, Symbol.PrimitiveTypeSymbol.intType);
+    }
+
+    private void assertArray(Symbol.TypeSymbol type) {
+        if (!type.isArrayType()) {
+            throw new SemanticFailure(SemanticFailure.Cause.TYPE_ERROR, "%s should be an array, but isn't", type);
+        }
     }
 
     protected class StatementTypeCheckerVisitor extends AstVisitor<Void, Void> {
@@ -70,10 +80,17 @@ public class TypeChecker {
 
         @Override
         public Void assign(Ast.Assign ast, Void arg) {
-            // The two sides of an assignment statement must have identical types,
-            // or the right-hand side's type must be a subtype of the left-hand side's type.
+            if (!(ast.left() instanceof Ast.Var || ast.left() instanceof Ast.Index || ast.left() instanceof Ast.Field)) {
+                throw new SemanticFailure(SemanticFailure.Cause.NOT_ASSIGNABLE, "%s is not assignable", ast.left());
+            }
+
             Symbol.TypeSymbol left = expressionTyper.visit(ast.left(), localScope);
             Symbol.TypeSymbol right = expressionTyper.visit(ast.right(), localScope);
+
+
+
+            // The two sides of an assignment statement must have identical types,
+            // or the right-hand side's type must be a subtype of the left-hand side's type.
             if (!left.equals(right)) {
                 assertSubtype(left, right);
             }
@@ -192,7 +209,9 @@ public class TypeChecker {
                 // type op type -> bool
                 case B_EQUAL:
                 case B_NOT_EQUAL:
-                    assertTypeEquality(left, right);
+                    if (!(left.isSubtypeOf(right) || right.isSubtypeOf(left))) {
+                        throw new SemanticFailure(SemanticFailure.Cause.TYPE_ERROR, "equality check on non related types");
+                    }
                     return Symbol.PrimitiveTypeSymbol.booleanType;
 
                 default:
@@ -217,8 +236,15 @@ public class TypeChecker {
 
         @Override
         public Symbol.TypeSymbol cast(Ast.Cast ast, SymbolTable<Symbol.VariableSymbol> localScope) {
-            assertSubtype(visit(ast.arg(), localScope), (Symbol.TypeSymbol) st.get(ast.typeName));
-            throw new ToDoException();
+            Symbol.TypeSymbol originalType = visit(ast.arg(), localScope);
+            Symbol.TypeSymbol castedType = (Symbol.TypeSymbol) st.get(ast.typeName);
+            if (castedType == null) {
+                throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_TYPE, "no type called %s", ast.typeName);
+            }
+            if (!(originalType.isSubtypeOf(castedType) || castedType.isSubtypeOf(originalType))) {
+                throw new SemanticFailure(SemanticFailure.Cause.TYPE_ERROR, "Cannot cast from %s to %s", originalType, castedType);
+            }
+            return castedType;
         }
 
         @Override
@@ -240,9 +266,9 @@ public class TypeChecker {
         @Override
         public Symbol.TypeSymbol index(Ast.Index ast, SymbolTable<Symbol.VariableSymbol> localScope) {
             assertInteger(visit(ast.right(), localScope));
-            // TODO assert array type left
-            // TODO return element type
-            throw new ToDoException();
+            Symbol.TypeSymbol left = visit(ast.left(), localScope);
+            assertArray(left);
+            return ((Symbol.ArrayTypeSymbol) left).elementType;
         }
 
         @Override
@@ -283,7 +309,7 @@ public class TypeChecker {
             Symbol.TypeSymbol classSymbol = (Symbol.TypeSymbol) st.get(ast.typeName);
             if (!(classSymbol instanceof Symbol.ClassSymbol)) {
                 throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_TYPE,
-                        "Tried to instantiate %s which doesn't exist", classSymbol.name);
+                        "Tried to instantiate %s which doesn't exist", ast.typeName);
             }
             return classSymbol;
         }

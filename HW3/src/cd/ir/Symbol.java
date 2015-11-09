@@ -19,6 +19,8 @@ public abstract class Symbol {
 
         public abstract boolean isSubtypeOf(TypeSymbol type);
 
+        public abstract boolean isArrayType();
+
         public String toString() {
             return name;
         }
@@ -40,8 +42,13 @@ public abstract class Symbol {
         }
 
         @Override
+        public boolean isArrayType() {
+            return false;
+        }
+
+        @Override
         public boolean isSubtypeOf(TypeSymbol type) {
-            // TODO this currently returns true when the types are equal.
+            // this currently returns true when the types are equal.
             return type == this;
         }
     }
@@ -60,6 +67,11 @@ public abstract class Symbol {
         }
 
         public boolean isReferenceType() {
+            return true;
+        }
+
+        @Override
+        public boolean isArrayType() {
             return true;
         }
     }
@@ -92,9 +104,14 @@ public abstract class Symbol {
         }
 
         @Override
+        public boolean isArrayType() {
+            return false;
+        }
+
+        @Override
         public boolean isSubtypeOf(TypeSymbol type) {
             // this also returns true when the types are equal.
-            if (this.equals(ClassSymbol.nullType)) {
+            if (this.equals(ClassSymbol.nullType) || type.equals(ClassSymbol.objectType)) {
                 return true;
             }
             ClassSymbol current = this;
