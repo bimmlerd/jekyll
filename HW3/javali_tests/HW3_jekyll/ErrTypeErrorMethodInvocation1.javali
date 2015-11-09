@@ -1,0 +1,15 @@
+// Type_Error: In a method invocation, the type of each actual argument must be a subtype of the type of the corresponding formal parameter.
+
+class Main {
+    void main() {
+        A a;
+        B b;
+        a.method(b, this);
+    }
+}
+
+class A {
+    void method(A a, B b) {}
+}
+
+class B extends A {}

@@ -1,0 +1,18 @@
+// Type_Error: The whole method invocation has the type that is declared as the formal return type of the method.
+
+class Main {
+    void main() {
+        A a;
+        B b;
+        boolean result;
+        result = a.method(b, b);
+    }
+}
+
+class A {
+    int method(A a, B b) {
+        return 0x4;
+    }
+}
+
+class B extends A {}

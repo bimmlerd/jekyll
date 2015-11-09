@@ -1,0 +1,14 @@
+// Type_Error: Equality operators (==, !=) take operands of types L and R where either L is a subtype of R, or R is a subtype of L.
+
+class Main {
+    void main() {
+        A a;
+        B b;
+        boolean result;
+        result = a == b;
+    }
+}
+
+class A {}
+
+class B {}

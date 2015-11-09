@@ -1,0 +1,15 @@
+// Type_Error: In a method return statement, the expression type must be a subtype of the corresponding formal return type.
+
+class Main {
+    void main() {}
+}
+
+class A {
+    int method() {
+        B b;
+        b = new B();
+        return b;
+    }
+}
+
+class B {}

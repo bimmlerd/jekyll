@@ -1,0 +1,14 @@
+// Type_Error: The this reference is of the class type of the enclosing class.
+
+class Main {
+    void main() {}
+}
+
+class A {
+    void method() {
+        B b;
+        b = this;
+    }
+}
+
+class B {}

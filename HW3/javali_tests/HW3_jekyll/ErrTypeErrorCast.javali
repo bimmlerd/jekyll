@@ -1,0 +1,13 @@
+// Type_Error: A cast from type R to type C is only legal if R is a subtype of C or vice versa.
+
+class Main {
+    void main() {
+        A a;
+        B b;
+        a = (A) b;
+    }
+}
+
+class A {}
+
+class B {}

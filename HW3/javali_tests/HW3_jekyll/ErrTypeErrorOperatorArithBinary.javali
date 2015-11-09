@@ -1,0 +1,11 @@
+// Type_Error: Binary arithmetic operators (*, /, %, +, -) require operands of type int and produce a result of type int.
+
+class Main {
+    void main() {
+        A a1, a2;
+        int result;
+        result = a1 * a2;
+    }
+}
+
+class A {}

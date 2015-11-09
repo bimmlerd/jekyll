@@ -4,5 +4,4 @@ class Main {
     void main() {}
 }
 
-class A extends B {
-}
+class A extends B {}

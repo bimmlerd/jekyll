@@ -1,0 +1,11 @@
+// Type_Error: Unary arithmetic operators (+, -) require operands of type int and produce a result of type int.
+
+class Main {
+    void main() {
+        A a;
+        int result;
+        result = -a;
+    }
+}
+
+class A {}

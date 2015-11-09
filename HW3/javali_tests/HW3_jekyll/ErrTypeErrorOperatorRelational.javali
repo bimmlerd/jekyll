@@ -1,0 +1,11 @@
+// Type_Error: Relational operators (<, <=, >, >=) require operands of type int and produce a result of type boolean.
+
+class Main {
+    void main() {
+        A a;
+        boolean result;
+        result = a <= 0;
+    }
+}
+
+class A {}

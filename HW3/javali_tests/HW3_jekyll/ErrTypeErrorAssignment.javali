@@ -1,0 +1,13 @@
+// Type_Error: The type of the right-hand side in an assignment must be a subtype of the type of the left-hand side.
+
+class Main {
+    void main() {
+        A a;
+        B b;
+        a = b;
+    }
+}
+
+class A extends B {}
+
+class B {}

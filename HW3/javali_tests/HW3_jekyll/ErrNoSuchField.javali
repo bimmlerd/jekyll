@@ -1,0 +1,12 @@
+// No_Such_Field: All referenced fields must exist.
+
+class Main {
+    void main() {
+        A a;
+        a = a.f;
+    }
+}
+
+class A {
+    void method() {}
+}

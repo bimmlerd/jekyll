@@ -1,0 +1,10 @@
+// No_Such_Method: All referenced methods must exist.
+
+class Main {
+    void main() {
+        A a;
+        a.f();
+    }
+}
+
+class A {}

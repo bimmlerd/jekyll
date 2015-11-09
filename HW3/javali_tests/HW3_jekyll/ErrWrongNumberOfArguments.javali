@@ -1,0 +1,12 @@
+// Wrong_Number_Of_Arguments: In a method invocation, the number of actual arguments must match the number of formal parameters from the method declaration.
+
+class Main {
+    void main() {
+        A a;
+        a.method(0);
+    }
+}
+
+class A {
+    void method(int a, boolean b) {}
+}

@@ -1,0 +1,8 @@
+// Type_Error: The boolean literal is assigned to variable that is not of type boolean.
+
+class Main {
+    void main() {
+        int a;
+        a = true;
+    }
+}

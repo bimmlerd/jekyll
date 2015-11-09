@@ -1,0 +1,8 @@
+// Type_Error: The integer literal is assigned to variable that is not of type int.
+
+class Main {
+    void main() {
+        boolean b;
+        b = 0;
+    }
+}

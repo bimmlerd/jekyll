@@ -1,0 +1,8 @@
+// Type_Error: Read produces a result of type int.
+
+class Main {
+    void main() {
+        boolean result;
+        result = read();
+    }
+}

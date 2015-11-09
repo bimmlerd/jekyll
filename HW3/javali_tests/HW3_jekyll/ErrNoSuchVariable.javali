@@ -1,0 +1,12 @@
+// No_Such_Variable: All referenced variables and parameters must exist.
+
+class Main {
+    void main() {}
+}
+
+class A {
+    boolean method() {
+        result = false;
+        return result;
+    }
+}

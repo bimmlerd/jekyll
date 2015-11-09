@@ -1,0 +1,7 @@
+// Type_Error: While(cond) requires cond to be of type boolean.
+
+class Main {
+    void main() {
+        while(0){}
+    }
+}

@@ -1,0 +1,7 @@
+// Type_Error: If(cond) requires cond to be of type boolean.
+
+class Main {
+    void main() {
+        if(0){}
+    }
+}

@@ -1,0 +1,10 @@
+// The null literal is of a hidden type that is a subtype of all reference types (array types and classes).
+
+class Main {
+    void main() {
+        A[] a;
+        a = null;
+    }
+}
+
+class A {}

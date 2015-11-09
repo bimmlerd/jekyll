@@ -1,0 +1,14 @@
+// Type_Error: In an array-indexing expression (A[i]), the array must be of some array type (A[]).
+
+class Main {
+    void main() {}
+}
+
+class A {
+    void method() {
+        A[] array;
+        A a;
+        int i;
+        a = a[i];
+    }
+}

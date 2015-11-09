@@ -1,0 +1,13 @@
+// Type_Error: There must be no attempt to access a field on a target of a non-object type, such as an array or a variable of type int.
+
+class Main {
+    void main() {
+        A[] a;
+        int result;
+        result = a.field;
+    }
+}
+
+class A {
+    int field;
+}

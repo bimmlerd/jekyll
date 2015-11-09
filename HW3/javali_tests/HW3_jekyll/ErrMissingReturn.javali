@@ -1,0 +1,9 @@
+// Missing_Return: A method with a return type different from void must have a return statement on all control flow paths.
+
+class Main {
+    void main() {}
+}
+
+class A {
+    boolean method() {}
+}

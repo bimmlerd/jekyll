@@ -1,0 +1,13 @@
+// Not_Assignable: The left-hand side of an assignment must be assignable (e.g., not this).
+// The only assignable expressions are variables (x), fields (expr.f), and array-indexing (expr[i]).
+
+class Main {
+    void main() {}
+}
+
+class A {
+    void method() {
+        A a;
+        this = a;
+    }
+}

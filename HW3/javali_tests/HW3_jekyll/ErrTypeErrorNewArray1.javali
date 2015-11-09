@@ -1,0 +1,13 @@
+// Type_Error: When creating a new array (new A[len]), the length len must be of type int.
+
+class Main {
+    void main() {}
+}
+
+class A {
+    void method() {
+        A[] array;
+        int i;
+        array = new A[false];
+    }
+}

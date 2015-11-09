@@ -1,0 +1,16 @@
+// Type_Error: The type of the whole array-indexing expression (A[i]) is the element type of the array (A).
+
+class Main {
+    void main() {}
+}
+
+class A {
+    void method() {
+        A[] array;
+        B a;
+        int i;
+        a = array[i];
+    }
+}
+
+class B {}

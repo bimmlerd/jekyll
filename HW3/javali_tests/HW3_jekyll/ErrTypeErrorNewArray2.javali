@@ -1,0 +1,13 @@
+// Type_Error: When creating a new array (new A[len]), the whole expression is of array type A[].
+
+class Main {
+    void main() {}
+}
+
+class A {
+    void method() {
+        A array;
+        int i;
+        array = new A[i];
+    }
+}
