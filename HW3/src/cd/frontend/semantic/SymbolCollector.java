@@ -12,11 +12,11 @@ import java.util.Set;
  * Fills the given symbol manager with all symbols we can find
  */
 public class SymbolCollector {
-    public SymbolCollector(SymbolManager symbolManager) {
-        this.sm = symbolManager;
+    public SymbolCollector(SymbolTable<Symbol.TypeSymbol> symbolTable) {
+        this.st = symbolTable;
     }
 
-    private final SymbolManager sm;
+    private final SymbolTable<Symbol.TypeSymbol> st;
     private Set<String> declaredClassNames = new HashSet<>();
 
     /**
@@ -27,16 +27,16 @@ public class SymbolCollector {
     public void fillSymbolManager(List<Ast.ClassDecl> classDecls) {
 
         // Add built-in primitive types.
-        sm.put(Symbol.TypeSymbol.PrimitiveTypeSymbol.intType);
-        sm.put(new Symbol.ArrayTypeSymbol(Symbol.TypeSymbol.PrimitiveTypeSymbol.intType));
-        sm.put(Symbol.TypeSymbol.PrimitiveTypeSymbol.voidType); // no void[]
-        sm.put(Symbol.TypeSymbol.PrimitiveTypeSymbol.booleanType);
-        sm.put(new Symbol.ArrayTypeSymbol(Symbol.TypeSymbol.PrimitiveTypeSymbol.booleanType));
+        st.put(Symbol.TypeSymbol.PrimitiveTypeSymbol.intType);
+        st.put(new Symbol.ArrayTypeSymbol(Symbol.TypeSymbol.PrimitiveTypeSymbol.intType));
+        st.put(Symbol.TypeSymbol.PrimitiveTypeSymbol.voidType); // no void[]
+        st.put(Symbol.TypeSymbol.PrimitiveTypeSymbol.booleanType);
+        st.put(new Symbol.ArrayTypeSymbol(Symbol.TypeSymbol.PrimitiveTypeSymbol.booleanType));
 
         // Add basic reference types.
-        sm.put(Symbol.TypeSymbol.ClassSymbol.nullType); // TODO null[] ??
-        sm.put(Symbol.TypeSymbol.ClassSymbol.objectType);
-        sm.put(new Symbol.ArrayTypeSymbol(Symbol.TypeSymbol.ClassSymbol.objectType));
+        st.put(Symbol.TypeSymbol.ClassSymbol.nullType); // TODO null[] ??
+        st.put(Symbol.TypeSymbol.ClassSymbol.objectType);
+        st.put(new Symbol.ArrayTypeSymbol(Symbol.TypeSymbol.ClassSymbol.objectType));
 
         for (Ast.ClassDecl classDecl : classDecls) {
             if (classDecl.name.equals(Symbol.ClassSymbol.objectType.name)) {
@@ -53,8 +53,8 @@ public class SymbolCollector {
 
             Symbol.ClassSymbol sym = new Symbol.ClassSymbol(classDecl);
             classDecl.sym = sym;
-            sm.put(sym);
-            sm.put(new Symbol.ArrayTypeSymbol(sym)); // also put class[] into the symbol manager
+            st.put(sym);
+            st.put(new Symbol.ArrayTypeSymbol(sym)); // also put class[] into the symbol manager
             // TODO superclass of ArrayTypeSymbols??
         }
 
@@ -182,7 +182,7 @@ public class SymbolCollector {
          * @return TypeSymbol of requested type.
          */
         private Symbol.TypeSymbol getType(String type) {
-            Symbol.TypeSymbol typeSymbol = sm.get(type);
+            Symbol.TypeSymbol typeSymbol = (Symbol.TypeSymbol) st.get(type);
             if (typeSymbol == null) {
                 throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_TYPE,
                         "Type not found: %s", type);

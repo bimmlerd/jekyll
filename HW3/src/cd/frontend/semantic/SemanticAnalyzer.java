@@ -9,7 +9,7 @@ import java.util.List;
 public class SemanticAnalyzer {
 
     public final Main main;
-    private SymbolManager symbolManager = new SymbolManager();
+    private SymbolTable<Symbol.TypeSymbol> symbolTable = new SymbolTable<>();
 
     public SemanticAnalyzer(Main main) {
         this.main = main;
@@ -17,13 +17,13 @@ public class SemanticAnalyzer {
 
     public void check(List<ClassDecl> classDecls) throws SemanticFailure {
         // fill symbol manager with all available info
-        (new SymbolCollector(symbolManager)).fillSymbolManager(classDecls);
+        (new SymbolCollector(symbolTable)).fillSymbolManager(classDecls);
 
         (new StartPointChecker()).check();
 
-        (new InheritanceChecker(symbolManager)).check();
+        (new InheritanceChecker(symbolTable)).check();
 
-        (new TypeChecker(symbolManager)).check(classDecls);
+        (new TypeChecker(symbolTable)).check(classDecls);
 
     }
 
@@ -33,12 +33,12 @@ public class SemanticAnalyzer {
          */
         public void check() {
             // Test for a valid start point.
-            if (!symbolManager.contains("Main")) {
+            if (!symbolTable.contains("Main")) {
                 // No class Main is defined.
                 throw new SemanticFailure(SemanticFailure.Cause.INVALID_START_POINT,
                         "There is no class Main defined.");
             }
-            Symbol.ClassSymbol mainClass = ((Symbol.ClassSymbol) symbolManager.get("Main"));
+            Symbol.ClassSymbol mainClass = ((Symbol.ClassSymbol) symbolTable.get("Main"));
             Symbol.MethodSymbol mainMethod = mainClass.getMethod("main");
             if (mainMethod == null) {
                 // Main has no method main().
