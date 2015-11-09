@@ -53,6 +53,7 @@ public abstract class Symbol {
 
         @Override
         public boolean isSubtypeOf(TypeSymbol type) {
+            // TODO or this? return type == ClassSymbol.objectType;
             throw new UnsupportedOperationException("isSubtypeOf does not make sense for array types");
         }
 

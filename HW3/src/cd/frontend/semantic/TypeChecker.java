@@ -88,12 +88,7 @@ public class TypeChecker {
         @Override
         public Void builtInWrite(Ast.BuiltInWrite ast, Void arg) {
             assertInteger(expressionTyper.visit(ast.arg(), localScope));
-            throw new ToDoException();
-        }
-
-        @Override
-        public Void builtInWriteln(Ast.BuiltInWriteln ast, Void arg) {
-            throw new ToDoException();
+            return null;
         }
 
         @Override
@@ -115,14 +110,28 @@ public class TypeChecker {
         }
 
         @Override
-        public Void returnStmt(Ast.ReturnStmt ast, Void arg) {
+        public Void ifElse(Ast.IfElse ast, Void arg) {
+            assertBoolean(expressionTyper.visit(ast.condition(), localScope));
+            // TODO visit children?
             throw new ToDoException();
+        }
+
+        @Override
+        public Void returnStmt(Ast.ReturnStmt ast, Void arg) {
+            // TODO set return type of method here to make checking for returns easier?
+            Symbol.TypeSymbol returnType = expressionTyper.visit(ast.arg(), localScope);
+            return null;
         }
 
         @Override
         public Void methodCall(Ast.MethodCall ast, Void arg) {
             Symbol.TypeSymbol returnType = expressionTyper.visit(ast.getMethodCallExpr(), localScope);
             return null;
+        }
+
+        @Override
+        public Void whileLoop(Ast.WhileLoop ast, Void arg) {
+            throw new ToDoException();
         }
     }
 
@@ -133,7 +142,7 @@ public class TypeChecker {
 
         @Override
         public Symbol.TypeSymbol unaryOp(Ast.UnaryOp ast, SymbolTable<Symbol.VariableSymbol> localScope) {
-            Symbol.TypeSymbol astType = visit(ast, localScope);
+            Symbol.TypeSymbol astType = visit(ast.arg(), localScope);
             switch (ast.operator) {
                 // int -> int
                 case U_MINUS:
@@ -210,9 +219,13 @@ public class TypeChecker {
 
         @Override
         public Symbol.TypeSymbol field(Ast.Field ast, SymbolTable<Symbol.VariableSymbol> localScope) {
-            // TODO resolve child of ast to class and check if the field exists there
+            // TODO refactor into getClassSymbol?
             // localScope.get("this").type.getField(ast.fieldName)
-            Symbol.VariableSymbol symbol = localScope.get(ast.fieldName);
+            Symbol.TypeSymbol classType = visit(ast.arg(), localScope); //TODO this is broken for not "this", need to move sm into a symtable and pass it here
+            if (!(classType instanceof Symbol.ClassSymbol)) {
+                throw new SemanticFailure(SemanticFailure.Cause.TYPE_ERROR);
+            }
+            Symbol.VariableSymbol symbol = ((Symbol.ClassSymbol) classType).getField(ast.fieldName);
             if (symbol == null) {
                 throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_FIELD, "Can't find %s anywhere, must've misplaced it. Sorry.", ast.fieldName);
             }
@@ -253,7 +266,12 @@ public class TypeChecker {
 
         @Override
         public Symbol.TypeSymbol newObject(Ast.NewObject ast, SymbolTable<Symbol.VariableSymbol> localScope) {
-            throw new ToDoException();
+            // TODO fix breakage when converting the sm
+            Symbol.TypeSymbol classSymbol = sm.get(ast.typeName);
+            if (!(classSymbol instanceof Symbol.ClassSymbol)) {
+                throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_TYPE, "Tried to instantiate %s which doesn't exist", classSymbol.name);
+            }
+            return classSymbol;
         }
 
         @Override

@@ -17,7 +17,7 @@ public class SymbolTable<S extends Symbol> {
 
     public SymbolTable() {}
 
-    public void setOuterScope(SymbolTable outerScope) {
+    public void setOuterScope(SymbolTable<S> outerScope) {
         this.outerScope = outerScope;
     }
 
