@@ -296,7 +296,8 @@ public class TypeChecker {
                 throw new SemanticFailure(SemanticFailure.Cause.WRONG_NUMBER_OF_ARGUMENTS,
                         "Wrong number of arguments for %s", ast.methodName);
             // verify formal parameter types match actual argument types
-            } else if (!Pair.zip(argTypes, paramTypes).stream()
+            } else if (!argTypes.isEmpty() &&
+                    !Pair.zip(argTypes, paramTypes).stream()
                     .map((p) -> (p.a.isSubtypeOf(p.b)))
                     .reduce(Boolean::logicalAnd).get()) {
                 throw new SemanticFailure(SemanticFailure.Cause.TYPE_ERROR,
