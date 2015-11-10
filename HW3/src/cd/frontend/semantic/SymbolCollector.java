@@ -34,7 +34,7 @@ public class SymbolCollector {
         st.put(new Symbol.ArrayTypeSymbol(Symbol.TypeSymbol.PrimitiveTypeSymbol.booleanType));
 
         // Add basic reference types.
-        st.put(Symbol.TypeSymbol.ClassSymbol.nullType); // TODO null[] ??
+        st.put(Symbol.TypeSymbol.ClassSymbol.nullType);
         st.put(Symbol.TypeSymbol.ClassSymbol.objectType);
         st.put(new Symbol.ArrayTypeSymbol(Symbol.TypeSymbol.ClassSymbol.objectType));
 
@@ -55,7 +55,6 @@ public class SymbolCollector {
             classDecl.sym = sym;
             st.put(sym);
             st.put(new Symbol.ArrayTypeSymbol(sym)); // also put class[] into the symbol manager
-            // TODO superclass of ArrayTypeSymbols??
         }
 
         InformationCollectorVisitor visitor = new InformationCollectorVisitor();

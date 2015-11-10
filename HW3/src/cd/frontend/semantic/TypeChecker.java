@@ -106,8 +106,6 @@ public class TypeChecker {
 
         @Override
         public Void methodDecl(Ast.MethodDecl ast, Void arg) {
-            // TODO validate that there is a return?
-            // TODO can methodSymbol be null here?
             Symbol.MethodSymbol methodSymbol = methods.get(ast.name);
             localScope = new SymbolTable<>(classScope);
             for (Symbol.VariableSymbol param : methodSymbol.parameters) {
@@ -135,7 +133,6 @@ public class TypeChecker {
 
         @Override
         public Void returnStmt(Ast.ReturnStmt ast, Void arg) {
-            // TODO set return type of method here to make checking for returns easier?
             if (!(ast.arg() == null)) {
                 ast.arg().type = expressionTyper.visit(ast.arg(), localScope);
                 assertSubtype(currentMethod.returnType, ast.arg().type);
@@ -257,8 +254,6 @@ public class TypeChecker {
 
         @Override
         public Symbol.TypeSymbol field(Ast.Field ast, SymbolTable<Symbol.VariableSymbol> localScope) {
-            // TODO refactor into getClassSymbol?
-            // localScope.get("this").type.getField(ast.fieldName)
             Symbol.TypeSymbol classType = visit(ast.arg(), localScope);
             if (!(classType instanceof Symbol.ClassSymbol)) {
                 throw new SemanticFailure(SemanticFailure.Cause.TYPE_ERROR);
