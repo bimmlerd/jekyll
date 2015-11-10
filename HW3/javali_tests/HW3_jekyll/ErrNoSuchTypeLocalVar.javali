@@ -1,4 +1,4 @@
-// No_Such_Type: The field declaration does not refer to an existing type.
+// No_Such_Type: The local variable declaration does not refer to an existing type.
 
 class Main {
     void main() {

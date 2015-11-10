@@ -1,0 +1,100 @@
+// Only valid types (or its subtypes) are used as they are required by specific operands and statements.
+
+// A valid start point is given by a class Main with a method main that has the following signature: void main().
+class Main {
+
+    int main;
+
+    void main() {
+
+        A a;
+        B b;
+        C c;
+
+        // When creating a new object (new X()), the whole expression is of type X.
+        a = new A();
+
+        // The type of the right-hand side in an assignment must be a subtype of the type of the left-hand side.
+        c = b;
+
+        // In a method invocation, the number of actual arguments must match the number of formal parameters from the method declaration.
+        // The type of each actual argument must be a subtype of the type of the corresponding formal parameter.
+        // The whole method invocation has the type that is declared as the formal return type of the method.
+        c = b.foo(a);
+    }
+}
+
+class A extends B {
+
+    // Override is valid, as our method has the same signature as the method in its super class C.
+    boolean method(int left, int right) {
+
+        A[] array;
+        A a;
+        B b;
+        int i;
+
+        // When creating a new array (new A[len]), the length len must be of type int. The whole expression is of array type A[].
+        array = new A[i];
+
+        // If() requires a condition of type boolean.
+        // Binary boolean operators (&&, ||) require operands of type boolean and produce a result of type boolean.
+        if(b.g && h) {
+
+            // In an array-indexing expression (A[i]), the index i must be of type int and the array must be of some array type (A[]).
+            // The type of the whole array-indexing expression (A[i]) is the element type of the array (A).
+            array[i] = this;
+        } else {
+        }
+
+        // While() requires a condition of type boolean.
+        // Unary boolean operators (!) require operands of type boolean and produce a result of type boolean.
+        while(!(true)) {
+        }
+
+        return true;
+    }
+}
+
+class B extends C {
+
+    boolean g;
+    boolean h;
+
+    C foo(B b) {
+        A a;
+        C c;
+
+        // Equality operators (==, !=) take operands of types L and R where either L is a subtype of R, or R is a subtype of L.
+        g = a != b;
+
+        // A cast from type R to type C is only legal if R is a subtype of C or vice versa.
+        a = (A) c;
+        b = (B) a;
+
+        // The type of the return value must be a subtype of the corresponding formal return type.
+        return a;
+    }
+}
+
+class C {
+
+    int result;
+
+    boolean method(int i, int j) {
+
+        // Read produces a result of type int.
+        result = read();
+
+        // Write() only accepts arguments of type int.
+        // Binary arithmetic operators (*, /, %, +, -) require operands of type int and produce a result of type int.
+        write(i+j); writeln();
+
+        // Unary arithmetic operators (+, -) require operands of type int and produce a result of type int.
+        i = -j;
+
+        // The type of the return value must be a subtype of the corresponding formal return type.
+        // Relational operators (<, <=, >, >=) require operands of type int and produce a result of type boolean.
+        return i < j;
+    }
+}
