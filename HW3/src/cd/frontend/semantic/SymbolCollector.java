@@ -24,7 +24,7 @@ public class SymbolCollector {
      *
      * @param classDecls list of class declarations
      */
-    public void fillSymbolManager(List<Ast.ClassDecl> classDecls) {
+    public void fillTable(List<Ast.ClassDecl> classDecls) {
 
         // Add built-in primitive types.
         st.put(Symbol.TypeSymbol.PrimitiveTypeSymbol.intType);

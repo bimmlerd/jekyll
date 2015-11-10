@@ -6,5 +6,7 @@ class Main {
         f() = true;
     }
 
-    boolean f() {}
+    boolean f() {
+        return true;
+    }
 }

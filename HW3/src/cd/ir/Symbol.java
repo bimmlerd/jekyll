@@ -58,7 +58,7 @@ public abstract class Symbol {
 
         @Override
         public boolean isSubtypeOf(TypeSymbol type) {
-            return type == ClassSymbol.objectType;
+            return type == ClassSymbol.objectType || type == this;
         }
 
         public ArrayTypeSymbol(TypeSymbol elementType) {
@@ -111,7 +111,9 @@ public abstract class Symbol {
         @Override
         public boolean isSubtypeOf(TypeSymbol type) {
             // this also returns true when the types are equal.
-            if (this.equals(ClassSymbol.nullType) || type.equals(ClassSymbol.objectType)) {
+            if (!type.isReferenceType()) {
+                return false;
+            } else if (this.equals(ClassSymbol.nullType) || type.equals(ClassSymbol.objectType)) {
                 return true;
             }
             ClassSymbol current = this;

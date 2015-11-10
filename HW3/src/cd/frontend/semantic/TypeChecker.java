@@ -63,6 +63,7 @@ public class TypeChecker {
         private Map<String, Symbol.MethodSymbol> methods;
         private final SymbolTable<Symbol.VariableSymbol> classScope;
         private SymbolTable<cd.ir.Symbol.VariableSymbol> localScope;
+        private Symbol.MethodSymbol currentMethod;
 
         public StatementTypeCheckerVisitor(Symbol.ClassSymbol classSymbol) {
             this.methods = classSymbol.methods;
@@ -106,6 +107,7 @@ public class TypeChecker {
         @Override
         public Void methodDecl(Ast.MethodDecl ast, Void arg) {
             // TODO validate that there is a return?
+            // TODO can methodSymbol be null here?
             Symbol.MethodSymbol methodSymbol = methods.get(ast.name);
             localScope = new SymbolTable<>(classScope);
             for (Symbol.VariableSymbol param : methodSymbol.parameters) {
@@ -116,8 +118,11 @@ public class TypeChecker {
                 localScope.put(local);
             }
 
+            currentMethod = methodSymbol;
+
             Void res = visitChildren(ast, null);
             localScope = null;
+            currentMethod = null;
             return res;
         }
 
@@ -133,6 +138,9 @@ public class TypeChecker {
             // TODO set return type of method here to make checking for returns easier?
             if (!(ast.arg() == null)) {
                 ast.arg().type = expressionTyper.visit(ast.arg(), localScope);
+                assertSubtype(currentMethod.returnType, ast.arg().type);
+            } else {
+                assertTypeEquality(currentMethod.returnType, Symbol.PrimitiveTypeSymbol.voidType);
             }
             return null;
         }
@@ -316,6 +324,7 @@ public class TypeChecker {
 
         @Override
         public Symbol.TypeSymbol newArray(Ast.NewArray ast, SymbolTable<Symbol.VariableSymbol> localScope) {
+            assertInteger(visit(ast.arg(), localScope));
             return (Symbol.TypeSymbol) st.get(ast.typeName);
         }
 
