@@ -4,8 +4,6 @@ import cd.ir.Ast;
 import cd.ir.AstVisitor;
 import cd.ir.Symbol;
 
-import java.util.Optional;
-
 public class ReturnChecker {
 
     private final SymbolTable<Symbol.TypeSymbol> st;
@@ -46,8 +44,7 @@ public class ReturnChecker {
         @Override
         public Boolean seq(Ast.Seq ast, Void arg) {
             if (!ast.children().isEmpty()) {
-                Optional<Boolean> res = ast.children().stream().map(a -> visit(a, null)).reduce(Boolean::logicalOr);
-                return res.get();
+                return ast.children().stream().map(a -> visit(a, null)).reduce(Boolean::logicalOr).get();
             }
             return false;
         }

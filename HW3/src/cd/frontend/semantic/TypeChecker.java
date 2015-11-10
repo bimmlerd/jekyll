@@ -57,9 +57,15 @@ public class TypeChecker {
         }
     }
 
+    private void assertRelatedType(Symbol.TypeSymbol a, Symbol.TypeSymbol b) {
+        if (!(a.isSubtypeOf(b) || b.isSubtypeOf(a))) {
+            throw new SemanticFailure(SemanticFailure.Cause.TYPE_ERROR, "Types %s and %s are not related", a, b);
+        }
+    }
+
     protected class StatementTypeCheckerVisitor extends AstVisitor<Void, Void> {
-        private final ExpressionTypingVisitor expressionTyper = new ExpressionTypingVisitor();
-        private Map<String, Symbol.MethodSymbol> methods;
+        private final ExpressionTypingVisitor ev = new ExpressionTypingVisitor();
+        private final Map<String, Symbol.MethodSymbol> methods;
         private final SymbolTable<Symbol.VariableSymbol> classScope;
         private SymbolTable<cd.ir.Symbol.VariableSymbol> localScope;
         private Symbol.MethodSymbol currentMethod;
@@ -84,23 +90,19 @@ public class TypeChecker {
                 throw new SemanticFailure(SemanticFailure.Cause.NOT_ASSIGNABLE, "%s is not assignable", ast.left());
             }
 
-            Symbol.TypeSymbol left = expressionTyper.visit(ast.left(), localScope);
-            Symbol.TypeSymbol right = expressionTyper.visit(ast.right(), localScope);
+            Symbol.TypeSymbol left = ev.visit(ast.left(), localScope);
+            Symbol.TypeSymbol right = ev.visit(ast.right(), localScope);
 
-
-
-            // The two sides of an assignment statement must have identical types,
-            // or the right-hand side's type must be a subtype of the left-hand side's type.
             if (!left.equals(right)) {
                 assertSubtype(left, right);
             }
-            return null;
+            return arg;
         }
 
         @Override
         public Void builtInWrite(Ast.BuiltInWrite ast, Void arg) {
-            assertInteger(expressionTyper.visit(ast.arg(), localScope));
-            return null;
+            assertInteger(ev.visit(ast.arg(), localScope));
+            return arg;
         }
 
         @Override
@@ -125,7 +127,7 @@ public class TypeChecker {
 
         @Override
         public Void ifElse(Ast.IfElse ast, Void arg) {
-            assertBoolean(expressionTyper.visit(ast.condition(), localScope));
+            assertBoolean(ev.visit(ast.condition(), localScope));
             visit(ast.then(), arg);
             return visit(ast.otherwise(), arg);
         }
@@ -133,29 +135,29 @@ public class TypeChecker {
         @Override
         public Void returnStmt(Ast.ReturnStmt ast, Void arg) {
             if (!(ast.arg() == null)) {
-                ast.arg().type = expressionTyper.visit(ast.arg(), localScope);
+                ast.arg().type = ev.visit(ast.arg(), localScope);
                 assertSubtype(currentMethod.returnType, ast.arg().type);
             } else {
                 assertTypeEquality(currentMethod.returnType, Symbol.PrimitiveTypeSymbol.voidType);
             }
-            return null;
+            return arg;
         }
 
         @Override
         public Void methodCall(Ast.MethodCall ast, Void arg) {
-            Symbol.TypeSymbol returnType = expressionTyper.visit(ast.getMethodCallExpr(), localScope);
-            return null;
+            ev.visit(ast.getMethodCallExpr(), localScope);
+            return arg;
         }
 
         @Override
         public Void whileLoop(Ast.WhileLoop ast, Void arg) {
-            assertBoolean(expressionTyper.visit(ast.condition(), localScope));
+            assertBoolean(ev.visit(ast.condition(), localScope));
             return visit(ast.body(), arg);
         }
     }
 
     /**
-     * The expression typer visitor returns the inferred type symbol of the expression it visits
+     * The expression typing visitor returns the inferred type symbol of the expression it visits
      */
     protected class ExpressionTypingVisitor extends ExprVisitor<Symbol.TypeSymbol,SymbolTable<Symbol.VariableSymbol>> {
 
@@ -213,9 +215,7 @@ public class TypeChecker {
                 // type op type -> bool
                 case B_EQUAL:
                 case B_NOT_EQUAL:
-                    if (!(left.isSubtypeOf(right) || right.isSubtypeOf(left))) {
-                        throw new SemanticFailure(SemanticFailure.Cause.TYPE_ERROR, "equality check on non related types");
-                    }
+                    assertRelatedType(right, left);
                     return Symbol.PrimitiveTypeSymbol.booleanType;
 
                 default:
@@ -243,11 +243,9 @@ public class TypeChecker {
             Symbol.TypeSymbol originalType = visit(ast.arg(), localScope);
             Symbol.TypeSymbol castedType = (Symbol.TypeSymbol) st.get(ast.typeName);
             if (castedType == null) {
-                throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_TYPE, "no type called %s", ast.typeName);
+                throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_TYPE, "Attempt to cast to %s, which doesn't exist", ast.typeName);
             }
-            if (!(originalType.isSubtypeOf(castedType) || castedType.isSubtypeOf(originalType))) {
-                throw new SemanticFailure(SemanticFailure.Cause.TYPE_ERROR, "Cannot cast from %s to %s", originalType, castedType);
-            }
+            assertRelatedType(originalType, castedType);
             return castedType;
         }
 
@@ -277,12 +275,14 @@ public class TypeChecker {
         public Symbol.TypeSymbol methodCall(Ast.MethodCallExpr ast, SymbolTable<Symbol.VariableSymbol> localScope) {
             Symbol.TypeSymbol calledOn = visit(ast.receiver(), localScope);
             if (! (calledOn instanceof Symbol.ClassSymbol)) {
-                throw new SemanticFailure(SemanticFailure.Cause.TYPE_ERROR);
+                throw new SemanticFailure(SemanticFailure.Cause.TYPE_ERROR,
+                        "Expected a class but got %s", calledOn.name);
             }
+
             Symbol.MethodSymbol method = ((Symbol.ClassSymbol) calledOn).getMethod(ast.methodName);
             if (method == null) {
                 throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_METHOD,
-                        "no method %s on type %s", ast.methodName, calledOn);
+                        "No method %s on type %s", ast.methodName, calledOn);
             }
 
             List<Symbol.TypeSymbol> argTypes = ast.argumentsWithoutReceiver().stream()
@@ -294,15 +294,14 @@ public class TypeChecker {
 
             if (argTypes.size() != paramTypes.size()) {
                 throw new SemanticFailure(SemanticFailure.Cause.WRONG_NUMBER_OF_ARGUMENTS,
-                        "wrong number of arguments for %s", ast.methodName);
+                        "Wrong number of arguments for %s", ast.methodName);
             // verify formal parameter types match actual argument types
             } else if (!Pair.zip(argTypes, paramTypes).stream()
                     .map((p) -> (p.a.isSubtypeOf(p.b)))
-                    .reduce(true, (acc, t) -> (acc && t))) {
+                    .reduce(Boolean::logicalAnd).get()) {
                 throw new SemanticFailure(SemanticFailure.Cause.TYPE_ERROR,
-                        "formal params of %s don't match arguments", ast.methodName);
+                        "Types of formal parameters of %s don't match arguments", ast.methodName);
             }
-
             return method.returnType;
         }
 
