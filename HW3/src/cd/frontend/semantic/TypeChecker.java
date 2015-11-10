@@ -25,7 +25,6 @@ public class TypeChecker {
             StatementTypeCheckerVisitor checker = new StatementTypeCheckerVisitor((Symbol.ClassSymbol) st.get(classDecl.name));
             checker.visit(classDecl, null);
         }
-
     }
 
     private void assertTypeEquality(Symbol.TypeSymbol a, Symbol.TypeSymbol b) {

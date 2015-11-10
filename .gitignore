@@ -1,6 +1,7 @@
 # GENERAL
 HW*/bin
 HW*/gen
+HW*/.ant-targets-build.xml
 
 # SVN crap
 *.svn

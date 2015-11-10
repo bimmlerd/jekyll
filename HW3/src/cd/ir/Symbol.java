@@ -1,9 +1,6 @@
 package cd.ir;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public abstract class Symbol {
 
@@ -82,6 +79,7 @@ public abstract class Symbol {
         public final VariableSymbol thisSymbol = new VariableSymbol("this", this);
         public final Map<String, VariableSymbol> fields = new HashMap<>();
         public final Map<String, MethodSymbol> methods = new HashMap<>();
+        private Set<TypeSymbol> superClasses; // "cache" superclasses
 
         /** Symbols for the built-in Object and null types */
         public static final ClassSymbol nullType = new ClassSymbol("<null>");
@@ -116,14 +114,15 @@ public abstract class Symbol {
             } else if (this.equals(ClassSymbol.nullType) || type.equals(ClassSymbol.objectType)) {
                 return true;
             }
-            ClassSymbol current = this;
-            while (current.superClass != null) {
-                if (current.equals(type)) {
-                    return true;
+            if (this.superClasses == null) {
+                this.superClasses = new HashSet<>();
+                ClassSymbol current = this;
+                while (current.superClass != null) {
+                    this.superClasses.add(current);
+                    current = current.superClass;
                 }
-                current = current.superClass;
             }
-            return false;
+            return this.superClasses.contains(type);
         }
 
         public VariableSymbol getField(String name) {
