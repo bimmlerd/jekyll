@@ -1,6 +1,5 @@
 package cd.frontend.semantic;
 
-import cd.ToDoException;
 import cd.ir.Symbol;
 
 import java.util.Collection;
@@ -11,19 +10,16 @@ import java.util.stream.Collector;
 
 public class SymbolTable<S extends Symbol> {
 
+    private SymbolTable<? extends Symbol> outerScope;
+    protected Map<String, S> symbolTable = new HashMap<>();
+
     public SymbolTable(SymbolTable<? extends Symbol> outerScope) {
         this.outerScope = outerScope;
     }
 
     public SymbolTable() { this.outerScope = null; }
 
-    private SymbolTable<? extends Symbol> outerScope;
-    protected Map<String, S> symbolTable = new HashMap<>();
-
     public void put(S symbol) {
-        if (containsInLocalScope(symbol)) {
-            throw new ToDoException();
-        }
         symbolTable.put(symbol.name, symbol);
     }
 

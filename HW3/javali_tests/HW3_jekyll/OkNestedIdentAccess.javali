@@ -1,0 +1,72 @@
+// Test that more complicated identifier accesses work out properly.
+
+class Main {
+    void main() {
+        A a;
+        B b;
+        boolean result;
+
+        // Variables (x) are assignable. Thus they are valid as the left-hand side of an assignment.
+        result = a.method(0,0) == b.method(0,0);
+
+        // Fields (expr.f) are assignable. Thus they are valid as the left-hand side of an assignment.
+        a.array = new A[32];
+
+        // Array-indexing expressions (expr[i]) are assignable. Thus they are valid as the left-hand side of an assignment.
+        a.array[0] = a;
+    }
+}
+
+class A extends B {
+
+    A[] array;
+
+    int method(int left, int right) {
+
+        B b;
+        int result;
+
+        // Valid identifier accesses are: variables (x), this, fields (expr.f), array-indexing expressions (expr[i]) and method call expressions (expr.m()).
+        result = left;
+        array[right] = this;
+        result = b.field;
+        result = size[left];
+        result = method(0,0);
+        result = b.method(0,0);
+
+        return result;
+    }
+}
+
+class B extends C {
+
+    int[] size;
+}
+
+class C {
+
+    int field;
+    A a;
+
+    int method(int i, int j) {
+
+        A a;
+        B b;
+        boolean result;
+        int var;
+
+        // Identifier accesses may be nested and used in expressions.
+        result = a.size[a.field] >= b.field;
+        var = object().method(i,j);
+        var = this.method(a.field,0);
+        result = (a.a.object() == a) && !result;
+        var = a.array[i].object().method(i,j);
+
+        return 0;
+    }
+
+    A object() {
+        A a;
+        return a;
+    }
+}

@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Fills the given symbol manager with all symbols we can find
+ * Fills the given symbol table with all declared symbols
  */
 public class SymbolCollector {
     public SymbolCollector(SymbolTable<Symbol.TypeSymbol> symbolTable) {
@@ -57,13 +57,17 @@ public class SymbolCollector {
             st.put(new Symbol.ArrayTypeSymbol(sym)); // also put class[] into the symbol manager
         }
 
-        InformationCollectorVisitor visitor = new InformationCollectorVisitor();
+        SymbolCollectorVisitor visitor = new SymbolCollectorVisitor();
         for (Ast.ClassDecl classDecl : classDecls) {
             visitor.visit(classDecl, null);
         }
     }
 
-    protected class InformationCollectorVisitor extends AstVisitor<Symbol, Symbol.VariableSymbol.Kind> {
+    /**
+     * The symbol collector visitor returns the symbol of the declaration it visits
+     */
+    protected class SymbolCollectorVisitor extends AstVisitor<Symbol, Symbol.VariableSymbol.Kind> {
+
         /**
          * Adds superclass to class symbols and visits fields and methods.
          *
@@ -188,7 +192,5 @@ public class SymbolCollector {
             }
             return typeSymbol;
         }
-
     }
-
 }

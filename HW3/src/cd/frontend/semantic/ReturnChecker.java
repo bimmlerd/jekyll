@@ -4,6 +4,9 @@ import cd.ir.Ast;
 import cd.ir.AstVisitor;
 import cd.ir.Symbol;
 
+/**
+ * Checks for return statements on all control flow paths in methods with a return type different from void
+ */
 public class ReturnChecker {
 
     private final SymbolTable<Symbol.TypeSymbol> st;
@@ -13,7 +16,8 @@ public class ReturnChecker {
     }
 
     public void check() {
-        ReturnCheckVisitor checker = new ReturnCheckVisitor();
+
+        ReturnCheckerVisitor checker = new ReturnCheckerVisitor();
         for (Symbol.ClassSymbol classSymbol : st.getClassSymbols()) {
             for (Symbol.MethodSymbol methodSymbol : classSymbol.methods.values()) {
                 if (methodSymbol.returnType != Symbol.PrimitiveTypeSymbol.voidType
@@ -24,7 +28,10 @@ public class ReturnChecker {
         }
     }
 
-    protected class ReturnCheckVisitor extends AstVisitor<Boolean, Void> {
+    /**
+     * The return checker visitor indicates whether the statement it visits contains a return statement
+     */
+    protected class ReturnCheckerVisitor extends AstVisitor<Boolean, Void> {
 
         @Override
         protected Boolean dfltStmt(Ast.Stmt ast, Void arg) {

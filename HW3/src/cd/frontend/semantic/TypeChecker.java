@@ -11,6 +11,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Checks the type of all statements and expressions
+ */
 public class TypeChecker {
 
     private final SymbolTable<Symbol.TypeSymbol> st;
@@ -34,10 +37,6 @@ public class TypeChecker {
     }
 
     private void assertSubtype(Symbol.TypeSymbol type, Symbol.TypeSymbol subType) {
-        if (type == null || subType == null) {
-            throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_TYPE);
-        }
-
         if (!subType.isSubtypeOf(type)) {
             throw new SemanticFailure(SemanticFailure.Cause.TYPE_ERROR, "%s is not a subtype of %s", subType, type);
         }
@@ -63,11 +62,15 @@ public class TypeChecker {
         }
     }
 
+    /**
+     * The statement type checker visitor throws a semantic failure whenever a typing error is detected
+     */
     protected class StatementTypeCheckerVisitor extends AstVisitor<Void, Void> {
+
         private final ExpressionTypingVisitor ev = new ExpressionTypingVisitor();
         private final Map<String, Symbol.MethodSymbol> methods;
         private final SymbolTable<Symbol.VariableSymbol> classScope;
-        private SymbolTable<cd.ir.Symbol.VariableSymbol> localScope;
+        private SymbolTable<Symbol.VariableSymbol> localScope;
         private Symbol.MethodSymbol currentMethod;
 
         public StatementTypeCheckerVisitor(Symbol.ClassSymbol classSymbol) {
@@ -90,12 +93,11 @@ public class TypeChecker {
                 throw new SemanticFailure(SemanticFailure.Cause.NOT_ASSIGNABLE, "%s is not assignable", ast.left());
             }
 
-            Symbol.TypeSymbol left = ev.visit(ast.left(), localScope);
-            Symbol.TypeSymbol right = ev.visit(ast.right(), localScope);
+            Symbol.TypeSymbol leftType = ev.visit(ast.left(), localScope);
+            Symbol.TypeSymbol rightType = ev.visit(ast.right(), localScope);
 
-            if (!left.equals(right)) {
-                assertSubtype(left, right);
-            }
+            assertSubtype(leftType, rightType);
+
             return arg;
         }
 
@@ -107,21 +109,16 @@ public class TypeChecker {
 
         @Override
         public Void methodDecl(Ast.MethodDecl ast, Void arg) {
-            Symbol.MethodSymbol methodSymbol = methods.get(ast.name);
+            currentMethod = methods.get(ast.name);
             localScope = new SymbolTable<>(classScope);
-            for (Symbol.VariableSymbol param : methodSymbol.parameters) {
-                localScope.put(param);
-            }
 
-            for (Symbol.VariableSymbol local : methodSymbol.locals.values()) {
-                localScope.put(local);
-            }
-
-            currentMethod = methodSymbol;
+            currentMethod.parameters.forEach(localScope::put);
+            currentMethod.locals.values().forEach(localScope::put);
 
             Void res = visitChildren(ast, null);
-            localScope = null;
+
             currentMethod = null;
+            localScope = null;
             return res;
         }
 
@@ -183,8 +180,8 @@ public class TypeChecker {
 
         @Override
         public Symbol.TypeSymbol binaryOp(Ast.BinaryOp ast, SymbolTable<Symbol.VariableSymbol> localScope) {
-            Symbol.TypeSymbol left = visit(ast.left(), localScope);
-            Symbol.TypeSymbol right = visit(ast.right(), localScope);
+            Symbol.TypeSymbol leftType = visit(ast.left(), localScope);
+            Symbol.TypeSymbol rightType = visit(ast.right(), localScope);
             switch (ast.operator) {
                 // int op int -> int
                 case B_PLUS:
@@ -192,8 +189,8 @@ public class TypeChecker {
                 case B_DIV:
                 case B_TIMES:
                 case B_MOD:
-                    assertInteger(left);
-                    assertInteger(right);
+                    assertInteger(leftType);
+                    assertInteger(rightType);
                     return Symbol.PrimitiveTypeSymbol.intType;
 
                 // int op int -> bool
@@ -201,21 +198,21 @@ public class TypeChecker {
                 case B_GREATER_THAN:
                 case B_LESS_THAN:
                 case B_LESS_OR_EQUAL:
-                    assertInteger(left);
-                    assertInteger(right);
+                    assertInteger(leftType);
+                    assertInteger(rightType);
                     return Symbol.PrimitiveTypeSymbol.booleanType;
 
                 // bool op bool -> bool
                 case B_OR:
                 case B_AND:
-                    assertBoolean(left);
-                    assertBoolean(right);
+                    assertBoolean(leftType);
+                    assertBoolean(rightType);
                     return Symbol.PrimitiveTypeSymbol.booleanType;
 
                 // type op type -> bool
                 case B_EQUAL:
                 case B_NOT_EQUAL:
-                    assertRelatedType(right, left);
+                    assertRelatedType(leftType, rightType);
                     return Symbol.PrimitiveTypeSymbol.booleanType;
 
                 default:
@@ -241,10 +238,7 @@ public class TypeChecker {
         @Override
         public Symbol.TypeSymbol cast(Ast.Cast ast, SymbolTable<Symbol.VariableSymbol> localScope) {
             Symbol.TypeSymbol originalType = visit(ast.arg(), localScope);
-            Symbol.TypeSymbol castedType = (Symbol.TypeSymbol) st.get(ast.typeName);
-            if (castedType == null) {
-                throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_TYPE, "Attempt to cast to %s, which doesn't exist", ast.typeName);
-            }
+            Symbol.TypeSymbol castedType = getType(ast.typeName);
             assertRelatedType(originalType, castedType);
             return castedType;
         }
@@ -266,23 +260,23 @@ public class TypeChecker {
         @Override
         public Symbol.TypeSymbol index(Ast.Index ast, SymbolTable<Symbol.VariableSymbol> localScope) {
             assertInteger(visit(ast.right(), localScope));
-            Symbol.TypeSymbol left = visit(ast.left(), localScope);
-            assertArray(left);
-            return ((Symbol.ArrayTypeSymbol) left).elementType;
+            Symbol.TypeSymbol leftType = visit(ast.left(), localScope);
+            assertArray(leftType);
+            return ((Symbol.ArrayTypeSymbol) leftType).elementType;
         }
 
         @Override
         public Symbol.TypeSymbol methodCall(Ast.MethodCallExpr ast, SymbolTable<Symbol.VariableSymbol> localScope) {
-            Symbol.TypeSymbol calledOn = visit(ast.receiver(), localScope);
-            if (! (calledOn instanceof Symbol.ClassSymbol)) {
+            Symbol.TypeSymbol calledOnType = visit(ast.receiver(), localScope);
+            if (! (calledOnType instanceof Symbol.ClassSymbol)) {
                 throw new SemanticFailure(SemanticFailure.Cause.TYPE_ERROR,
-                        "Expected a class but got %s", calledOn.name);
+                        "Expected a class but got %s", calledOnType.name);
             }
 
-            Symbol.MethodSymbol method = ((Symbol.ClassSymbol) calledOn).getMethod(ast.methodName);
+            Symbol.MethodSymbol method = ((Symbol.ClassSymbol) calledOnType).getMethod(ast.methodName);
             if (method == null) {
                 throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_METHOD,
-                        "No method %s on type %s", ast.methodName, calledOn);
+                        "No method %s on type %s", ast.methodName, calledOnType);
             }
 
             List<Symbol.TypeSymbol> argTypes = ast.argumentsWithoutReceiver().stream()
@@ -308,18 +302,13 @@ public class TypeChecker {
 
         @Override
         public Symbol.TypeSymbol newObject(Ast.NewObject ast, SymbolTable<Symbol.VariableSymbol> localScope) {
-            Symbol.TypeSymbol classSymbol = (Symbol.TypeSymbol) st.get(ast.typeName);
-            if (!(classSymbol instanceof Symbol.ClassSymbol)) {
-                throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_TYPE,
-                        "Tried to instantiate %s which doesn't exist", ast.typeName);
-            }
-            return classSymbol;
+            return getType(ast.typeName);
         }
 
         @Override
         public Symbol.TypeSymbol newArray(Ast.NewArray ast, SymbolTable<Symbol.VariableSymbol> localScope) {
             assertInteger(visit(ast.arg(), localScope));
-            return (Symbol.TypeSymbol) st.get(ast.typeName);
+            return getType(ast.typeName);
         }
 
         @Override
@@ -340,6 +329,16 @@ public class TypeChecker {
                         "Can't find variable %s anywhere, must've misplaced it. Sorry.", ast.name);
             }
             return symbol.type;
+        }
+
+        // Take care of undefined types.
+        private Symbol.TypeSymbol getType(String type) {
+            Symbol.TypeSymbol typeSymbol = (Symbol.TypeSymbol) st.get(type);
+            if (typeSymbol == null) {
+                throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_TYPE,
+                        "Type not found: %s", type);
+            }
+            return typeSymbol;
         }
     }
 }

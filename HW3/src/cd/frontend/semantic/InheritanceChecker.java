@@ -19,6 +19,7 @@ public class InheritanceChecker {
     }
 
     public void check() {
+
         for (Symbol.ClassSymbol classSym : st.getClassSymbols()) {
 
             // check for circular inheritance

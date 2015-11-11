@@ -6,6 +6,10 @@ public abstract class Symbol {
 
     public final String name;
 
+    protected Symbol(String name) {
+        this.name = name;
+    }
+
     public static abstract class TypeSymbol extends Symbol {
 
         public TypeSymbol(String name) {
@@ -14,9 +18,9 @@ public abstract class Symbol {
 
         public abstract boolean isReferenceType();
 
-        public abstract boolean isSubtypeOf(TypeSymbol type);
-
         public abstract boolean isArrayType();
+
+        public abstract boolean isSubtypeOf(TypeSymbol type);
 
         public String toString() {
             return name;
@@ -45,18 +49,13 @@ public abstract class Symbol {
 
         @Override
         public boolean isSubtypeOf(TypeSymbol type) {
-            // this currently returns true when the types are equal.
+            // Returns true when the types are equal.
             return type == this;
         }
     }
 
     public static class ArrayTypeSymbol extends TypeSymbol {
         public final TypeSymbol elementType;
-
-        @Override
-        public boolean isSubtypeOf(TypeSymbol type) {
-            return type == ClassSymbol.objectType || type == this;
-        }
 
         public ArrayTypeSymbol(TypeSymbol elementType) {
             super(elementType.name + "[]");
@@ -70,6 +69,11 @@ public abstract class Symbol {
         @Override
         public boolean isArrayType() {
             return true;
+        }
+
+        @Override
+        public boolean isSubtypeOf(TypeSymbol type) {
+            return type == ClassSymbol.objectType || type == this;
         }
     }
 
@@ -108,7 +112,7 @@ public abstract class Symbol {
 
         @Override
         public boolean isSubtypeOf(TypeSymbol type) {
-            // this also returns true when the types are equal.
+            // Returns true when the types are equal.
             if (!type.isReferenceType()) {
                 return false;
             } else if (this.equals(ClassSymbol.nullType) || type.equals(ClassSymbol.objectType)) {
@@ -117,6 +121,7 @@ public abstract class Symbol {
             if (this.superClasses == null) {
                 this.superClasses = new HashSet<>();
                 ClassSymbol current = this;
+                // We don't need to add the classSymbol for class Object, as we already tested this case above.
                 while (current.superClass != null) {
                     this.superClasses.add(current);
                     current = current.superClass;
@@ -178,9 +183,4 @@ public abstract class Symbol {
             return name;
         }
     }
-
-    protected Symbol(String name) {
-        this.name = name;
-    }
-
 }

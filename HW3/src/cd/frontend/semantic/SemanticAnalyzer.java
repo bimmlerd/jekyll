@@ -28,12 +28,13 @@ public class SemanticAnalyzer {
         (new TypeChecker(globalSymTable)).check(classDecls);
     }
 
+    /**
+     * Checks for a valid starting point to be present
+     */
     protected class StartPointChecker {
-        /**
-         * Throws an exception if no valid starting point is present
-         */
+
         public void check() {
-            // Test for a valid start point.
+
             if (!globalSymTable.contains("Main")) {
                 // No class Main is defined.
                 throw new SemanticFailure(SemanticFailure.Cause.INVALID_START_POINT,
