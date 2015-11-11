@@ -51,10 +51,9 @@ public class SymbolCollector {
             }
             declaredClassNames.add(classDecl.name);
 
-            Symbol.ClassSymbol sym = new Symbol.ClassSymbol(classDecl);
-            classDecl.sym = sym;
-            st.put(sym);
-            st.put(new Symbol.ArrayTypeSymbol(sym)); // also put class[] into the symbol manager
+            classDecl.sym = new Symbol.ClassSymbol(classDecl);
+            st.put(classDecl.sym);
+            st.put(new Symbol.ArrayTypeSymbol(classDecl.sym)); // also put class[] into the symbol manager
         }
 
         SymbolCollectorVisitor visitor = new SymbolCollectorVisitor();

@@ -160,22 +160,23 @@ public class TypeChecker {
 
         @Override
         public Symbol.TypeSymbol unaryOp(Ast.UnaryOp ast, SymbolTable<Symbol.VariableSymbol> localScope) {
-            Symbol.TypeSymbol astType = visit(ast.arg(), localScope);
+            ast.type = visit(ast.arg(), localScope);
             switch (ast.operator) {
                 // int -> int
                 case U_MINUS:
                 case U_PLUS:
-                    assertInteger(astType);
-                    return Symbol.PrimitiveTypeSymbol.intType;
+                    assertInteger(ast.type);
+                    break;
 
                 // bool -> bool
                 case U_BOOL_NOT:
-                    assertBoolean(astType);
-                    return Symbol.PrimitiveTypeSymbol.booleanType;
+                    assertBoolean(ast.type);
+                    break;
 
                 default:
                     throw new ToDoException();
             }
+            return ast.type;
         }
 
         @Override
@@ -191,7 +192,8 @@ public class TypeChecker {
                 case B_MOD:
                     assertInteger(leftType);
                     assertInteger(rightType);
-                    return Symbol.PrimitiveTypeSymbol.intType;
+                    ast.type = Symbol.PrimitiveTypeSymbol.intType;
+                    break;
 
                 // int op int -> bool
                 case B_GREATER_OR_EQUAL:
@@ -200,47 +202,54 @@ public class TypeChecker {
                 case B_LESS_OR_EQUAL:
                     assertInteger(leftType);
                     assertInteger(rightType);
-                    return Symbol.PrimitiveTypeSymbol.booleanType;
+                    ast.type = Symbol.PrimitiveTypeSymbol.booleanType;
+                    break;
 
                 // bool op bool -> bool
                 case B_OR:
                 case B_AND:
                     assertBoolean(leftType);
                     assertBoolean(rightType);
-                    return Symbol.PrimitiveTypeSymbol.booleanType;
+                    ast.type = Symbol.PrimitiveTypeSymbol.booleanType;
+                    break;
 
                 // type op type -> bool
                 case B_EQUAL:
                 case B_NOT_EQUAL:
                     assertRelatedType(leftType, rightType);
-                    return Symbol.PrimitiveTypeSymbol.booleanType;
+                    ast.type = Symbol.PrimitiveTypeSymbol.booleanType;
+                    break;
 
                 default:
                     throw new ToDoException();
             }
+            return ast.type;
         }
 
         @Override
         public Symbol.TypeSymbol booleanConst(Ast.BooleanConst ast, SymbolTable<Symbol.VariableSymbol> localScope) {
-            return Symbol.PrimitiveTypeSymbol.booleanType;
+            ast.type = Symbol.PrimitiveTypeSymbol.booleanType;
+            return ast.type;
         }
 
         @Override
         public Symbol.TypeSymbol intConst(Ast.IntConst ast, SymbolTable<Symbol.VariableSymbol> localScope) {
-            return Symbol.PrimitiveTypeSymbol.intType;
+            ast.type = Symbol.PrimitiveTypeSymbol.intType;
+            return ast.type;
         }
 
         @Override
         public Symbol.TypeSymbol builtInRead(Ast.BuiltInRead ast, SymbolTable<Symbol.VariableSymbol> localScope) {
-            return Symbol.PrimitiveTypeSymbol.intType;
+            ast.type = Symbol.PrimitiveTypeSymbol.intType;
+            return ast.type;
         }
 
         @Override
         public Symbol.TypeSymbol cast(Ast.Cast ast, SymbolTable<Symbol.VariableSymbol> localScope) {
-            Symbol.TypeSymbol originalType = visit(ast.arg(), localScope);
-            Symbol.TypeSymbol castedType = getType(ast.typeName);
-            assertRelatedType(originalType, castedType);
-            return castedType;
+            ast.originalType = visit(ast.arg(), localScope);
+            ast.type = getType(ast.typeName);
+            assertRelatedType(ast.originalType, ast.type);
+            return ast.type;
         }
 
         @Override
@@ -249,12 +258,13 @@ public class TypeChecker {
             if (!(classType instanceof Symbol.ClassSymbol)) {
                 throw new SemanticFailure(SemanticFailure.Cause.TYPE_ERROR);
             }
-            Symbol.VariableSymbol symbol = ((Symbol.ClassSymbol) classType).getField(ast.fieldName);
-            if (symbol == null) {
+            ast.sym = ((Symbol.ClassSymbol) classType).getField(ast.fieldName);
+            if (ast.sym == null) {
                 throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_FIELD,
                         "Can't find field %s anywhere, must've misplaced it. Sorry.", ast.fieldName);
             }
-            return symbol.type;
+            ast.type = ast.sym.type;
+            return ast.type;
         }
 
         @Override
@@ -262,27 +272,28 @@ public class TypeChecker {
             assertInteger(visit(ast.right(), localScope));
             Symbol.TypeSymbol leftType = visit(ast.left(), localScope);
             assertArray(leftType);
-            return ((Symbol.ArrayTypeSymbol) leftType).elementType;
+            ast.type = ((Symbol.ArrayTypeSymbol) leftType).elementType;
+            return ast.type;
         }
 
         @Override
         public Symbol.TypeSymbol methodCall(Ast.MethodCallExpr ast, SymbolTable<Symbol.VariableSymbol> localScope) {
-            Symbol.TypeSymbol calledOnType = visit(ast.receiver(), localScope);
-            if (! (calledOnType instanceof Symbol.ClassSymbol)) {
+            Symbol.TypeSymbol classType = visit(ast.receiver(), localScope);
+            if (! (classType instanceof Symbol.ClassSymbol)) {
                 throw new SemanticFailure(SemanticFailure.Cause.TYPE_ERROR,
-                        "Expected a class but got %s", calledOnType.name);
+                        "Expected a class but got %s", classType.name);
             }
 
-            Symbol.MethodSymbol method = ((Symbol.ClassSymbol) calledOnType).getMethod(ast.methodName);
-            if (method == null) {
+            ast.sym = ((Symbol.ClassSymbol) classType).getMethod(ast.methodName);
+            if (ast.sym == null) {
                 throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_METHOD,
-                        "No method %s on type %s", ast.methodName, calledOnType);
+                        "No method %s on type %s", ast.methodName, classType);
             }
 
             List<Symbol.TypeSymbol> argTypes = ast.argumentsWithoutReceiver().stream()
                     .map((a)->(visit(a, localScope)))
                     .collect(Collectors.toList());
-            List<Symbol.TypeSymbol> paramTypes = method.parameters.stream()
+            List<Symbol.TypeSymbol> paramTypes = ast.sym.parameters.stream()
                     .map((a)->(a.type))
                     .collect(Collectors.toList());
 
@@ -297,38 +308,44 @@ public class TypeChecker {
                 throw new SemanticFailure(SemanticFailure.Cause.TYPE_ERROR,
                         "Types of formal parameters of %s don't match arguments", ast.methodName);
             }
-            return method.returnType;
+            ast.type = ast.sym.returnType;
+            return ast.type;
         }
 
         @Override
         public Symbol.TypeSymbol newObject(Ast.NewObject ast, SymbolTable<Symbol.VariableSymbol> localScope) {
-            return getType(ast.typeName);
+            ast.type = getType(ast.typeName);
+            return ast.type;
         }
 
         @Override
         public Symbol.TypeSymbol newArray(Ast.NewArray ast, SymbolTable<Symbol.VariableSymbol> localScope) {
             assertInteger(visit(ast.arg(), localScope));
-            return getType(ast.typeName);
+            ast.type = getType(ast.typeName);
+            return ast.type;
         }
 
         @Override
         public Symbol.TypeSymbol nullConst(Ast.NullConst ast, SymbolTable<Symbol.VariableSymbol> localScope) {
-            return Symbol.ClassSymbol.nullType;
+            ast.type = Symbol.ClassSymbol.nullType;
+            return ast.type;
         }
 
         @Override
         public Symbol.TypeSymbol thisRef(Ast.ThisRef ast, SymbolTable<Symbol.VariableSymbol> localScope) {
-            return ((Symbol.VariableSymbol) localScope.get("this")).type;
+            ast.type = ((Symbol.VariableSymbol) localScope.get("this")).type;
+            return ast.type;
         }
 
         @Override
         public Symbol.TypeSymbol var(Ast.Var ast, SymbolTable<Symbol.VariableSymbol> localScope) {
-            Symbol.VariableSymbol symbol = (Symbol.VariableSymbol) localScope.get(ast.name);
-            if (symbol == null) {
+            ast.sym = (Symbol.VariableSymbol) localScope.get(ast.name);
+            if (ast.sym == null) {
                 throw new SemanticFailure(SemanticFailure.Cause.NO_SUCH_VARIABLE,
                         "Can't find variable %s anywhere, must've misplaced it. Sorry.", ast.name);
             }
-            return symbol.type;
+            ast.type = ast.sym.type;
+            return ast.type;
         }
 
         // Take care of undefined types.

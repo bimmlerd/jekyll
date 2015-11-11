@@ -209,7 +209,7 @@ public abstract class Ast {
 	public static class Cast extends ArgExpr {
 		
 		public String typeName;
-		public TypeSymbol typeSym;
+		public TypeSymbol originalType;
 		
 		public Cast(Expr arg, String typeName) {
 			super(arg);
@@ -223,7 +223,7 @@ public abstract class Ast {
 		
 		@Override
 		protected <E extends Expr> E postCopy(E item) {
-			((Cast)item).typeSym = typeSym;
+			((Cast)item).originalType = originalType;
 			return super.postCopy(item);
 		}
 		
