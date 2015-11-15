@@ -1,0 +1,3 @@
+HW*/*.javali.*
+!HW*/*.javali.in
+shared
