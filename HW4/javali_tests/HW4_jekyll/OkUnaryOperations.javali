@@ -1,0 +1,42 @@
+/* Test all unary operations */
+class Main {
+    void main() {
+        int i0, i1, i2;
+        boolean b0, b1, b2;
+
+// plus
+
+        i0 = +2 + +3;
+        i1 = +i0 * 1;
+        i1 = 0 - +i1;
+        i2 = +i0 * +i1;
+        i1 = +(+(i0));
+        i0 = +0 + +(+i0);
+
+        write(i0); writeln();
+        write(i1); writeln();
+        write(i2); writeln();
+
+// minus
+
+        i0 = -6 - 1;
+        i1 = -12 - -i0;
+        i1 = -i1 * -4;
+        i2 = i0 * -i1;
+        i2 = -(-(1));
+
+        write(i0); writeln();
+        write(i1); writeln();
+        write(i2); writeln();
+
+// boolean not
+
+        b0 = true;
+        b1 = !b0 && false;
+        b2 = !!b1 || b0;
+
+        if (!b2) {
+            write(0); writeln();
+        }
+    }
+}

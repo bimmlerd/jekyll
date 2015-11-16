@@ -69,18 +69,59 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 
 		cg.debug("Binary Op: %s (%s,%s)", ast, leftReg, rightReg);
 
+        // store opcode of jump to be performed after comparison of registers
+        String jmpOp = "";
+
 		switch (ast.operator) {
 		case B_TIMES:
 			cg.emit.emit("imul", rightReg, leftReg);
 			break;
+
+		case B_DIV:
+			throw new ToDoException();
+		case B_MOD:
+			throw new ToDoException();
+
 		case B_PLUS:
 			cg.emit.emit("add", rightReg, leftReg);
 			break;
+
 		case B_MINUS:
 			cg.emit.emit("sub", rightReg, leftReg);
 			break;
-		default:
-			throw new ToDoException();
+
+		case B_AND:
+			cg.emit.emit("and", rightReg, leftReg);
+            break;
+
+		case B_OR:
+            cg.emit.emit("or", rightReg, leftReg);
+            break;
+
+		case B_EQUAL:
+            jmpOp = "je";
+        case B_NOT_EQUAL:
+            jmpOp = (jmpOp.isEmpty()) ? "jne" : jmpOp;
+        case B_LESS_THAN:
+            jmpOp = (jmpOp.isEmpty()) ? "jl" : jmpOp;
+        case B_LESS_OR_EQUAL:
+            jmpOp = (jmpOp.isEmpty()) ? "jle" : jmpOp;
+        case B_GREATER_THAN:
+            jmpOp = (jmpOp.isEmpty()) ? "jg" : jmpOp;
+        case B_GREATER_OR_EQUAL:
+            jmpOp = (jmpOp.isEmpty()) ? "jge" : jmpOp;
+
+            // compare values and use a conditional jump to store correct boolean value in register
+            String labelTrue = cg.emit.uniqueLabel();
+            String labelFalse = cg.emit.uniqueLabel();
+            cg.emit.emit("cmp", rightReg, leftReg);
+            cg.emit.emit(jmpOp, labelTrue);
+            cg.emit.emitMove(constant(0), leftReg);
+            cg.emit.emit("jmp", labelFalse);
+            cg.emit.emitLabel(labelTrue);
+            cg.emit.emitMove(constant(1), leftReg);
+            cg.emit.emitLabel(labelFalse);
+            break;
 		}
 
 		cg.rm.releaseRegister(rightReg);
@@ -90,9 +131,9 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 
 	@Override
 	public Register booleanConst(BooleanConst ast, Void arg) {
-		{
-			throw new ToDoException();
-		}
+        Register reg = cg.rm.getRegister();
+        cg.emit.emit("movl", ast.value ? constant(1) : constant(0), reg);
+        return reg;
 	}
 
 	@Override
@@ -124,11 +165,9 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 
 	@Override
 	public Register intConst(IntConst ast, Void arg) {
-		{
-			Register reg = cg.rm.getRegister();
-			cg.emit.emit("movl", "$" + ast.value, reg);
-			return reg;
-		}
+        Register reg = cg.rm.getRegister();
+        cg.emit.emit("movl", constant(ast.value), reg);
+        return reg;
 	}
 
 	@Override
@@ -175,24 +214,22 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 
 	@Override
 	public Register unaryOp(UnaryOp ast, Void arg) {
-		{
-			Register argReg = gen(ast.arg());
-			switch (ast.operator) {
-			case U_PLUS:
-				break;
+        Register argReg = gen(ast.arg());
+        switch (ast.operator) {
+        case U_PLUS:
+            break;
 
-			case U_MINUS:
-				cg.emit.emit("negl", argReg);
-				break;
+        case U_MINUS:
+            cg.emit.emit("negl", argReg);
+            break;
 
-			case U_BOOL_NOT:
-				cg.emit.emit("negl", argReg);
-				cg.emit.emit("incl", argReg);
-				break;
-			}
+        case U_BOOL_NOT:
+            cg.emit.emit("negl", argReg);
+            cg.emit.emit("incl", argReg);
+            break;
+        }
 
-			return argReg;
-		}
+        return argReg;
 	}
 	
 	@Override
@@ -201,5 +238,4 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 		cg.emit.emit("movl", AstCodeGenerator.VAR_PREFIX + ast.name, reg);
 		return reg;
 	}
-
 }

@@ -1,0 +1,27 @@
+/* Test loop statements */
+class Main {
+    void main() {
+        int i0, i1, i2;
+        boolean b0, b1, b2;
+
+        i0 = 256;
+        i1 = 32;
+        b0 = true;
+
+// while loops
+
+        while (i0 > 0) {
+            write(0); writeln();
+            i0 = i0 -1;
+        }
+
+        while (false) {
+            write(1); writeln();
+        }
+
+        while (b0 && (i0 < i1)) {
+            write(2); writeln();
+            b0 = false;
+        }
+    }
+}

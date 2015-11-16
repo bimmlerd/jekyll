@@ -1,0 +1,29 @@
+/* Test conditional statements */
+class Main {
+    void main() {
+        int i0, i1, i2;
+
+// if-then
+
+        if (false) {
+            write(i0); writeln();
+        }
+
+        if (i0 > i1 && i1 > i2) {
+            write(i2); writeln();
+        }
+
+// if-then-else
+
+        if (i0 == i1) {
+            write(0); writeln();
+        } else {
+            write(1); writeln();
+        }
+
+        if (true) {
+        } else {
+            write(i0); writeln();
+        }
+    }
+}

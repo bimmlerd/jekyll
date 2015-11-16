@@ -1,0 +1,9 @@
+class Main {
+    void main() {
+        int a, b, c, d;
+
+        a = read();
+        write(a); writeln();
+
+    }
+}

@@ -1,0 +1,150 @@
+/* Test all binary operations */
+class Main {
+    void main() {
+        int i0, i1, i2;
+        boolean b0, b1, b2;
+
+// addition
+
+        i0 = 2 + 3;
+        i1 = i0 + 1;
+        i1 = 0 + i1;
+        i2 = i0 + i1;
+
+        write(i0); writeln();
+        write(i1); writeln();
+        write(i2); writeln();
+
+// subtraction
+
+        i0 = 6 - 1;
+        i1 = -12 - i0;
+        i1 = i1 - -4;
+        i2 = i0 - i1;
+
+        write(i0); writeln();
+        write(i1); writeln();
+        write(i2); writeln();
+
+// multiplication
+
+        i0 = 1 * 20;
+        i1 = 2 * i0;
+        i1 = i0 * -1;
+        i2 = i0 * i1;
+
+        write(i0); writeln();
+        write(i1); writeln();
+        write(i2); writeln();
+
+// division
+
+/*        i0 = 40 / 20;
+        i1 = 20 / i0;
+        i1 = i1 / -1;
+        i2 = i0 / i1;
+
+        write(i0); writeln();
+        write(i1); writeln();
+        write(i2); writeln();*/
+
+// modulo
+
+/*        i0 = 3 % 20;
+        i1 = 20 % i0;
+        i1 = i1 % 4;
+        i2 = i0 % i1;
+
+        write(i0); writeln();
+        write(i1); writeln();
+        write(i2); writeln();*/
+
+// and
+
+        b0 = true && true;
+        b1 = true && b0;
+        b1 = b1 && false;
+        b2 = b0 && b1;
+
+        if (b2) {
+            write(0); writeln();
+        }
+
+// or
+
+        b0 = true || true;
+        b1 = true || b0;
+        b1 = b1 || false;
+        b2 = b0 || b1;
+
+        if (!b2) {
+            write(1); writeln();
+        }
+
+// equal
+
+        b0 = 3 == 0xa5;
+        b1 = 32 == i0;
+        b1 = i1 == 0;
+        b2 = i0 == i1;
+
+        if (b2) {
+            write(2); writeln();
+        }
+
+// not equal
+
+        b0 = 3 != 0xa5;
+        b1 = 32 != i0;
+        b1 = i1 != 0;
+        b2 = i0 != i1;
+
+        if (!b2) {
+            write(3); writeln();
+        }
+
+// less than
+
+        b0 = 3 < 0xa5;
+        b1 = 32 < i0;
+        b1 = i1 < 0;
+        b2 = i0 < i1;
+
+        if (b2) {
+            write(4); writeln();
+        }
+
+// less or equal
+
+        b0 = 3 <= 0xa5;
+        b1 = 32 <= i0;
+        b1 = i1 <= 0;
+        b2 = i0 <= i1;
+
+        if (!b2) {
+            write(5); writeln();
+        }
+
+// greater than
+
+        b0 = 3 > 0xa5;
+        b1 = 32 > i0;
+        b1 = i1 > 0;
+        b2 = i0 > i1;
+
+        if (b2) {
+            write(6); writeln();
+        }
+
+// greater or equal
+
+        b0 = 3 <= 0xa5;
+        b1 = 32 <= i0;
+        b1 = i1 <= 0;
+        b2 = i0 <= i1;
+
+        if (!b2) {
+            write(7); writeln();
+        }
+    }
+}

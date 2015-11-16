@@ -97,7 +97,7 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 		ast.decls().accept(new AstVisitor<Void, Void>() {
 			@Override
 			public Void varDecl(VarDecl ast, Void arg) {
-				if (!ast.type.equals("int"))
+				if (!(ast.type.equals("int") || ast.type.equals("boolean"))) // TODO: store booleans in integer section?
 					throw new RuntimeException(
 							"Only int variables expected");
 				cg.emit.emitLabel(AstCodeGenerator.VAR_PREFIX + ast.name);
@@ -120,16 +120,54 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 
 	@Override
 	public Register ifElse(IfElse ast, Void arg) {
-		{
-			throw new ToDoException();
-		}
+
+        String labelAfterThen = cg.emit.uniqueLabel();
+        String labelAfterElse = cg.emit.uniqueLabel();
+
+		// generate code to evaluate the condition
+        Register conditionReg = cg.eg.gen(ast.condition());
+
+		// decide whether then-part is executed
+		cg.emit.emit("cmp", constant(0), conditionReg);
+        cg.rm.releaseRegister(conditionReg);
+        cg.emit.emit("je", labelAfterThen);
+
+		// generate code for then-part
+        gen(ast.then());
+
+        // skip around else-part
+        cg.emit.emit("jmp", labelAfterElse);
+        cg.emit.emitLabel(labelAfterThen);
+
+        // generate code for else-part
+        gen(ast.otherwise());
+
+        cg.emit.emitLabel(labelAfterElse);
+		return null;
 	}
 
 	@Override
 	public Register whileLoop(WhileLoop ast, Void arg) {
-		{
-			throw new ToDoException();
-		}
+
+        String labelBeforeTest = cg.emit.uniqueLabel();
+        String labelAfterBody = cg.emit.uniqueLabel();
+
+        cg.emit.emitLabel(labelBeforeTest);
+
+        // generate code to evaluate the condition
+        Register conditionReg = cg.eg.gen(ast.condition());
+
+        // decide whether loop-body is executed
+        cg.emit.emit("cmp", constant(0), conditionReg);
+        cg.rm.releaseRegister(conditionReg);
+        cg.emit.emit("je", labelAfterBody);
+
+        // generate code for loop-body
+        gen(ast.body());
+
+        cg.emit.emit("jmp", labelBeforeTest);
+        cg.emit.emitLabel(labelAfterBody);
+		return null;
 	}
 
 	@Override
