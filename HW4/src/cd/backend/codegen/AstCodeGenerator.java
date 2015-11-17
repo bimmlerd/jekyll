@@ -70,6 +70,10 @@ public class AstCodeGenerator {
 
 		emitPrologue();
 
+		emit.emitCommentSection("VTables");
+
+		new VTableBuilder(this).emitVTables(astRoots);
+
 		emit.emitCommentSection("Body");
 
 		for (ClassDecl ast : astRoots) {
@@ -111,7 +115,7 @@ public class AstCodeGenerator {
 	}
 
 	protected void emitMethodPrefix(Ast.MethodDecl methodDecl) {
-		emit.emitLabel(String.format("CLASSNAME::%s", methodDecl.name)); // TODO need the class name here
+		emit.emitLabel(String.format("CLASSNAME$%s", methodDecl.name)); // TODO need the class name here
 
 		// TODO replace with enter?
 		// Preamble: save the old %ebp and point %ebp to the saved %ebp (ie, the new stack frame).

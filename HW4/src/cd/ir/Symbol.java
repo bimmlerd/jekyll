@@ -1,5 +1,7 @@
 package cd.ir;
 
+import cd.backend.codegen.VTableBuilder;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -85,12 +87,10 @@ public abstract class Symbol {
 	public static class ClassSymbol extends TypeSymbol {
 		public final Ast.ClassDecl ast;
 		public ClassSymbol superClass;
-		public final VariableSymbol thisSymbol =
-			new VariableSymbol("this", this);
-		public final Map<String, VariableSymbol> fields = 
-			new HashMap<String, VariableSymbol>();
-		public final Map<String, MethodSymbol> methods =
-			new HashMap<String, MethodSymbol>();
+		public final VariableSymbol thisSymbol = new VariableSymbol("this", this);
+		public final Map<String, VariableSymbol> fields = new HashMap<>();
+		public final Map<String, MethodSymbol> methods = new HashMap<>();
+		public VTableBuilder.VTable vTable;
 
 		/** Symbols for the built-in Object and null types */
 		public static final ClassSymbol nullType = new ClassSymbol("<null>");

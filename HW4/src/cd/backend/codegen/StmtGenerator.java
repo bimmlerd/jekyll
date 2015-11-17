@@ -76,7 +76,7 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 		// # Function body.
 		visit(ast.body(), arg);
 
-		// TODO somehow avoid emitting this if we had a return in the body?
+		// TODO somehow avoid emitting the suffix again if we had a return in the body?
 		cg.emitMethodSuffix(ast.sym.returnType.equals(Symbol.PrimitiveTypeSymbol.voidType));
 		return null;
 	}
