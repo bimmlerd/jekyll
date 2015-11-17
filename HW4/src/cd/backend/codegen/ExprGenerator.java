@@ -1,6 +1,7 @@
 package cd.backend.codegen;
 
 import static cd.Config.SCANF;
+import static cd.backend.codegen.AssemblyEmitter.arrayAddress;
 import static cd.backend.codegen.AssemblyEmitter.constant;
 import static cd.backend.codegen.RegisterManager.STACK_REG;
 import cd.ToDoException;
@@ -158,9 +159,26 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 
 	@Override
 	public Register index(Index ast, Void arg) {
-		{
-			throw new ToDoException();
-		}
+
+        int leftRN = cg.rnv.calc(ast.left());
+        int rightRN = cg.rnv.calc(ast.right());
+
+        Register baseReg, offsetReg;
+        if (leftRN > rightRN) {
+            // generate code to get the base address of the array
+            baseReg = gen(ast.left());
+            // generate code to get the offset in the array
+            offsetReg = gen(ast.right());
+        } else {
+            offsetReg = gen(ast.right());
+            baseReg = gen(ast.left());
+        }
+
+        // access array element
+        cg.emit.emitMove(arrayAddress(baseReg, offsetReg), baseReg);
+
+        cg.rm.releaseRegister(offsetReg);
+        return baseReg;
 	}
 
 	@Override
@@ -193,9 +211,9 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 
 	@Override
 	public Register nullConst(NullConst ast, Void arg) {
-		{
-			throw new ToDoException();
-		}
+		Register reg = cg.rm.getRegister();
+		cg.emit.emit("movl", constant(0), reg);
+		return reg;
 	}
 
 	@Override
@@ -235,6 +253,7 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 	@Override
 	public Register var(Var ast, Void arg) {
 		Register reg = cg.rm.getRegister();
+        // TODO: locals are no longer in the data section
 		cg.emit.emit("movl", AstCodeGenerator.VAR_PREFIX + ast.name, reg);
 		return reg;
 	}

@@ -97,6 +97,7 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 		ast.decls().accept(new AstVisitor<Void, Void>() {
 			@Override
 			public Void varDecl(VarDecl ast, Void arg) {
+                // TODO: locals have to be put on the stack
 				if (!(ast.type.equals("int") || ast.type.equals("boolean"))) // TODO: store booleans in integer section?
 					throw new RuntimeException(
 							"Only int variables expected");
