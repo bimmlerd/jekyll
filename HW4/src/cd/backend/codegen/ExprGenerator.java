@@ -225,9 +225,25 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 
 	@Override
 	public Register methodCall(MethodCallExpr ast, Void arg) {
-		{
-			throw new ToDoException();
-		}
+		// function call; method(0x5, 0x10);
+		// subl $0x8, %esp      # Reserve space for the arguments (4 bytes for each arg).
+		// movl $0x10, 4(%esp)  # Put the second argument at the memory address %esp + 4.
+		// movl $0x5, (%esp)    # Put the first argument at the memory address %esp
+
+		// push %eax            # Save %eax before a function call.
+		// push %ecx            # Save %ecx before a function call.
+		// push %edx            # Save %edx before a function call.
+
+		// call method
+
+		// save return value (eax) somewhere
+
+		// pop %edx				# Restore %edx after a function call.
+		// pop %ecx				# Restore %ecx after a function call.
+		// pop %eax				# Restore %eax after a function call.
+
+		// addl $0x8, %esp      # Reclaim stack space reserved for arguments.
+		throw new ToDoException();
 	}
 
 	@Override

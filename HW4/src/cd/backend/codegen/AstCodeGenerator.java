@@ -3,9 +3,16 @@ package cd.backend.codegen;
 import java.io.Writer;
 import java.util.List;
 
+import cd.Config;
 import cd.Main;
 import cd.backend.codegen.RegisterManager.Register;
+import cd.ir.Ast;
 import cd.ir.Ast.ClassDecl;
+
+import static cd.Config.MAIN;
+import static cd.backend.codegen.RegisterManager.BASE_REG;
+import static cd.backend.codegen.RegisterManager.CALLEE_SAVE;
+import static cd.backend.codegen.RegisterManager.STACK_REG;
 
 public class AstCodeGenerator {
 
@@ -58,23 +65,78 @@ public class AstCodeGenerator {
 	 * final declarations required.
 	 * </ol>
 	 */
-	public void go(List<? extends ClassDecl> astRoots) {
+	public void go(List<ClassDecl> astRoots) {
+		emit.emitCommentSection("Prologue");
+
+		emitPrologue();
+
+		emit.emitCommentSection("Body");
+
 		for (ClassDecl ast : astRoots) {
 			sg.gen(ast);
 		}
+
+		emit.emitCommentSection("Epilogue");
+
+		emitEpilogue();
 	}
 
 
 	protected void initMethodData() {
-		{
-			rm.initRegisters();
-		}
+		rm.initRegisters();
 	}
 
+
+	protected void emitPrologue() {
+		 emit.emitRaw(Config.TEXT_SECTION);
+		 emit.emitRaw(".globl " + MAIN);
+		 emit.emitLabel(MAIN);
+		 emit.emit("enter", "$8", "$0");
+		 emit.emit("and", -16, STACK_REG); // 1111...0000 -> align
+
+		// create new Main object
+		// call Main.main
+		emit.emitComment("TODO Create new Main, call main on it");
+
+		emitMethodSuffix(true);
+	}
+
+	protected void emitEpilogue() {
+		// Emit some useful string constants:
+		emit.emitRaw(Config.DATA_STR_SECTION);
+		emit.emitLabel("STR_NL");
+		emit.emitRaw(Config.DOT_STRING + " \"\\n\"");
+		emit.emitLabel("STR_D");
+		emit.emitRaw(Config.DOT_STRING + " \"%d\"");
+	}
+
+	protected void emitMethodPrefix(Ast.MethodDecl methodDecl) {
+		emit.emitLabel(String.format("CLASSNAME::%s", methodDecl.name)); // TODO need the class name here
+
+		// TODO replace with enter?
+		// Preamble: save the old %ebp and point %ebp to the saved %ebp (ie, the new stack frame).
+		emit.emit("push", BASE_REG);
+		emit.emitMove(STACK_REG, BASE_REG);
+		// Reserve space for local variables.
+		int space = methodDecl.decls().children().size() * 4; // TODO do nicer
+		emit.emit("subl", AssemblyEmitter.constant(space), STACK_REG);
+
+		// save callee saved registers
+		for (Register reg : RegisterManager.CALLEE_SAVE) {
+			emit.emit("push", reg);
+		}
+
+	}
 
 	protected void emitMethodSuffix(boolean returnNull) {
 		if (returnNull)
 			emit.emit("movl", "$0", Register.EAX);
+
+		// restore callee saved registers (reversed order!)
+		for (int i = CALLEE_SAVE.length - 1; i >= 0; i--) {
+			emit.emit("pop", CALLEE_SAVE[i]);
+		}
+
 		emit.emitRaw("leave");
 		emit.emitRaw("ret");
 	}

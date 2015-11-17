@@ -1,7 +1,7 @@
 package cd.backend.codegen;
 
-import static cd.Config.MAIN;
 import static cd.backend.codegen.AssemblyEmitter.constant;
+import static cd.backend.codegen.RegisterManager.BASE_REG;
 import static cd.backend.codegen.RegisterManager.STACK_REG;
 
 import java.util.List;
@@ -20,9 +20,9 @@ import cd.ir.Ast.MethodCall;
 import cd.ir.Ast.MethodDecl;
 import cd.ir.Ast.ReturnStmt;
 import cd.ir.Ast.Var;
-import cd.ir.Ast.VarDecl;
 import cd.ir.Ast.WhileLoop;
 import cd.ir.AstVisitor;
+import cd.ir.Symbol;
 import cd.ir.Symbol.MethodSymbol;
 import cd.util.debug.AstOneLine;
 
@@ -57,10 +57,6 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 		}
 	}
 
-	public Register methodCall(MethodSymbol sym, List<Expr> allArguments) {
-		throw new RuntimeException("Not required");
-	}
-
 	// Emit vtable for arrays of this class:
 	@Override
 	public Register classDecl(ClassDecl ast, Void arg) {
@@ -75,47 +71,13 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 
 	@Override
 	public Register methodDecl(MethodDecl ast, Void arg) {
-		
-		// ------------------------------------------------------------
-		// Homework 1 Prologue Generation:
-		// Rather simplistic due to limited requirements!
+		cg.emitMethodPrefix(ast);
 
-		if (!ast.name.equals("main"))
-			throw new RuntimeException(
-					"Only expected one method named 'main'");
+		// # Function body.
+		visit(ast.body(), arg);
 
-		// Emit some useful string constants:
-		cg.emit.emitRaw(Config.DATA_STR_SECTION);
-		cg.emit.emitLabel("STR_NL");
-		cg.emit.emitRaw(Config.DOT_STRING + " \"\\n\"");
-		cg.emit.emitLabel("STR_D");
-		cg.emit.emitRaw(Config.DOT_STRING + " \"%d\"");
-
-		// Emit a label for each variable:
-		// Let the AST Visitor do the iteration for us.
-		cg.emit.emitRaw(Config.DATA_INT_SECTION);
-		ast.decls().accept(new AstVisitor<Void, Void>() {
-			@Override
-			public Void varDecl(VarDecl ast, Void arg) {
-                // TODO: locals have to be put on the stack
-				if (!(ast.type.equals("int") || ast.type.equals("boolean"))) // TODO: store booleans in integer section?
-					throw new RuntimeException(
-							"Only int variables expected");
-				cg.emit.emitLabel(AstCodeGenerator.VAR_PREFIX + ast.name);
-				cg.emit.emitConstantData("0");
-				return null;
-			}
-		}, null);
-
-		// Emit the main() method:
-		cg.emit.emitRaw(Config.TEXT_SECTION);
-		cg.emit.emitRaw(".globl " + MAIN);
-		cg.emit.emitLabel(MAIN);
-
-		cg.emit.emit("enter", "$8", "$0");
-		cg.emit.emit("and", -16, STACK_REG);
-		gen(ast.body());
-		cg.emitMethodSuffix(true);
+		// TODO somehow avoid emitting this if we had a return in the body?
+		cg.emitMethodSuffix(ast.sym.returnType.equals(Symbol.PrimitiveTypeSymbol.voidType));
 		return null;
 	}
 
@@ -184,6 +146,7 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 
 	@Override
 	public Register builtInWrite(BuiltInWrite ast, Void arg) {
+		// TODO save caller saved registers
 		Register reg = cg.eg.gen(ast.arg());
 		cg.emit.emit("sub", constant(16), STACK_REG);
 		cg.emit.emitStore(reg, 4, STACK_REG);
@@ -196,6 +159,7 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 
 	@Override
 	public Register builtInWriteln(BuiltInWriteln ast, Void arg) {
+		// TODO save caller saved registers
 		cg.emit.emit("sub", constant(16), STACK_REG);
 		cg.emit.emitStore("$STR_NL", 0, STACK_REG);
 		cg.emit.emit("call", Config.PRINTF);

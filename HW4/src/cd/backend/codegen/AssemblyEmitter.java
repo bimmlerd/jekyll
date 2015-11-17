@@ -32,8 +32,7 @@ public class AssemblyEmitter {
 
 	/** Creates an operand addressing an item in an array */
 	static String arrayAddress(Register arrReg, Register idxReg) {
-		final int offset = Config.SIZEOF_PTR * 2; // one word each in front for
-													// vptr and length
+		final int offset = Config.SIZEOF_PTR * 2; // one word each in front for vptr and length
 		final int mul = Config.SIZEOF_PTR; // assume all arrays of 4-byte elem
 		return String.format("%d(%s,%s,%d)", offset, arrReg, idxReg, mul);
 	}
