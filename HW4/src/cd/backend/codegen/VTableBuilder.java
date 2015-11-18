@@ -24,7 +24,7 @@ public class VTableBuilder {
         // we can only build VTables of classes whose superclass' vtable already exists
         Set<Symbol.ClassSymbol> handled = new HashSet<>();
 
-        Symbol.ClassSymbol.objectType.vTable = new VTable();
+        Symbol.ClassSymbol.objectType.vTable = VTable.makeObjectVTable();
         emitVTable(Symbol.TypeSymbol.ClassSymbol.objectType);
         handled.add(Symbol.ClassSymbol.objectType);
 
@@ -51,9 +51,6 @@ public class VTableBuilder {
                 handled.add(current);
             }
         }
-
-
-
     }
 
 
@@ -61,7 +58,7 @@ public class VTableBuilder {
      * Builds a vtable for @param classSymbol, assuming the vtable of the superclasses are in place.
      */
     private void buildVTable(Symbol.ClassSymbol classSymbol) {
-        classSymbol.vTable = new VTable(classSymbol.superClass.vTable);
+        classSymbol.vTable = new VTable(classSymbol.superClass.vTable, classSymbol);
         classSymbol.methods.forEach((unqualifiedName, methodSym) ->
                 classSymbol.vTable.add(unqualifiedName, VTableBuilder.getMethodLabel(methodSym, classSymbol)));
 
@@ -73,20 +70,27 @@ public class VTableBuilder {
         classSymbol.vTable.getSortedList().forEach(cg.emit::emitConstantData);
     }
 
-    public class VTable {
+    public static class VTable {
 
         private final Map<String, Pair<String, Integer>> table = new HashMap<>();
 
-        private final VTable parent;
+        private final Symbol.ClassSymbol classSymbol;
+        private final static String PARENT_KEY = "$parent";
 
-        public VTable() {
-            // should only be used for object vtable
-            parent = null;
+        public static VTable makeObjectVTable() {
+            return new VTable();
         }
 
-        public VTable(VTable parent) {
-            this.parent = parent;
+        private VTable() {
+            // should only be used for object vtable
+            classSymbol = Symbol.ClassSymbol.objectType;
+            table.put(PARENT_KEY, new Pair<>("0", 0));
+        }
+
+        public VTable(VTable parent, Symbol.ClassSymbol classSymbol) {
             table.putAll(parent.table);
+            this.classSymbol = classSymbol;
+            table.put(PARENT_KEY, new Pair<>(parent.getLabel(), 0));
         }
 
         public void add(String unqualifiedName, String label) {
@@ -102,17 +106,22 @@ public class VTableBuilder {
             return Config.SIZEOF_PTR * table.get(unqualifiedName).getValue();
         }
 
+        public String getLabel() {
+            return getVTableLabel(classSymbol);
+        }
+
         public boolean isEmpty() {
             return table.isEmpty();
         }
 
         public List<String> getSortedList() {
-            List<String> res = new ArrayList<>();
-            table.values().forEach(p -> res.add(p.getValue(), p.getKey()));
-            return res;
+            String[] res = new String[table.values().size()];
+            table.values().forEach(p -> res[p.getValue()] = p.getKey());
+            return Arrays.asList(res);
         }
     }
 
+    // Utility methods to have naming logic at one place only
     public static String getVTableLabel(String name) {
         return String.format("%s$%s", VTABLE_PREFIX, name);
     }
