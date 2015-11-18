@@ -66,13 +66,9 @@ public class AstCodeGenerator {
 	 * </ol>
 	 */
 	public void go(List<ClassDecl> astRoots) {
-		emit.emitCommentSection("Prologue");
+		new VTableBuilder(this).emitVTables(astRoots);
 
 		emitPrologue();
-
-		emit.emitCommentSection("VTables");
-
-		new VTableBuilder(this).emitVTables(astRoots);
 
 		emit.emitCommentSection("Body");
 
@@ -92,11 +88,13 @@ public class AstCodeGenerator {
 
 
 	protected void emitPrologue() {
-		 emit.emitRaw(Config.TEXT_SECTION);
-		 emit.emitRaw(".globl " + MAIN);
-		 emit.emitLabel(MAIN);
-		 emit.emit("enter", "$8", "$0");
-		 emit.emit("and", -16, STACK_REG); // 1111...0000 -> align
+		emit.emitCommentSection("Prologue");
+
+		emit.emitRaw(Config.TEXT_SECTION);
+		emit.emitRaw(".globl " + MAIN);
+		emit.emitLabel(MAIN);
+		emit.emit("enter", "$8", "$0");
+		emit.emit("and", -16, STACK_REG); // 1111...0000 -> align
 
 		// create new Main object
 		// call Main.main

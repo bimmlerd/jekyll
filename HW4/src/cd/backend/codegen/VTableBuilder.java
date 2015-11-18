@@ -21,34 +21,37 @@ public class VTableBuilder {
     }
 
     public void emitVTables(List<Ast.ClassDecl> unorderedClassDecls) {
+        cg.emit.emitCommentSection("VTables");
+        cg.emit.emitRaw(Config.DATA_INT_SECTION);
+
         // we can only build VTables of classes whose superclass' vtable already exists
-        Set<Symbol.ClassSymbol> handled = new HashSet<>();
+        Set<Symbol.ClassSymbol> handledClasses = new HashSet<>();
 
         Symbol.ClassSymbol.objectType.vTable = VTable.makeObjectVTable();
         emitVTable(Symbol.TypeSymbol.ClassSymbol.objectType);
-        handled.add(Symbol.ClassSymbol.objectType);
+        handledClasses.add(Symbol.ClassSymbol.objectType);
 
         Symbol.ClassSymbol current;
         for (Ast.ClassDecl classDecl : unorderedClassDecls) {
-            if (handled.contains(classDecl.sym)) {
+            if (handledClasses.contains(classDecl.sym)) {
                 continue;
             }
 
-            Stack<Symbol.ClassSymbol> todo = new Stack<>();
+            Stack<Symbol.ClassSymbol> deferredClasses = new Stack<>();
             current = classDecl.sym;
 
-            // go up the hierarchy until you have a superclass which is done, pushing deferred symbols onto a stack
-            while (!handled.contains(current.superClass)) {
-                todo.push(current);
+            // go up the hierarchy until we are at a handled class, pushing deferred classes onto a stack
+            while (!handledClasses.contains(current)) {
+                deferredClasses.push(current);
                 current = current.superClass;
             }
-            todo.push(current);
 
-            while (!todo.empty()) {
-                current = todo.pop();
+            // work our way down again, handling the classes in the right order
+            while (!deferredClasses.empty()) {
+                current = deferredClasses.pop();
                 buildVTable(current);
                 emitVTable(current);
-                handled.add(current);
+                handledClasses.add(current);
             }
         }
     }
@@ -66,7 +69,6 @@ public class VTableBuilder {
 
     private void emitVTable(Symbol.ClassSymbol classSymbol) {
         cg.emit.emitLabel(getVTableLabel(classSymbol));
-        // TODO ptr to parent vtable
         classSymbol.vTable.getSortedList().forEach(cg.emit::emitConstantData);
     }
 
@@ -87,10 +89,10 @@ public class VTableBuilder {
             table.put(PARENT_KEY, new Pair<>("0", 0));
         }
 
-        public VTable(VTable parent, Symbol.ClassSymbol classSymbol) {
-            table.putAll(parent.table);
+        public VTable(VTable parentVTable, Symbol.ClassSymbol classSymbol) {
+            table.putAll(parentVTable.table);
             this.classSymbol = classSymbol;
-            table.put(PARENT_KEY, new Pair<>(parent.getLabel(), 0));
+            table.put(PARENT_KEY, new Pair<>(parentVTable.getVTableLabel(), 0));
         }
 
         public void add(String unqualifiedName, String label) {
@@ -102,16 +104,12 @@ public class VTableBuilder {
             }
         }
 
-        public int getOffset(String unqualifiedName) {
-            return Config.SIZEOF_PTR * table.get(unqualifiedName).getValue();
+        public int getMethodOffset(String methodName) {
+            return Config.SIZEOF_PTR * table.get(methodName).getValue();
         }
 
-        public String getLabel() {
-            return getVTableLabel(classSymbol);
-        }
-
-        public boolean isEmpty() {
-            return table.isEmpty();
+        public String getVTableLabel() {
+            return VTableBuilder.getVTableLabel(classSymbol);
         }
 
         public List<String> getSortedList() {
