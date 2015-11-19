@@ -32,12 +32,12 @@ public class StackManager {
 
         // reserve space of size ceil(actual_space_needed / 16) * 16
         int argSpace = arguments.size() * Config.SIZEOF_PTR;
-        int allocSpace = ((offsetFromOrigin + argSpace) / 16 + 1) * 16 - offsetFromOrigin;
+        int adjustment = -(offsetFromOrigin % 16 + 4 * argSpace) % 16;
+        int allocSpace = adjustment + argSpace;
 
         // make space for the arguments including alignment
         cg.emit.emitComment("Space for arguments and place arguments:");
         cg.emit.emit("subl", constant(allocSpace), RegisterManager.STACK_REG);
-        offsetFromOrigin += allocSpace;
 
         // place arguments
         for (int i = 0; i < arguments.size(); i++) {
@@ -51,11 +51,11 @@ public class StackManager {
     public void afterFunctionCall(List<String> arguments) {
 
         int argSpace = arguments.size() * Config.SIZEOF_PTR;
-        int allocSpace = offsetFromOrigin - ((offsetFromOrigin - argSpace) / 16) * 16;
+        int adjustment = -(offsetFromOrigin % 16 + 4 * argSpace) % 16;
+        int allocSpace = adjustment + argSpace;
 
         cg.emit.emitComment("Reclaim space from arguments:");
         cg.emit.emit("addl", constant(allocSpace), RegisterManager.STACK_REG);
-        offsetFromOrigin -= allocSpace;
 
         restoreCallerSavedRegs();
     }
