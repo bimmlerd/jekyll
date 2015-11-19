@@ -1,26 +1,20 @@
 package cd.backend.codegen;
 
-import static cd.backend.codegen.AssemblyEmitter.constant;
-import static cd.backend.codegen.RegisterManager.BASE_REG;
-import static cd.backend.codegen.RegisterManager.STACK_REG;
-
 import cd.Config;
-import cd.ToDoException;
 import cd.backend.codegen.RegisterManager.Register;
 import cd.ir.Ast;
-import cd.ir.Ast.Assign;
-import cd.ir.Ast.BuiltInWrite;
-import cd.ir.Ast.BuiltInWriteln;
-import cd.ir.Ast.ClassDecl;
-import cd.ir.Ast.IfElse;
-import cd.ir.Ast.MethodCall;
-import cd.ir.Ast.MethodDecl;
-import cd.ir.Ast.ReturnStmt;
-import cd.ir.Ast.Var;
-import cd.ir.Ast.WhileLoop;
+import cd.ir.Ast.*;
 import cd.ir.AstVisitor;
 import cd.ir.Symbol;
 import cd.util.debug.AstOneLine;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static cd.backend.codegen.AssemblyEmitter.constant;
+import static cd.backend.codegen.AssemblyEmitter.labelAddress;
+import static cd.backend.codegen.RegisterManager.BASE_REG;
+import static cd.backend.codegen.RegisterManager.STACK_REG;
 
 /**
  * Generates code to process statements and declarations.
@@ -40,7 +34,7 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 	@Override
 	public Register visit(Ast ast, Void arg) {
 		try {
-			cg.emit.increaseIndent("Emitting " + AstOneLine.toString(ast));
+			cg.emit.increaseIndent(String.format("Emitting %s", AstOneLine.toString(ast)));
 			return super.visit(ast, arg);
 		} finally {
 			cg.emit.decreaseIndent();
@@ -49,9 +43,10 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 
 	@Override
 	public Register methodCall(MethodCall ast, Void dummy) {
-		{
-			throw new ToDoException();
-		}
+		Register reg = cg.eg.gen(ast.getMethodCallExpr());
+		// return value is not stored
+		cg.rm.releaseRegister(reg);
+		return null;
 	}
 
 	// Emit vtable for arrays of this class:
@@ -69,10 +64,9 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 		// Preamble: save the old %ebp and point %ebp to the saved %ebp (ie, the new stack frame).
 		cg.emit.emit("push", BASE_REG);
 		cg.emit.emitMove(STACK_REG, BASE_REG);
-		// Reserve space for local variables.
+		// Reserve space for local variables. // TODO keep track of offsets for varDecls ?
 		int space = ast.decls().children().size() * Config.SIZEOF_PTR; // TODO do nicer
 		cg.emit.emit("subl", AssemblyEmitter.constant(space), STACK_REG);
-
 
 		cg.stack.storeCalleeSavedRegs();
 
@@ -138,43 +132,58 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 
 	@Override
 	public Register assign(Assign ast, Void arg) {
+        // TODO visitor for allowed LHS to return addresses and not value stored at the address
 		if (!(ast.left() instanceof Var))
 			throw new RuntimeException("LHS must be var in HW1");
 		Var var = (Var) ast.left();
 		Register rhsReg = cg.eg.gen(ast.right());
-		cg.emit.emit("movl", rhsReg, AstCodeGenerator.VAR_PREFIX + var.name);
+		cg.emit.emitMove(rhsReg, String.format("%s%s", AstCodeGenerator.VAR_PREFIX, var.name));
 		cg.rm.releaseRegister(rhsReg);
 		return null;
 	}
 
 	@Override
 	public Register builtInWrite(BuiltInWrite ast, Void arg) {
-		// TODO save caller saved registers
-		Register reg = cg.eg.gen(ast.arg());
-		cg.emit.emit("sub", constant(16), STACK_REG);
-		cg.emit.emitStore(reg, 4, STACK_REG);
-		cg.emit.emitStore("$STR_D", 0, STACK_REG);
-		cg.emit.emit("call", Config.PRINTF);
-		cg.emit.emit("add", constant(16), STACK_REG);
+        // evaluate integer expression to print
+        Register reg = cg.eg.gen(ast.arg());
+        List<String> arguments = new ArrayList<>();
+        arguments.add(labelAddress("STR_D"));
+        arguments.add(reg.repr);
+
+        // put arguments on the stack and save caller saved registers before making the call
+        cg.stack.beforeFunctionCall(arguments);
+		cg.emit.emit("call", Config.PRINTF); // return value is not stored
+		cg.stack.afterFunctionCall(arguments);
+
 		cg.rm.releaseRegister(reg);
 		return null;
 	}
 
 	@Override
 	public Register builtInWriteln(BuiltInWriteln ast, Void arg) {
-		// TODO save caller saved registers
-		cg.emit.emit("sub", constant(16), STACK_REG);
-		cg.emit.emitStore("$STR_NL", 0, STACK_REG);
-		cg.emit.emit("call", Config.PRINTF);
-		cg.emit.emit("add", constant(16), STACK_REG);
+        List<String> arguments = new ArrayList<>();
+        arguments.add(labelAddress("STR_NL"));
+
+        // put arguments on the stack and save caller saved registers before making the call
+        cg.stack.beforeFunctionCall(arguments);
+        cg.emit.emit("call", Config.PRINTF); // return value is not stored
+        cg.stack.afterFunctionCall(arguments);
+
 		return null;
 	}
 
 	@Override
 	public Register returnStmt(ReturnStmt ast, Void arg) {
-		{
-			throw new ToDoException();
-		}
+        if (ast.arg() == null) {
+            // no return value
+            cg.emitMethodSuffix(true);
+        } else {
+            Register reg = cg.eg.gen(ast.arg());
+            cg.emit.emitMove(reg, Register.EAX);
+            cg.emitMethodSuffix(false);
+        }
+
+        return null;
 	}
 
 }

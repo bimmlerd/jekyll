@@ -1,17 +1,15 @@
 package cd.backend.codegen;
 
-import java.io.Writer;
-import java.util.List;
-
 import cd.Config;
 import cd.Main;
 import cd.backend.codegen.RegisterManager.Register;
-import cd.ir.Ast;
 import cd.ir.Ast.ClassDecl;
 
+import java.io.Writer;
+import java.util.List;
+
 import static cd.Config.MAIN;
-import static cd.backend.codegen.RegisterManager.BASE_REG;
-import static cd.backend.codegen.RegisterManager.CALLEE_SAVE;
+import static cd.backend.codegen.AssemblyEmitter.constant;
 import static cd.backend.codegen.RegisterManager.STACK_REG;
 
 public class AstCodeGenerator {
@@ -93,9 +91,9 @@ public class AstCodeGenerator {
 		emit.emitCommentSection("Prologue");
 
 		emit.emitRaw(Config.TEXT_SECTION);
-		emit.emitRaw(".globl " + MAIN);
+		emit.emitRaw(String.format(".globl %s", MAIN));
 		emit.emitLabel(MAIN);
-		emit.emit("enter", "$8", "$0");
+		emit.emit("enter", constant(8), constant(0));
 		emit.emit("and", -16, STACK_REG); // 1111...0000 -> align
 
 		// create new Main object
@@ -115,8 +113,9 @@ public class AstCodeGenerator {
 	}
 
 	protected void emitMethodSuffix(boolean returnNull) {
-		if (returnNull)
-			emit.emit("movl", "$0", Register.EAX);
+		if (returnNull) {
+			emit.emitMove(constant(0), Register.EAX);
+		}
 
 		stack.restoreCalleeSavedRegs();
 

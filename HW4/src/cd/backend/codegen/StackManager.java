@@ -26,6 +26,8 @@ public class StackManager {
     public void beforeFunctionCall(List<String> arguments) {
         storeCallerSavedRegs();
 
+        // TODO the space reserved probably needs to be something like ceil(actual_space_needed / 16) * 16
+
         // make space for and place arguments
         cg.emit.emitComment("Space for arguments and place arguments:");
         cg.emit.emit("subl", arguments.size() * Config.SIZEOF_PTR, RegisterManager.STACK_REG);
@@ -35,12 +37,11 @@ public class StackManager {
         }
 
         // TODO broken
-        // align the stack
+        // TODO align the stack before pushing the arguments, for offset calculation in callee
         assert offsetFromOrigin >= 0;
         int adjustment = offsetFromOrigin % 16;
         cg.emit.emitComment("Aligning stack for function call:");
         cg.emit.emit("subl", AssemblyEmitter.constant(adjustment), RegisterManager.STACK_REG);
-
     }
 
     /**

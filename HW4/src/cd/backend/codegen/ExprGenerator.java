@@ -1,34 +1,21 @@
 package cd.backend.codegen;
 
-import static cd.Config.SCANF;
-import static cd.backend.codegen.AssemblyEmitter.arrayAddress;
-import static cd.backend.codegen.AssemblyEmitter.constant;
-import static cd.backend.codegen.RegisterManager.STACK_REG;
-
 import cd.Config;
 import cd.ToDoException;
 import cd.backend.codegen.RegisterManager.Register;
-import cd.ir.Ast.BinaryOp;
-import cd.ir.Ast.BooleanConst;
-import cd.ir.Ast.BuiltInRead;
-import cd.ir.Ast.Cast;
-import cd.ir.Ast.Expr;
-import cd.ir.Ast.Field;
-import cd.ir.Ast.Index;
-import cd.ir.Ast.IntConst;
-import cd.ir.Ast.MethodCallExpr;
-import cd.ir.Ast.NewArray;
-import cd.ir.Ast.NewObject;
-import cd.ir.Ast.NullConst;
-import cd.ir.Ast.ThisRef;
-import cd.ir.Ast.UnaryOp;
-import cd.ir.Ast.Var;
+import cd.ir.Ast.*;
 import cd.ir.ExprVisitor;
 import cd.ir.Symbol;
 import cd.util.debug.AstOneLine;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static cd.Config.SCANF;
+import static cd.backend.codegen.AssemblyEmitter.arrayAddress;
+import static cd.backend.codegen.AssemblyEmitter.constant;
+import static cd.backend.codegen.AssemblyEmitter.labelAddress;
+import static cd.backend.codegen.RegisterManager.STACK_REG;
 
 /**
  * Generates code to evaluate expressions. After emitting the code, returns a
@@ -48,7 +35,7 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 	@Override
 	public Register visit(Expr ast, Void arg) {
 		try {
-			cg.emit.increaseIndent("Emitting " + AstOneLine.toString(ast));
+			cg.emit.increaseIndent(String.format("Emitting %s", AstOneLine.toString(ast)));
 			return super.visit(ast, null);
 		} finally {
 			cg.emit.decreaseIndent();
@@ -85,6 +72,7 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 			break;
 
 		case B_DIV:
+            // TODO exit with error code ExitCode.DIVISION_BY_ZERO if divisor is zero
 			throw new ToDoException();
 		case B_MOD:
 			throw new ToDoException();
@@ -139,25 +127,32 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 	@Override
 	public Register booleanConst(BooleanConst ast, Void arg) {
         Register reg = cg.rm.getRegister();
-        cg.emit.emit("movl", ast.value ? constant(1) : constant(0), reg);
+        cg.emit.emitMove(ast.value ? constant(1) : constant(0), reg);
         return reg;
 	}
 
 	@Override
 	public Register builtInRead(BuiltInRead ast, Void arg) {
 		Register reg = cg.rm.getRegister();
-		cg.emit.emit("sub", constant(16), STACK_REG);
 		cg.emit.emit("leal", AssemblyEmitter.registerOffset(8, STACK_REG), reg);
-		cg.emit.emitStore(reg, 4, STACK_REG);
-		cg.emit.emitStore("$STR_D", 0, STACK_REG);
+
+        List<String> arguments = new ArrayList<>();
+        arguments.add(labelAddress("STR_D"));
+        arguments.add(reg.repr);
+        cg.stack.beforeFunctionCall(arguments);
+
 		cg.emit.emit("call", SCANF);
-		cg.emit.emitLoad(8, STACK_REG, reg);
-		cg.emit.emit("add", constant(16), STACK_REG);
+
+        // store value
+        cg.emit.emitLoad(8, STACK_REG, reg);
+        cg.stack.afterFunctionCall(arguments);
+
 		return reg;
 	}
 
 	@Override
 	public Register cast(Cast ast, Void arg) {
+        // TODO exit with error code ExitCode.INVALID_DOWNCAST if runtime type is not a subtype of cast type
 		{
 			throw new ToDoException();
 		}
@@ -180,6 +175,7 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
             baseReg = gen(ast.left());
         }
 
+        // TODO exit with error code ExitCode.INVALID_ARRAY_BOUNDS if array index is invalid
         // access array element
         cg.emit.emitMove(arrayAddress(baseReg, offsetReg), baseReg);
 
@@ -190,7 +186,7 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 	@Override
 	public Register intConst(IntConst ast, Void arg) {
         Register reg = cg.rm.getRegister();
-        cg.emit.emit("movl", constant(ast.value), reg);
+        cg.emit.emitMove(constant(ast.value), reg);
         return reg;
 	}
 
@@ -203,6 +199,7 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 
 	@Override
 	public Register newArray(NewArray ast, Void arg) {
+        // TODO exit with error code ExitCode.INVALID_ARRAY_SIZE if array size is negative
 		{
 			throw new ToDoException();
 		}
@@ -228,18 +225,19 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 
 		cg.emit.emit("call", Config.CALLOC);
 
-		Register res = cg.rm.getRegister();
-		cg.emit.emitMove(Register.EAX, res);
+		// store return value in a new register
+		Register reg = cg.rm.getRegister();
+		cg.emit.emitMove(Register.EAX, reg);
 
 		cg.stack.afterFunctionCall(arguments);
 
-		return res;
+		return reg;
 	}
 
 	@Override
 	public Register nullConst(NullConst ast, Void arg) {
 		Register reg = cg.rm.getRegister();
-		cg.emit.emit("movl", constant(0), reg);
+		cg.emit.emitMove(constant(0), reg);
 		return reg;
 	}
 
@@ -252,27 +250,54 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 
 	@Override
 	public Register methodCall(MethodCallExpr ast, Void arg) {
-		// function call; method(0x5, 0x10);
-		// push %eax            # Save %eax before a function call.
-		// push %ecx            # Save %ecx before a function call.
-		// push %edx            # Save %edx before a function call.
+        List<String> arguments = new ArrayList<>();
 
-		// TODO the space reserved probably needs to be something like ceil(actual_space_needed / 16) * 16
-		// subl $0x8, %esp      # Reserve space for the arguments (4 bytes for each arg).
-		// movl $0x10, 4(%esp)  # Put the second argument at the memory address %esp + 4.
-		// movl $0x5, (%esp)    # Put the first argument at the memory address %esp
+        if (!(ast.receiver().type instanceof Symbol.ClassSymbol)) {
+            // should be caught by semantic analyzer
+            throw new ToDoException();
+        }
+        Register reg = gen(ast.receiver());
+        arguments.add(reg.repr);
+        // TODO target is determined by the runtime type of the object instance
+        // get class name to construct label
+        String recv = "$";
 
-		// call method
+        for (Expr argExpr : ast.argumentsWithoutReceiver()) {
+            // generate code to evaluate all arguments
+            reg = gen(argExpr);
+            arguments.add(reg.repr);
+        }
 
-		// addl $0x8, %esp      # Reclaim stack space reserved for arguments.
+        // function call; method(0x5, 0x10);
+        // push %eax            # Save %eax before a function call.
+        // push %ecx            # Save %ecx before a function call.
+        // push %edx            # Save %edx before a function call.
 
-		// save return value (eax) somewhere
+        // subl $0x8, %esp      # Reserve space for the arguments (4 bytes for each arg).
+        // movl $0x10, 4(%esp)  # Put the second argument at the memory address %esp + 4.
+        // movl $0x5, (%esp)    # Put the first argument at the memory address %esp
 
-		// pop %edx				# Restore %edx after a function call.
-		// pop %ecx				# Restore %ecx after a function call.
-		// pop %eax				# Restore %eax after a function call.
+        // put arguments on the stack and save caller saved registers before making the call
+        cg.stack.beforeFunctionCall(arguments);
 
-		throw new ToDoException();
+        // call method
+
+        cg.emit.emit("call", String.format("%s$%s", recv, ast.methodName));
+
+        // movl %eax, ...       # save return value (eax) somewhere
+
+        // store return value in a new register
+        reg = cg.rm.getRegister();
+        cg.emit.emitMove(Register.EAX, reg);
+
+        // addl $0x8, %esp      # Reclaim stack space reserved for arguments.
+        // pop %edx				# Restore %edx after a function call.
+        // pop %ecx				# Restore %ecx after a function call.
+        // pop %eax				# Restore %eax after a function call.
+
+        cg.stack.afterFunctionCall(arguments);
+
+        return reg;
 	}
 
 	@Override
@@ -299,7 +324,7 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 	public Register var(Var ast, Void arg) {
 		Register reg = cg.rm.getRegister();
         // TODO: locals are no longer in the data section
-		cg.emit.emit("movl", AstCodeGenerator.VAR_PREFIX + ast.name, reg);
+		cg.emit.emitMove(String.format("%s%s", AstCodeGenerator.VAR_PREFIX, ast.name), reg);
 		return reg;
 	}
 }
