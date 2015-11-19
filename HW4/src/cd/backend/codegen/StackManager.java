@@ -28,15 +28,16 @@ public class StackManager {
     public void beforeFunctionCall(List<String> arguments) {
         storeCallerSavedRegs();
 
-        // TODO the space reserved probably needs to be something like ceil(actual_space_needed / 16) * 16
+        // TODO initialize correctly in prologue
 
+        // reserve space of size ceil(actual_space_needed / 16) * 16
         int argSpace = arguments.size() * Config.SIZEOF_PTR;
-        int adjustment = ((offsetFromOrigin + argSpace) % 16 + 1) * 16 - offsetFromOrigin; // TODO untested
+        int allocSpace = ((offsetFromOrigin + argSpace) / 16 + 1) * 16 - offsetFromOrigin;
 
         // make space for the arguments including alignment
         cg.emit.emitComment("Space for arguments and place arguments:");
-        cg.emit.emit("subl", constant(adjustment), RegisterManager.STACK_REG);
-        offsetFromOrigin += adjustment;
+        cg.emit.emit("subl", constant(allocSpace), RegisterManager.STACK_REG);
+        offsetFromOrigin += allocSpace;
 
         // place arguments
         for (int i = 0; i < arguments.size(); i++) {
@@ -50,11 +51,11 @@ public class StackManager {
     public void afterFunctionCall(List<String> arguments) {
 
         int argSpace = arguments.size() * Config.SIZEOF_PTR;
-        int adjustment = offsetFromOrigin - ((offsetFromOrigin - argSpace) % 16) * 16; // TODO untested
+        int allocSpace = offsetFromOrigin - ((offsetFromOrigin - argSpace) / 16) * 16;
 
         cg.emit.emitComment("Reclaim space from arguments:");
-        cg.emit.emit("addl", constant(adjustment), RegisterManager.STACK_REG);
-        offsetFromOrigin -= adjustment;
+        cg.emit.emit("addl", constant(allocSpace), RegisterManager.STACK_REG);
+        offsetFromOrigin -= allocSpace;
 
         restoreCallerSavedRegs();
     }
