@@ -17,6 +17,7 @@ public class VTableBuilder {
     public final static String VTABLE_PREFIX = "VTABLE";
 
     public VTableBuilder(AstCodeGenerator cg) {
+        // TODO refactor into just emitter, don't actually need the cg
         this.cg = cg;
     }
 
@@ -29,6 +30,7 @@ public class VTableBuilder {
 
         Symbol.ClassSymbol.objectType.vTable = VTable.makeObjectVTable();
         emitVTable(Symbol.TypeSymbol.ClassSymbol.objectType);
+        Symbol.ClassSymbol.objectType.oTable = new ObjectTableBuilder.ObjectTable(Symbol.ClassSymbol.objectType);
         handledClasses.add(Symbol.ClassSymbol.objectType);
 
         Symbol.ClassSymbol current;
@@ -51,6 +53,7 @@ public class VTableBuilder {
                 current = deferredClasses.pop();
                 buildVTable(current);
                 emitVTable(current);
+                ObjectTableBuilder.buildObjectTable(current);
                 handledClasses.add(current);
             }
         }

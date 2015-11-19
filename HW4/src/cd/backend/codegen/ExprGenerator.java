@@ -4,6 +4,8 @@ import static cd.Config.SCANF;
 import static cd.backend.codegen.AssemblyEmitter.arrayAddress;
 import static cd.backend.codegen.AssemblyEmitter.constant;
 import static cd.backend.codegen.RegisterManager.STACK_REG;
+
+import cd.Config;
 import cd.ToDoException;
 import cd.backend.codegen.RegisterManager.Register;
 import cd.ir.Ast.BinaryOp;
@@ -22,7 +24,11 @@ import cd.ir.Ast.ThisRef;
 import cd.ir.Ast.UnaryOp;
 import cd.ir.Ast.Var;
 import cd.ir.ExprVisitor;
+import cd.ir.Symbol;
 import cd.util.debug.AstOneLine;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Generates code to evaluate expressions. After emitting the code, returns a
@@ -204,9 +210,30 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 
 	@Override
 	public Register newObject(NewObject ast, Void arg) {
-		{
+		if (!(ast.type instanceof Symbol.ClassSymbol)) {
 			throw new ToDoException();
 		}
+		Symbol.ClassSymbol classSymbol = (Symbol.ClassSymbol) ast.type;
+
+		// prepare stack for a call
+		// if eax is in use, save it somewhere
+		// call calloc with calloc(classSymbol.oTable.getCount(), 4)
+		// move the returned address into a new register if needed
+		// restore eax
+
+		List<String> arguments = new ArrayList<>();
+		arguments.add(AssemblyEmitter.constant(classSymbol.oTable.getCount()));
+		arguments.add(AssemblyEmitter.constant(Config.SIZEOF_PTR));
+		cg.stack.beforeFunctionCall(arguments);
+
+		cg.emit.emit("call", Config.CALLOC);
+
+		Register res = cg.rm.getRegister();
+		cg.emit.emitMove(Register.EAX, res);
+
+		cg.stack.afterFunctionCall(arguments);
+
+		return res;
 	}
 
 	@Override
@@ -226,15 +253,18 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 	@Override
 	public Register methodCall(MethodCallExpr ast, Void arg) {
 		// function call; method(0x5, 0x10);
-		// subl $0x8, %esp      # Reserve space for the arguments (4 bytes for each arg).
-		// movl $0x10, 4(%esp)  # Put the second argument at the memory address %esp + 4.
-		// movl $0x5, (%esp)    # Put the first argument at the memory address %esp
-
 		// push %eax            # Save %eax before a function call.
 		// push %ecx            # Save %ecx before a function call.
 		// push %edx            # Save %edx before a function call.
 
+		// TODO the space reserved probably needs to be something like ceil(actual_space_needed / 16) * 16
+		// subl $0x8, %esp      # Reserve space for the arguments (4 bytes for each arg).
+		// movl $0x10, 4(%esp)  # Put the second argument at the memory address %esp + 4.
+		// movl $0x5, (%esp)    # Put the first argument at the memory address %esp
+
 		// call method
+
+		// addl $0x8, %esp      # Reclaim stack space reserved for arguments.
 
 		// save return value (eax) somewhere
 
@@ -242,7 +272,6 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 		// pop %ecx				# Restore %ecx after a function call.
 		// pop %eax				# Restore %eax after a function call.
 
-		// addl $0x8, %esp      # Reclaim stack space reserved for arguments.
 		throw new ToDoException();
 	}
 

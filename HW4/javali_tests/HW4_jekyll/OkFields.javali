@@ -1,0 +1,22 @@
+class A {
+    int a_field;
+}
+
+class B extends A {
+    int b_field;
+}
+
+class C extends B {
+    int c_field;
+}
+
+class D extends B {
+    int d1_field;
+    int d2_field;
+}
+
+class Main {
+    void main() {
+        write(1);
+    }
+}

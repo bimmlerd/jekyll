@@ -24,6 +24,7 @@ public class AstCodeGenerator {
 	protected final Main main;
 	
 	protected final AssemblyEmitter emit;
+	protected final StackManager stack;
 	protected final RegisterManager rm = new RegisterManager();
 
 	AstCodeGenerator(Main main, Writer out) {
@@ -32,6 +33,7 @@ public class AstCodeGenerator {
 		}
 		
 		this.emit = new AssemblyEmitter(out);
+		this.stack = new StackManager(this);
 		this.main = main;
 		this.rnv = new RegsNeededVisitor();
 
@@ -112,32 +114,11 @@ public class AstCodeGenerator {
 		emit.emitRaw(Config.DOT_STRING + " \"%d\"");
 	}
 
-	protected void emitMethodPrefix(Ast.MethodDecl methodDecl) {
-		emit.emitLabel(String.format("CLASSNAME$%s", methodDecl.name)); // TODO need the class name here
-
-		// TODO replace with enter?
-		// Preamble: save the old %ebp and point %ebp to the saved %ebp (ie, the new stack frame).
-		emit.emit("push", BASE_REG);
-		emit.emitMove(STACK_REG, BASE_REG);
-		// Reserve space for local variables.
-		int space = methodDecl.decls().children().size() * 4; // TODO do nicer
-		emit.emit("subl", AssemblyEmitter.constant(space), STACK_REG);
-
-		// save callee saved registers
-		for (Register reg : RegisterManager.CALLEE_SAVE) {
-			emit.emit("push", reg);
-		}
-
-	}
-
 	protected void emitMethodSuffix(boolean returnNull) {
 		if (returnNull)
 			emit.emit("movl", "$0", Register.EAX);
 
-		// restore callee saved registers (reversed order!)
-		for (int i = CALLEE_SAVE.length - 1; i >= 0; i--) {
-			emit.emit("pop", CALLEE_SAVE[i]);
-		}
+		stack.restoreCalleeSavedRegs();
 
 		emit.emitRaw("leave");
 		emit.emitRaw("ret");

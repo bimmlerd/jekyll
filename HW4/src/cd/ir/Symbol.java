@@ -1,5 +1,6 @@
 package cd.ir;
 
+import cd.backend.codegen.ObjectTableBuilder;
 import cd.backend.codegen.VTableBuilder;
 
 import java.util.ArrayList;
@@ -91,6 +92,7 @@ public abstract class Symbol {
 		public final Map<String, VariableSymbol> fields = new HashMap<>();
 		public final Map<String, MethodSymbol> methods = new HashMap<>();
 		public VTableBuilder.VTable vTable;
+		public ObjectTableBuilder.ObjectTable oTable;
 
 		/** Symbols for the built-in Object and null types */
 		public static final ClassSymbol nullType = new ClassSymbol("<null>");
