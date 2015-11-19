@@ -30,9 +30,8 @@ public class StackManager {
 
         // TODO initialize correctly in prologue
 
-        // reserve space of size ceil(actual_space_needed / 16) * 16
         int argSpace = arguments.size() * Config.SIZEOF_PTR;
-        int adjustment = -(offsetFromOrigin % 16 + 4 * argSpace) % 16;
+        int adjustment = 16 - (offsetFromOrigin % 16 + argSpace) % 16;
         int allocSpace = adjustment + argSpace;
 
         // make space for the arguments including alignment
@@ -51,7 +50,7 @@ public class StackManager {
     public void afterFunctionCall(List<String> arguments) {
 
         int argSpace = arguments.size() * Config.SIZEOF_PTR;
-        int adjustment = -(offsetFromOrigin % 16 + 4 * argSpace) % 16;
+        int adjustment = 16 - (offsetFromOrigin % 16 + argSpace) % 16;
         int allocSpace = adjustment + argSpace;
 
         cg.emit.emitComment("Reclaim space from arguments:");
