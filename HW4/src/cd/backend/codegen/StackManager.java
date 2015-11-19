@@ -4,6 +4,8 @@ import cd.Config;
 
 import java.util.List;
 
+import static cd.backend.codegen.AssemblyEmitter.constant;
+
 /**
  * Utility class to prepare the stack for function calls etc
  */
@@ -28,20 +30,18 @@ public class StackManager {
 
         // TODO the space reserved probably needs to be something like ceil(actual_space_needed / 16) * 16
 
-        // make space for and place arguments
+        int argSpace = arguments.size() * Config.SIZEOF_PTR;
+        int adjustment = ((offsetFromOrigin + argSpace) % 16 + 1) * 16 - offsetFromOrigin; // TODO untested
+
+        // make space for the arguments including alignment
         cg.emit.emitComment("Space for arguments and place arguments:");
-        cg.emit.emit("subl", arguments.size() * Config.SIZEOF_PTR, RegisterManager.STACK_REG);
-        offsetFromOrigin += arguments.size() * Config.SIZEOF_PTR;
+        cg.emit.emit("subl", constant(adjustment), RegisterManager.STACK_REG);
+        offsetFromOrigin += adjustment;
+
+        // place arguments
         for (int i = 0; i < arguments.size(); i++) {
             cg.emit.emitStore(arguments.get(i), i * Config.SIZEOF_PTR, RegisterManager.STACK_REG);
         }
-
-        // TODO broken
-        // TODO align the stack before pushing the arguments, for offset calculation in callee
-        assert offsetFromOrigin >= 0;
-        int adjustment = offsetFromOrigin % 16;
-        cg.emit.emitComment("Aligning stack for function call:");
-        cg.emit.emit("subl", AssemblyEmitter.constant(adjustment), RegisterManager.STACK_REG);
     }
 
     /**
@@ -49,14 +49,12 @@ public class StackManager {
      */
     public void afterFunctionCall(List<String> arguments) {
 
-        cg.emit.emitComment("Undo stack align after function call:");
-        int adjustment = offsetFromOrigin % 16;
-        cg.emit.emit("addl", AssemblyEmitter.constant(adjustment), RegisterManager.STACK_REG);
-
+        int argSpace = arguments.size() * Config.SIZEOF_PTR;
+        int adjustment = offsetFromOrigin - ((offsetFromOrigin - argSpace) % 16) * 16; // TODO untested
 
         cg.emit.emitComment("Reclaim space from arguments:");
-        cg.emit.emit("addl", arguments.size() * Config.SIZEOF_PTR, RegisterManager.STACK_REG);
-        offsetFromOrigin -= arguments.size() * Config.SIZEOF_PTR;
+        cg.emit.emit("addl", constant(adjustment), RegisterManager.STACK_REG);
+        offsetFromOrigin -= adjustment;
 
         restoreCallerSavedRegs();
     }
