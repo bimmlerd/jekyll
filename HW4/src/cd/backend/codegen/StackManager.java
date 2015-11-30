@@ -28,8 +28,6 @@ public class StackManager {
     public void beforeFunctionCall(List<String> arguments) {
         storeCallerSavedRegs();
 
-        // TODO initialize correctly in prologue
-
         int argSpace = arguments.size() * Config.SIZEOF_PTR;
         int adjustment = 16 - (offsetFromOrigin % 16 + argSpace) % 16;
         int allocSpace = adjustment + argSpace;

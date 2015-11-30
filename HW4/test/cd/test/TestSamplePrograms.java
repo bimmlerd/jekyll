@@ -1,18 +1,17 @@
 package cd.test;
 
+import cd.Config;
+import cd.Main;
+import cd.util.FileUtil;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+
 import java.io.File;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
-
-import cd.Config;
-import cd.Main;
-import cd.util.FileUtil;
 
 @RunWith(Parameterized.class)
 public class TestSamplePrograms extends AbstractTestAgainstFrozenReference {
@@ -22,7 +21,7 @@ public class TestSamplePrograms extends AbstractTestAgainstFrozenReference {
 	 * variable like:
 	 * {@code justFile = new File("javali_tests/HW2/Inheritance.javali")}.
 	 */
-	public static final File justFile = new File("javali_tests/HW4/OkVirtualMethod.javali");
+	public static final File justFile = new File("javali_tests/HW4_jekyll/SimpleTryOut.javali");
 //	public static final File justFile = null;
 
 	/**

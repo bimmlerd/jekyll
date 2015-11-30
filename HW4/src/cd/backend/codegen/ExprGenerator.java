@@ -12,9 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static cd.Config.SCANF;
-import static cd.backend.codegen.AssemblyEmitter.arrayAddress;
-import static cd.backend.codegen.AssemblyEmitter.constant;
-import static cd.backend.codegen.AssemblyEmitter.labelAddress;
+import static cd.backend.codegen.AssemblyEmitter.*;
 import static cd.backend.codegen.RegisterManager.STACK_REG;
 
 /**
@@ -176,6 +174,15 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
         }
 
         // TODO exit with error code ExitCode.INVALID_ARRAY_BOUNDS if array index is invalid
+		// array structure on heap:
+		//  --------------------  ptr +
+		// | vtable ptr			| 0 - 4
+		// | length of array	| 4 - 8
+		// | data[0]			| 8 - 12
+		// | ...				|
+		// | data[length - 1]	|
+		//  --------------------
+
         // access array element
         cg.emit.emitMove(arrayAddress(baseReg, offsetReg), baseReg);
 
@@ -200,6 +207,16 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 	@Override
 	public Register newArray(NewArray ast, Void arg) {
         // TODO exit with error code ExitCode.INVALID_ARRAY_SIZE if array size is negative
+
+		// array structure on heap:
+		//  --------------------  ptr +
+		// | vtable ptr			| 0 - 4
+		// | length of array	| 4 - 8
+		// | data[0]			| 8 - 12
+		// | ...				|
+		// | data[length - 1]	|
+		//  --------------------
+
 		{
 			throw new ToDoException();
 		}
@@ -212,11 +229,11 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 		}
 		Symbol.ClassSymbol classSymbol = (Symbol.ClassSymbol) ast.type;
 
-		// prepare stack for a call
-		// if eax is in use, save it somewhere
-		// call calloc with calloc(classSymbol.oTable.getCount(), 4)
-		// move the returned address into a new register if needed
-		// restore eax
+		// object structure on heap: TODO
+		//  --------------------  ptr +
+		// | vtable ptr			| 0 - 4
+		// | data 				| 4 - ...
+		//  --------------------
 
 		List<String> arguments = new ArrayList<>();
 		arguments.add(AssemblyEmitter.constant(classSymbol.oTable.getCount()));
@@ -225,11 +242,14 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 
 		cg.emit.emit("call", Config.CALLOC);
 
-		// store return value in a new register
+		// store address in a new register
 		Register reg = cg.rm.getRegister();
 		cg.emit.emitMove(Register.EAX, reg);
 
 		cg.stack.afterFunctionCall(arguments);
+
+		// store vtable ptr
+		//classSymbol.vTable.getVTableLabel()
 
 		return reg;
 	}
@@ -282,6 +302,7 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 
         // call method
 
+		// TODO don't do the name logic yourself, use getMethodLabel
         cg.emit.emit("call", String.format("%s$%s", recv, ast.methodName));
 
         // movl %eax, ...       # save return value (eax) somewhere

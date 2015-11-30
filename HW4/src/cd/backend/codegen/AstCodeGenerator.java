@@ -4,8 +4,10 @@ import cd.Config;
 import cd.Main;
 import cd.backend.codegen.RegisterManager.Register;
 import cd.ir.Ast.ClassDecl;
+import cd.ir.Symbol;
 
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.List;
 
 import static cd.Config.MAIN;
@@ -68,6 +70,13 @@ public class AstCodeGenerator {
 	public void go(List<ClassDecl> astRoots) {
 		new VTableBuilder(this).emitVTables(astRoots);
 
+		for (ClassDecl classDecl : astRoots) {
+			if (classDecl.name.equals("Main")) {
+				mainSymbol = classDecl.sym;
+				break;
+			}
+		}
+
 		emitPrologue();
 
 		emit.emitCommentSection("Body");
@@ -80,6 +89,8 @@ public class AstCodeGenerator {
 
 		emitEpilogue();
 	}
+
+	private Symbol.ClassSymbol mainSymbol;
 
 
 	protected void initMethodData() {
@@ -96,9 +107,30 @@ public class AstCodeGenerator {
 		emit.emit("enter", constant(8), constant(0));
 		emit.emit("and", -16, STACK_REG); // 1111...0000 -> align
 
+
+
 		// create new Main object
+		List<String> arguments = new ArrayList<>();
+		arguments.add(AssemblyEmitter.constant(mainSymbol.oTable.getCount()));
+		arguments.add(AssemblyEmitter.constant(Config.SIZEOF_PTR));
+		stack.beforeFunctionCall(arguments);
+
+		emit.emit("call", Config.CALLOC);
+
+		// store address in a new register
+		Register mainInstance = rm.getRegister();
+		emit.emitMove(Register.EAX, mainInstance);
+
+		stack.afterFunctionCall(arguments);
+
+		// store vtable ptr
+		// TODO no need to spill here, right?
+		Register vTablePointer = rm.getRegister();
+		emit.emitMove(mainSymbol.vTable.getVTableLabel(), vTablePointer);
+		emit.emitStore(vTablePointer, 0, mainInstance);
+
 		// call Main.main
-		emit.emitComment("TODO Create new Main, call main on it");
+		emit.emit("call", mainSymbol.vTable.getMethodLabel("main"));
 
 		emitMethodSuffix(true);
 	}

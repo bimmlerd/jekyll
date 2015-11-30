@@ -115,6 +115,10 @@ public class VTableBuilder {
             return VTableBuilder.getVTableLabel(classSymbol);
         }
 
+        public String getMethodLabel(String unqualifiedMethodName) {
+            return VTableBuilder.getMethodLabel(unqualifiedMethodName, classSymbol);
+        }
+
         public List<String> getSortedList() {
             String[] res = new String[table.values().size()];
             table.values().forEach(p -> res[p.getValue()] = p.getKey());
@@ -134,19 +138,31 @@ public class VTableBuilder {
         return getVTableLabel(classSymbol.name);
     }
 
+    public static String getMethodLabel(String unqualifiedMethodName, String className) {
+        return String.format("%s$%s", className, unqualifiedMethodName);
+    }
+
+    public static String getMethodLabel(String unqualifiedMethodName, Ast.ClassDecl classDecl) {
+        return getMethodLabel(unqualifiedMethodName, classDecl.name);
+    }
+
+    public static String getMethodLabel(String unqualifiedMethodName, Symbol.ClassSymbol classSymbol) {
+        return getMethodLabel(unqualifiedMethodName, classSymbol.name);
+    }
+
     public static String getMethodLabel(Ast.MethodDecl methodDecl, Ast.ClassDecl classDecl) {
-        return String.format("%s$%s", classDecl.name, methodDecl.name);
+        return getMethodLabel(methodDecl.name, classDecl.name);
     }
 
     public static String getMethodLabel(Symbol.MethodSymbol methodSymbol, Ast.ClassDecl classDecl) {
-        return getMethodLabel(methodSymbol.ast, classDecl);
+        return getMethodLabel(methodSymbol.name, classDecl.name);
     }
 
     public static String getMethodLabel(Ast.MethodDecl methodDecl, Symbol.ClassSymbol classSymbol) {
-        return getMethodLabel(methodDecl, classSymbol.ast);
+        return getMethodLabel(methodDecl.name, classSymbol.name);
     }
 
     public static String getMethodLabel(Symbol.MethodSymbol methodSymbol, Symbol.ClassSymbol classSymbol) {
-        return getMethodLabel(methodSymbol.ast, classSymbol.ast);
+        return getMethodLabel(methodSymbol.name, classSymbol.name);
     }
 }
