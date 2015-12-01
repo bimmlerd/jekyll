@@ -13,6 +13,7 @@ import java.util.List;
 
 import static cd.Config.SCANF;
 import static cd.backend.codegen.AssemblyEmitter.*;
+import static cd.backend.codegen.RegisterManager.BASE_REG;
 import static cd.backend.codegen.RegisterManager.STACK_REG;
 
 /**
@@ -344,8 +345,8 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 	@Override
 	public Register var(Var ast, Void arg) {
 		Register reg = cg.rm.getRegister();
-        // TODO: locals are no longer in the data section
-		cg.emit.emitMove(String.format("%s%s", AstCodeGenerator.VAR_PREFIX, ast.name), reg);
+		int offset = cg.stack.getOffsetForLocal(ast.name);
+		cg.emit.emitMove(String.format("%d(%s)", offset, BASE_REG), reg);
 		return reg;
 	}
 }

@@ -58,7 +58,7 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 	public Register methodDecl(MethodDecl ast, Void arg) {
 		cg.emit.emitLabel(String.format("%s$%s", currentClass.name, ast.name));
 
-		cg.stack.methodPreamble(ast.decls().children());
+		cg.stack.methodPreamble(ast.name, ast.decls().children());
 
 		cg.stack.storeCalleeSavedRegs();
 

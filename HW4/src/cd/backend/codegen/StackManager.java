@@ -1,9 +1,12 @@
 package cd.backend.codegen;
 
 import cd.Config;
+import cd.ToDoException;
 import cd.ir.Ast;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static cd.backend.codegen.AssemblyEmitter.constant;
 
@@ -14,19 +17,59 @@ public class StackManager {
 
     private final AstCodeGenerator cg;
 
-    // TODO maybe this is useful, requires that all stack interaction goes through us though
     private int offsetFromOrigin = 0; // origin is 16 aligned: esp == XX..XXX0000 in binary
+
+    private Map<String, Integer> currentFunctionScope;
+
+    // function name maps to a local scope, scope maps name to offset from ebp
+    private Map<String, Map<String, Integer>> localScopes = new HashMap<>();
 
     public StackManager(AstCodeGenerator codeGenerator) {
         cg = codeGenerator;
     }
 
-    public void methodPreamble(List<Ast> locals) {
+    public Map<String, Integer> createFunctionScope(String methodName) {
+        if (!localScopes.containsKey(methodName)) {
+            Map<String, Integer> res = new HashMap<>();
+            localScopes.put(methodName, res);
+            return res;
+        } else {
+            throw new ToDoException();
+        }
+    }
+
+
+    public int getOffsetForLocal(String name) {
+        if (currentFunctionScope == null) {
+            throw new ToDoException();
+        }
+
+        return currentFunctionScope.get(name);
+    }
+
+    /**
+     * allocates stack space for @param locals of a method, and adjusts stack
+     * offset
+     */
+    public void methodPreamble(String methodName, List<Ast> locals) {
+        currentFunctionScope =  createFunctionScope(methodName);
+
         int localSpace = locals.size() * Config.SIZEOF_PTR;
         cg.emit.emit("enter",
                 AssemblyEmitter.constant(localSpace),
                 AssemblyEmitter.constant(0));
-        offsetFromOrigin += localSpace + 4; // localspace for locals, 4 for enter
+        offsetFromOrigin += localSpace + 4; // localSpace for locals, 4 for enter
+
+        cg.emit.emitComment("Zero locals on stack");
+        int basePointerOffset = Config.SIZEOF_PTR; // $ebp + 0 is old ebp
+        for (Ast astLocal : locals) {
+            Ast.VarDecl local = (Ast.VarDecl) astLocal;
+            currentFunctionScope.put(local.name, basePointerOffset);
+            cg.emit.emitStore(AssemblyEmitter.constant(0),
+                    basePointerOffset,
+                    RegisterManager.BASE_REG);
+            basePointerOffset += Config.SIZEOF_PTR;
+        }
     }
 
     /**
