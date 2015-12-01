@@ -1,6 +1,7 @@
 package cd.backend.codegen;
 
 import cd.Config;
+import cd.ir.Ast;
 
 import java.util.List;
 
@@ -18,6 +19,14 @@ public class StackManager {
 
     public StackManager(AstCodeGenerator codeGenerator) {
         cg = codeGenerator;
+    }
+
+    public void methodPreamble(List<Ast> locals) {
+        int localSpace = locals.size() * Config.SIZEOF_PTR;
+        cg.emit.emit("enter",
+                AssemblyEmitter.constant(localSpace),
+                AssemblyEmitter.constant(0));
+        offsetFromOrigin += localSpace + 4; // localspace for locals, 4 for enter
     }
 
     /**

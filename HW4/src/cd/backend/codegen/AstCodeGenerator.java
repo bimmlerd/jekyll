@@ -107,8 +107,6 @@ public class AstCodeGenerator {
 		emit.emit("enter", constant(8), constant(0));
 		emit.emit("and", -16, STACK_REG); // 1111...0000 -> align
 
-
-
 		// create new Main object
 		List<String> arguments = new ArrayList<>();
 		arguments.add(AssemblyEmitter.constant(mainSymbol.oTable.getCount()));

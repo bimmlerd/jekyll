@@ -13,8 +13,6 @@ import java.util.List;
 
 import static cd.backend.codegen.AssemblyEmitter.constant;
 import static cd.backend.codegen.AssemblyEmitter.labelAddress;
-import static cd.backend.codegen.RegisterManager.BASE_REG;
-import static cd.backend.codegen.RegisterManager.STACK_REG;
 
 /**
  * Generates code to process statements and declarations.
@@ -60,13 +58,7 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 	public Register methodDecl(MethodDecl ast, Void arg) {
 		cg.emit.emitLabel(String.format("%s$%s", currentClass.name, ast.name));
 
-		// TODO replace with enter?
-		// Preamble: save the old %ebp and point %ebp to the saved %ebp (ie, the new stack frame).
-		cg.emit.emit("push", BASE_REG);
-		cg.emit.emitMove(STACK_REG, BASE_REG);
-		// Reserve space for local variables. // TODO keep track of offsets for varDecls ?
-		int space = ast.decls().children().size() * Config.SIZEOF_PTR; // TODO do nicer
-		cg.emit.emit("subl", AssemblyEmitter.constant(space), STACK_REG);
+		cg.stack.methodPreamble(ast.decls().children());
 
 		cg.stack.storeCalleeSavedRegs();
 
