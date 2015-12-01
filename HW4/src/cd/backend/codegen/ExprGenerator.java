@@ -20,19 +20,15 @@ import static cd.backend.codegen.RegisterManager.STACK_REG;
  * Generates code to evaluate expressions. After emitting the code, returns a
  * Register where the result can be found.
  */
-class ExprGenerator extends ExprVisitor<Register, Void> {
+class ExprGenerator extends ExprVisitor<Register, Context> {
 	protected final AstCodeGenerator cg;
 
 	ExprGenerator(AstCodeGenerator astCodeGenerator) {
 		cg = astCodeGenerator;
 	}
 
-	public Register gen(Expr ast) {
-		return visit(ast, null);
-	}
-
-	@Override
-	public Register visit(Expr ast, Void arg) {
+    @Override
+	public Register visit(Expr ast, Context ctx) {
 		try {
 			cg.emit.increaseIndent(String.format("Emitting %s", AstOneLine.toString(ast)));
 			return super.visit(ast, null);
@@ -43,7 +39,7 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 	}
 
 	@Override
-	public Register binaryOp(BinaryOp ast, Void arg) {
+	public Register binaryOp(BinaryOp ast, Context ctx) {
 		// Simplistic HW1 implementation that does
 		// not care if it runs out of registers, and
 		// supports only a limited range of operations:
@@ -53,11 +49,11 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 
 		Register leftReg, rightReg;
 		if (leftRN > rightRN) {
-			leftReg = gen(ast.left());
-			rightReg = gen(ast.right());
+            leftReg = visit(ast.left(), ctx);
+            rightReg = visit(ast.right(), ctx);
 		} else {
-			rightReg = gen(ast.right());
-			leftReg = gen(ast.left());
+            rightReg = visit(ast.right(), ctx);
+            leftReg = visit(ast.left(), ctx);
 		}
 
 		cg.debug("Binary Op: %s (%s,%s)", ast, leftReg, rightReg);
@@ -124,14 +120,14 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 	}
 
 	@Override
-	public Register booleanConst(BooleanConst ast, Void arg) {
+	public Register booleanConst(BooleanConst ast, Context ctx) {
         Register reg = cg.rm.getRegister();
         cg.emit.emitMove(ast.value ? constant(1) : constant(0), reg);
         return reg;
 	}
 
 	@Override
-	public Register builtInRead(BuiltInRead ast, Void arg) {
+	public Register builtInRead(BuiltInRead ast, Context ctx) {
 		Register reg = cg.rm.getRegister();
 		cg.emit.emit("leal", AssemblyEmitter.registerOffset(8, STACK_REG), reg);
 
@@ -150,7 +146,7 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 	}
 
 	@Override
-	public Register cast(Cast ast, Void arg) {
+	public Register cast(Cast ast, Context ctx) {
         // TODO exit with error code ExitCode.INVALID_DOWNCAST if runtime type is not a subtype of cast type
 		{
 			throw new ToDoException();
@@ -158,7 +154,7 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 	}
 
 	@Override
-	public Register index(Index ast, Void arg) {
+	public Register index(Index ast, Context ctx) {
 
         int leftRN = cg.rnv.calc(ast.left());
         int rightRN = cg.rnv.calc(ast.right());
@@ -166,12 +162,12 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
         Register baseReg, offsetReg;
         if (leftRN > rightRN) {
             // generate code to get the base address of the array
-            baseReg = gen(ast.left());
+            baseReg = visit(ast.left(), ctx);
             // generate code to get the offset in the array
-            offsetReg = gen(ast.right());
+            offsetReg = visit(ast.right(), ctx);
         } else {
-            offsetReg = gen(ast.right());
-            baseReg = gen(ast.left());
+            offsetReg = visit(ast.right(), ctx);
+            baseReg = visit(ast.left(), ctx);
         }
 
         // TODO exit with error code ExitCode.INVALID_ARRAY_BOUNDS if array index is invalid
@@ -184,29 +180,41 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 		// | data[length - 1]	|
 		//  --------------------
 
-        // access array element
-        cg.emit.emitMove(arrayAddress(baseReg, offsetReg), baseReg);
+        if (ctx.calculateValue) {
+            cg.emit.emitMove(arrayAddress(baseReg, offsetReg), baseReg); // access array element
+        } else {
+            cg.emit.emit("leal", arrayAddress(baseReg, offsetReg), baseReg); // store address of array element
+        }
 
         cg.rm.releaseRegister(offsetReg);
         return baseReg;
 	}
 
 	@Override
-	public Register intConst(IntConst ast, Void arg) {
+	public Register intConst(IntConst ast, Context ctx) {
         Register reg = cg.rm.getRegister();
         cg.emit.emitMove(constant(ast.value), reg);
         return reg;
 	}
 
 	@Override
-	public Register field(Field ast, Void arg) {
+	public Register field(Field ast, Context ctx) {
 		{
 			throw new ToDoException();
 		}
-	}
+
+/* TODO
+        if (ctx.calculateValue) {
+            cg.emit.emitMove(arrayAddress(baseReg, offsetReg), baseReg); // access array element
+        } else {
+            cg.emit.emit("leal", arrayAddress(baseReg, offsetReg), baseReg); // store address of array element
+        }
+*/
+
+    }
 
 	@Override
-	public Register newArray(NewArray ast, Void arg) {
+	public Register newArray(NewArray ast, Context ctx) {
         // TODO exit with error code ExitCode.INVALID_ARRAY_SIZE if array size is negative
 
 		// array structure on heap:
@@ -224,7 +232,7 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 	}
 
 	@Override
-	public Register newObject(NewObject ast, Void arg) {
+	public Register newObject(NewObject ast, Context ctx) {
 		if (!(ast.type instanceof Symbol.ClassSymbol)) {
 			throw new ToDoException();
 		}
@@ -256,28 +264,28 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 	}
 
 	@Override
-	public Register nullConst(NullConst ast, Void arg) {
+	public Register nullConst(NullConst ast, Context ctx) {
 		Register reg = cg.rm.getRegister();
 		cg.emit.emitMove(constant(0), reg);
 		return reg;
 	}
 
 	@Override
-	public Register thisRef(ThisRef ast, Void arg) {
+	public Register thisRef(ThisRef ast, Context ctx) {
 		{
 			throw new ToDoException();
 		}
 	}
 
 	@Override
-	public Register methodCall(MethodCallExpr ast, Void arg) {
+	public Register methodCall(MethodCallExpr ast, Context ctx) {
         List<String> arguments = new ArrayList<>();
 
         if (!(ast.receiver().type instanceof Symbol.ClassSymbol)) {
             // should be caught by semantic analyzer
             throw new ToDoException();
         }
-        Register reg = gen(ast.receiver());
+        Register reg = visit(ast.receiver(), ctx);
         arguments.add(reg.repr);
         // TODO target is determined by the runtime type of the object instance
         // get class name to construct label
@@ -285,7 +293,7 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 
         for (Expr argExpr : ast.argumentsWithoutReceiver()) {
             // generate code to evaluate all arguments
-            reg = gen(argExpr);
+            reg = visit(argExpr, ctx);
             arguments.add(reg.repr);
         }
 
@@ -323,8 +331,8 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 	}
 
 	@Override
-	public Register unaryOp(UnaryOp ast, Void arg) {
-        Register argReg = gen(ast.arg());
+	public Register unaryOp(UnaryOp ast, Context ctx) {
+        Register argReg = visit(ast.arg(), ctx);
         switch (ast.operator) {
         case U_PLUS:
             break;
@@ -343,10 +351,16 @@ class ExprGenerator extends ExprVisitor<Register, Void> {
 	}
 	
 	@Override
-	public Register var(Var ast, Void arg) {
+	public Register var(Var ast, Context ctx) {
 		Register reg = cg.rm.getRegister();
 		int offset = cg.stack.getOffsetForLocal(ast.name);
-		cg.emit.emitMove(String.format("%d(%s)", offset, BASE_REG), reg);
-		return reg;
-	}
+
+        if (ctx.calculateValue) {
+            cg.emit.emitMove(String.format("%d(%s)", offset, BASE_REG), reg); // access local variable
+        } else {
+            cg.emit.emit("leal", String.format("%d(%s)", offset, BASE_REG), reg); // store address of local variable
+        }
+
+        return reg;
+    }
 }

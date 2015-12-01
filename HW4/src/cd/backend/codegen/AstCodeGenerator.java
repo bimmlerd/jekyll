@@ -81,8 +81,10 @@ public class AstCodeGenerator {
 
 		emit.emitCommentSection("Body");
 
+        Context ctx;
 		for (ClassDecl ast : astRoots) {
-			sg.gen(ast);
+			ctx = new Context(ast.sym, true); // context information for current class
+			sg.visit(ast, ctx);
 		}
 
 		emit.emitCommentSection("Epilogue");

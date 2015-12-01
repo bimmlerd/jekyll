@@ -17,31 +17,26 @@ import static cd.backend.codegen.AssemblyEmitter.labelAddress;
 /**
  * Generates code to process statements and declarations.
  */
-class StmtGenerator extends AstVisitor<Register, Void> {
+class StmtGenerator extends AstVisitor<Register, Context> {
 	protected final AstCodeGenerator cg;
-	private Symbol.ClassSymbol currentClass;
 
 	StmtGenerator(AstCodeGenerator astCodeGenerator) {
 		cg = astCodeGenerator;
 	}
 
-	public void gen(Ast ast) {
-		visit(ast, null);
-	}
-
-	@Override
-	public Register visit(Ast ast, Void arg) {
+    @Override
+	public Register visit(Ast ast, Context ctx) {
 		try {
 			cg.emit.increaseIndent(String.format("Emitting %s", AstOneLine.toString(ast)));
-			return super.visit(ast, arg);
+			return super.visit(ast, ctx);
 		} finally {
 			cg.emit.decreaseIndent();
 		}
 	}
 
 	@Override
-	public Register methodCall(MethodCall ast, Void dummy) {
-		Register reg = cg.eg.gen(ast.getMethodCallExpr());
+	public Register methodCall(MethodCall ast, Context ctx) {
+        Register reg = cg.eg.visit(ast.getMethodCallExpr(), ctx);
 		// return value is not stored
 		cg.rm.releaseRegister(reg);
 		return null;
@@ -49,21 +44,20 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 
 	// Emit vtable for arrays of this class:
 	@Override
-	public Register classDecl(ClassDecl ast, Void arg) {
-		currentClass = ast.sym;
-		return visitChildren(ast, arg);
+	public Register classDecl(ClassDecl ast, Context ctx) {
+		return visitChildren(ast, ctx);
 	}
 
 	@Override
-	public Register methodDecl(MethodDecl ast, Void arg) {
-		cg.emit.emitLabel(String.format("%s$%s", currentClass.name, ast.name));
+	public Register methodDecl(MethodDecl ast, Context ctx) {
+		cg.emit.emitLabel(String.format("%s$%s", ctx.currentClass.name, ast.name));
 
 		cg.stack.methodPreamble(ast.name, ast.decls().children());
 
 		cg.stack.storeCalleeSavedRegs();
 
 		// # Function body.
-		visit(ast.body(), arg);
+		visit(ast.body(), ctx);
 
 		// TODO somehow avoid emitting the suffix again if we had a return in the body?
 		cg.emitMethodSuffix(ast.sym.returnType.equals(Symbol.PrimitiveTypeSymbol.voidType));
@@ -71,13 +65,13 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 	}
 
 	@Override
-	public Register ifElse(IfElse ast, Void arg) {
+	public Register ifElse(IfElse ast, Context ctx) {
 
         String labelAfterThen = cg.emit.uniqueLabel();
         String labelAfterElse = cg.emit.uniqueLabel();
 
 		// generate code to evaluate the condition
-        Register conditionReg = cg.eg.gen(ast.condition());
+        Register conditionReg = cg.eg.visit(ast.condition(), ctx);
 
 		// decide whether then-part is executed
 		cg.emit.emit("cmp", constant(0), conditionReg);
@@ -85,21 +79,21 @@ class StmtGenerator extends AstVisitor<Register, Void> {
         cg.emit.emit("je", labelAfterThen);
 
 		// generate code for then-part
-        gen(ast.then());
+        visit(ast.then(), ctx);
 
         // skip around else-part
         cg.emit.emit("jmp", labelAfterElse);
         cg.emit.emitLabel(labelAfterThen);
 
         // generate code for else-part
-        gen(ast.otherwise());
+        visit(ast.otherwise(), ctx);
 
         cg.emit.emitLabel(labelAfterElse);
 		return null;
 	}
 
 	@Override
-	public Register whileLoop(WhileLoop ast, Void arg) {
+	public Register whileLoop(WhileLoop ast, Context ctx) {
 
         String labelBeforeTest = cg.emit.uniqueLabel();
         String labelAfterBody = cg.emit.uniqueLabel();
@@ -107,7 +101,7 @@ class StmtGenerator extends AstVisitor<Register, Void> {
         cg.emit.emitLabel(labelBeforeTest);
 
         // generate code to evaluate the condition
-        Register conditionReg = cg.eg.gen(ast.condition());
+        Register conditionReg = cg.eg.visit(ast.condition(), ctx);
 
         // decide whether loop-body is executed
         cg.emit.emit("cmp", constant(0), conditionReg);
@@ -115,7 +109,7 @@ class StmtGenerator extends AstVisitor<Register, Void> {
         cg.emit.emit("je", labelAfterBody);
 
         // generate code for loop-body
-        gen(ast.body());
+        visit(ast.body(), ctx);
 
         cg.emit.emit("jmp", labelBeforeTest);
         cg.emit.emitLabel(labelAfterBody);
@@ -123,21 +117,24 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 	}
 
 	@Override
-	public Register assign(Assign ast, Void arg) {
-        // TODO visitor for allowed LHS to return addresses and not value stored at the address
-		if (!(ast.left() instanceof Var))
-			throw new RuntimeException("LHS must be var in HW1");
-		Var var = (Var) ast.left();
-		Register rhsReg = cg.eg.gen(ast.right());
-		cg.emit.emitMove(rhsReg, String.format("%s%s", AstCodeGenerator.VAR_PREFIX, var.name));
+	public Register assign(Assign ast, Context ctx) {
+        // we need an address where to store the assigned value
+        ctx.calculateValue = false;
+        Register lhsReg = cg.eg.visit(ast.left(), ctx);
+
+        // we want to value of the rhs expression
+        ctx.calculateValue = true;
+        Register rhsReg = cg.eg.visit(ast.right(), ctx);
+
+		cg.emit.emitStore(rhsReg, 0, lhsReg);
 		cg.rm.releaseRegister(rhsReg);
 		return null;
 	}
 
 	@Override
-	public Register builtInWrite(BuiltInWrite ast, Void arg) {
+	public Register builtInWrite(BuiltInWrite ast, Context ctx) {
         // evaluate integer expression to print
-        Register reg = cg.eg.gen(ast.arg());
+        Register reg = cg.eg.visit(ast.arg(), ctx);
         List<String> arguments = new ArrayList<>();
         arguments.add(labelAddress("STR_D"));
         arguments.add(reg.repr);
@@ -152,7 +149,7 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 	}
 
 	@Override
-	public Register builtInWriteln(BuiltInWriteln ast, Void arg) {
+	public Register builtInWriteln(BuiltInWriteln ast, Context ctx) {
         List<String> arguments = new ArrayList<>();
         arguments.add(labelAddress("STR_NL"));
 
@@ -165,12 +162,12 @@ class StmtGenerator extends AstVisitor<Register, Void> {
 	}
 
 	@Override
-	public Register returnStmt(ReturnStmt ast, Void arg) {
+	public Register returnStmt(ReturnStmt ast, Context ctx) {
         if (ast.arg() == null) {
             // no return value
             cg.emitMethodSuffix(true);
         } else {
-            Register reg = cg.eg.gen(ast.arg());
+            Register reg = cg.eg.visit(ast.arg(), ctx);
             cg.emit.emitMove(reg, Register.EAX);
             cg.emitMethodSuffix(false);
         }
