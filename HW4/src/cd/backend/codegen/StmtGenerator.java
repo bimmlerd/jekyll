@@ -9,6 +9,7 @@ import cd.ir.Symbol;
 import cd.util.debug.AstOneLine;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import static cd.backend.codegen.AssemblyEmitter.constant;
@@ -50,11 +51,39 @@ class StmtGenerator extends AstVisitor<Register, Context> {
 
 	@Override
 	public Register methodDecl(MethodDecl ast, Context ctx) {
-		cg.emit.emitLabel(String.format("%s$%s", ctx.currentClass.name, ast.name));
+		cg.emit.emitLabel(ctx.currentClass.vTable.getMethodLabel(ast.name));
 
-		cg.stack.methodPreamble(ast.name, ast.decls().children());
+		int localSpace = ast.sym.locals.size() * Config.SIZEOF_PTR;
+		cg.emit.emit("enter",
+				AssemblyEmitter.constant(localSpace),
+				AssemblyEmitter.constant(0));
+		ctx.stackOffset += localSpace + 4; // localSpace for locals, 4 for enter
 
-		cg.stack.storeCalleeSavedRegs();
+		if (ctx.offsetTable != null) {
+			ctx.offsetTable.clear();
+		} else {
+			ctx.offsetTable = new HashMap<>();
+		}
+
+		int basePointerOffset = 2 * Config.SIZEOF_PTR;
+
+		ctx.offsetTable.put("this", basePointerOffset); // fill in this ref as first argument
+		for (Symbol.VariableSymbol param: ast.sym.parameters) {
+			basePointerOffset += Config.SIZEOF_PTR;
+			ctx.offsetTable.put(param.name, basePointerOffset);
+		}
+
+		basePointerOffset = 0;
+		cg.emit.emitComment("Zero locals on stack");
+		for (Symbol.VariableSymbol local : ast.sym.locals.values()) {
+            ctx.offsetTable.put(local.name, basePointerOffset);
+			basePointerOffset -= Config.SIZEOF_PTR;
+			cg.emit.emitStore(AssemblyEmitter.constant(0),
+                    basePointerOffset,
+                    RegisterManager.BASE_REG);
+        }
+
+		ctx.stackOffset += cg.storeRegisters(false);
 
 		// # Function body.
 		visit(ast.body(), ctx);
@@ -140,9 +169,9 @@ class StmtGenerator extends AstVisitor<Register, Context> {
         arguments.add(reg.repr);
 
         // put arguments on the stack and save caller saved registers before making the call
-        cg.stack.beforeFunctionCall(arguments);
+		ctx.stackOffset = cg.beforeFunctionCall(arguments, ctx.stackOffset);
 		cg.emit.emit("call", Config.PRINTF); // return value is not stored
-		cg.stack.afterFunctionCall(arguments);
+		ctx.stackOffset = cg.afterFunctionCall(arguments, ctx.stackOffset);
 
 		cg.rm.releaseRegister(reg);
 		return null;
@@ -154,9 +183,9 @@ class StmtGenerator extends AstVisitor<Register, Context> {
         arguments.add(labelAddress("STR_NL"));
 
         // put arguments on the stack and save caller saved registers before making the call
-        cg.stack.beforeFunctionCall(arguments);
+		ctx.stackOffset = cg.beforeFunctionCall(arguments, ctx.stackOffset);
         cg.emit.emit("call", Config.PRINTF); // return value is not stored
-        cg.stack.afterFunctionCall(arguments);
+		ctx.stackOffset = cg.afterFunctionCall(arguments, ctx.stackOffset);
 
 		return null;
 	}

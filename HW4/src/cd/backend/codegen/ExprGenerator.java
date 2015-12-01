@@ -134,13 +134,14 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
         List<String> arguments = new ArrayList<>();
         arguments.add(labelAddress("STR_D"));
         arguments.add(reg.repr);
-        cg.stack.beforeFunctionCall(arguments);
+
+		ctx.stackOffset = cg.beforeFunctionCall(arguments, ctx.stackOffset);
 
 		cg.emit.emit("call", SCANF);
 
         // store value
         cg.emit.emitLoad(8, STACK_REG, reg);
-        cg.stack.afterFunctionCall(arguments);
+        ctx.stackOffset = cg.afterFunctionCall(arguments, ctx.stackOffset);
 
 		return reg;
 	}
@@ -202,18 +203,17 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 
 	@Override
 	public Register field(Field ast, Context ctx) {
-		{
-			throw new ToDoException();
-		}
+		boolean calculateValue = ctx.calculateValue;
+		int offset = ctx.currentClass.oTable.getOffset(ast.fieldName);
 
-/* TODO
-        if (ctx.calculateValue) {
-            cg.emit.emitMove(arrayAddress(baseReg, offsetReg), baseReg); // access array element
+		ctx.calculateValue = true;
+		Register recv = visit(ast.arg(), ctx);
+        if (calculateValue) {
+            cg.emit.emitMove(registerOffset(offset, recv), recv); // access field
         } else {
-            cg.emit.emit("leal", arrayAddress(baseReg, offsetReg), baseReg); // store address of array element
+            cg.emit.emit("leal", registerOffset(offset, recv), recv); // store address of field
         }
-*/
-
+		return recv;
     }
 
 	@Override
@@ -250,7 +250,8 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		List<String> arguments = new ArrayList<>();
 		arguments.add(AssemblyEmitter.constant(classSymbol.oTable.getCount()));
 		arguments.add(AssemblyEmitter.constant(Config.SIZEOF_PTR));
-		cg.stack.beforeFunctionCall(arguments);
+
+		ctx.stackOffset = cg.beforeFunctionCall(arguments, ctx.stackOffset);
 
 		cg.emit.emit("call", Config.CALLOC);
 
@@ -258,7 +259,7 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		Register reg = cg.rm.getRegister();
 		cg.emit.emitMove(Register.EAX, reg);
 
-		cg.stack.afterFunctionCall(arguments);
+		ctx.stackOffset = cg.afterFunctionCall(arguments, ctx.stackOffset);
 
 		// store vtable ptr
 		//classSymbol.vTable.getVTableLabel()
@@ -275,62 +276,46 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 
 	@Override
 	public Register thisRef(ThisRef ast, Context ctx) {
-		{
-			throw new ToDoException();
-		}
+		int offset = ctx.offsetTable.get("this");
+		Register thisReg = cg.rm.getRegister();
+		cg.emit.emitMove(String.format("%d(%s)", offset, BASE_REG), thisReg);
+		return thisReg;
 	}
 
 	@Override
 	public Register methodCall(MethodCallExpr ast, Context ctx) {
-        List<String> arguments = new ArrayList<>();
+        List<Expr> arguments = ast.allArguments();
 
-        if (!(ast.receiver().type instanceof Symbol.ClassSymbol)) {
-            // should be caught by semantic analyzer
-            throw new ToDoException();
+		ctx.stackOffset += cg.storeRegisters(true);
+
+		int allocSpace = cg.calculateAllocSpace(arguments.size(), ctx.stackOffset);
+
+		// make space for the arguments including alignment
+		cg.emit.emitComment("Space for arguments and place arguments:");
+		cg.emit.emit("subl", constant(allocSpace), STACK_REG);
+
+		Register reg;
+        for (int i = 0; i < arguments.size(); i++) {
+			// evaluate this argument
+            reg = visit(arguments.get(i), ctx);
+			// and store it on the stack
+			cg.emit.emitStore(reg, i * Config.SIZEOF_PTR, STACK_REG);
+			cg.rm.releaseRegister(reg);
         }
-        Register reg = visit(ast.receiver(), ctx);
-        arguments.add(reg.repr);
-        // TODO target is determined by the runtime type of the object instance
-        // get class name to construct label
-        String recv = "$";
 
-        for (Expr argExpr : ast.argumentsWithoutReceiver()) {
-            // generate code to evaluate all arguments
-            reg = visit(argExpr, ctx);
-            arguments.add(reg.repr);
-        }
-
-        // function call; method(0x5, 0x10);
-        // push %eax            # Save %eax before a function call.
-        // push %ecx            # Save %ecx before a function call.
-        // push %edx            # Save %edx before a function call.
-
-        // subl $0x8, %esp      # Reserve space for the arguments (4 bytes for each arg).
-        // movl $0x10, 4(%esp)  # Put the second argument at the memory address %esp + 4.
-        // movl $0x5, (%esp)    # Put the first argument at the memory address %esp
-
-        // put arguments on the stack and save caller saved registers before making the call
-        cg.stack.beforeFunctionCall(arguments);
-
-        // call method
-
-		// TODO don't do the name logic yourself, use getMethodLabel
-        cg.emit.emit("call", String.format("%s$%s", recv, ast.methodName));
-
-        // movl %eax, ...       # save return value (eax) somewhere
+		// call method
+        cg.emit.emit("call", ctx.currentClass.vTable.getMethodLabel(ast.methodName));
 
         // store return value in a new register
         reg = cg.rm.getRegister();
         cg.emit.emitMove(Register.EAX, reg);
 
-        // addl $0x8, %esp      # Reclaim stack space reserved for arguments.
-        // pop %edx				# Restore %edx after a function call.
-        // pop %ecx				# Restore %ecx after a function call.
-        // pop %eax				# Restore %eax after a function call.
+		cg.emit.emitComment("Reclaim space from arguments:");
+		cg.emit.emit("addl", constant(allocSpace), STACK_REG);
 
-        cg.stack.afterFunctionCall(arguments);
+		ctx.stackOffset += cg.restoreRegisters(true);
 
-        return reg;
+		return reg;
 	}
 
 	@Override
@@ -356,7 +341,7 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 	@Override
 	public Register var(Var ast, Context ctx) {
 		Register reg = cg.rm.getRegister();
-		int offset = cg.stack.getOffsetForLocal(ast.name);
+		int offset = ctx.offsetTable.get(ast.name);
 
         if (ctx.calculateValue) {
             cg.emit.emitMove(String.format("%d(%s)", offset, BASE_REG), reg); // access local variable
