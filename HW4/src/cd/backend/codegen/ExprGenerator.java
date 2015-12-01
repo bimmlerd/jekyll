@@ -2,6 +2,7 @@ package cd.backend.codegen;
 
 import cd.Config;
 import cd.ToDoException;
+import cd.backend.ExitCode;
 import cd.backend.codegen.RegisterManager.Register;
 import cd.ir.Ast.*;
 import cd.ir.ExprVisitor;
@@ -61,17 +62,60 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
         // store opcode of jump to be performed after comparison of registers
         String jmpOp = "";
 
+		boolean isModulo = false;
 		switch (ast.operator) {
 		case B_TIMES:
 			cg.emit.emit("imul", rightReg, leftReg);
 			break;
 
-		case B_DIV:
-            // TODO exit with error code ExitCode.DIVISION_BY_ZERO if divisor is zero
-			throw new ToDoException();
 		case B_MOD:
-			throw new ToDoException();
+			isModulo = true;
+		case B_DIV:
+			String labelOK = cg.emit.uniqueLabel();
+			cg.emit.emit("cmp", AssemblyEmitter.constant(0), rightReg);
+			cg.emit.emit("jne", labelOK);
 
+			// exit with error code ExitCode.DIVISION_BY_ZERO
+			List<String> arguments = new ArrayList<>();
+			arguments.add(AssemblyEmitter.constant(ExitCode.DIVISION_BY_ZERO.value));
+			ctx.stackOffset = cg.beforeFunctionCall(arguments, ctx.stackOffset);
+			cg.emit.emit("call", Config.EXIT);
+
+			cg.emit.emitLabel(labelOK);
+
+			if (cg.rm.isInUse(Register.EAX) && Register.EAX != leftReg) {
+				cg.emit.emitComment("Save eax prior to div");
+				cg.emit.emitStore(Register.EAX, -4, RegisterManager.STACK_REG);
+			}
+			if (cg.rm.isInUse(Register.EDX)) {
+				cg.emit.emitComment("Save edx prior to div");
+				cg.emit.emitStore(Register.EDX, -8, RegisterManager.STACK_REG);
+			}
+			cg.emit.emitMove(leftReg, Register.EAX);
+			cg.emit.emitRaw("cdq");
+			if (rightReg == Register.EAX) {
+				cg.emit.emitComment("Divide by %EAX, which is saved on the stack");
+				cg.emit.emit("idivl", AssemblyEmitter.registerOffset(-4, RegisterManager.STACK_REG));
+			} else if (rightReg == Register.EDX) {
+				cg.emit.emitComment("Divide by %EDX, which is saved on the stack");
+				cg.emit.emit("idivl", AssemblyEmitter.registerOffset(-8, RegisterManager.STACK_REG));
+			} else {
+				cg.emit.emit("idivl", rightReg);
+			}
+			if (isModulo) {
+				cg.emit.emitMove(Register.EDX, rightReg);
+			} else {
+				cg.emit.emitMove(Register.EAX, rightReg);
+			}
+			if (cg.rm.isInUse(Register.EAX) && Register.EAX != leftReg) {
+				cg.emit.emitComment("Restore eax post div");
+				cg.emit.emitMove(AssemblyEmitter.registerOffset(-4, RegisterManager.STACK_REG), Register.EAX);
+			}
+			if (cg.rm.isInUse(Register.EDX)) {
+				cg.emit.emitComment("Restore edx post div");
+				cg.emit.emitMove(AssemblyEmitter.registerOffset(-8, RegisterManager.STACK_REG), Register.EDX);
+			}
+			break;
 		case B_PLUS:
 			cg.emit.emit("add", rightReg, leftReg);
 			break;

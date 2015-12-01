@@ -236,7 +236,7 @@ public class AstCodeGenerator {
 	 */
 	protected int calculateAllocSpace(int argCount, int offset) {
 		int argSpace = argCount * Config.SIZEOF_PTR;
-		int adjustment = 16 - (offset - argSpace) % 16;
+		int adjustment = 16 + (offset - argSpace) % 16;
 		return adjustment + argSpace;
 	}
 }
