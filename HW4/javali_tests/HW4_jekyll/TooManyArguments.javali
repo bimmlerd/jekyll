@@ -1,0 +1,18 @@
+// tests whether having a lot of arguments work
+class Main {
+    void main() {
+        write(manyArgs(1, 2, 3, 4, 5, 6, 7, 8));
+    }
+
+    int manyArgs(int a, int b, int c, int d, int e, int f, int g, int h) {
+        write(a);
+        write(b);
+        write(c);
+        write(d);
+        write(e);
+        write(f);
+        write(g);
+        write(h);
+        return h;
+    }
+}
