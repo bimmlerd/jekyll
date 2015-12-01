@@ -31,7 +31,7 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 	public Register visit(Expr ast, Context ctx) {
 		try {
 			cg.emit.increaseIndent(String.format("Emitting %s", AstOneLine.toString(ast)));
-			return super.visit(ast, null);
+			return super.visit(ast, ctx);
 		} finally {
 			cg.emit.decreaseIndent();
 		}
@@ -156,6 +156,9 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 	@Override
 	public Register index(Index ast, Context ctx) {
 
+        boolean calculateValue = ctx.calculateValue;
+        ctx.calculateValue = true;
+
         int leftRN = cg.rnv.calc(ast.left());
         int rightRN = cg.rnv.calc(ast.right());
 
@@ -180,7 +183,7 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		// | data[length - 1]	|
 		//  --------------------
 
-        if (ctx.calculateValue) {
+        if (calculateValue) {
             cg.emit.emitMove(arrayAddress(baseReg, offsetReg), baseReg); // access array element
         } else {
             cg.emit.emit("leal", arrayAddress(baseReg, offsetReg), baseReg); // store address of array element
