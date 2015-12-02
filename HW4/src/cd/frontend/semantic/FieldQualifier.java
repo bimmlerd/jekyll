@@ -11,6 +11,14 @@ import cd.ir.AstRewriteVisitor;
  */
 public class FieldQualifier extends AstRewriteVisitor<Void> {
 
+	private Ast.ClassDecl currentClass;
+
+	@Override
+	public Ast classDecl(Ast.ClassDecl ast, Void arg) {
+		currentClass = ast;
+		return visitChildren(ast, arg);
+	}
+
 	@Override
 	public Ast var(Var ast, Void arg) {
 		switch (ast.sym.kind) {
@@ -20,7 +28,9 @@ public class FieldQualifier extends AstRewriteVisitor<Void> {
 				return ast;
 			case FIELD :
 				// Convert an implicit field reference to "this.foo"
-				Ast.Field f = new Ast.Field(new Ast.ThisRef(), ast.name);
+				Ast.ThisRef thisRef = new Ast.ThisRef();
+				thisRef.type = currentClass.sym;
+				Ast.Field f = new Ast.Field(thisRef, ast.name);
 				f.sym = ast.sym;
 				f.type = ast.type;
 				return f;
