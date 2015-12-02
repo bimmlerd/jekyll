@@ -4,15 +4,19 @@ import cd.Config;
 import cd.ToDoException;
 import cd.backend.ExitCode;
 import cd.backend.codegen.RegisterManager.Register;
+import cd.ir.Ast;
 import cd.ir.Ast.*;
 import cd.ir.ExprVisitor;
 import cd.ir.Symbol;
+import cd.util.Pair;
 import cd.util.debug.AstOneLine;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringJoiner;
 
 import static cd.Config.SCANF;
+import static cd.Config.SIZEOF_PTR;
 import static cd.backend.codegen.AssemblyEmitter.*;
 import static cd.backend.codegen.RegisterManager.*;
 
@@ -44,17 +48,10 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		// not care if it runs out of registers, and
 		// supports only a limited range of operations:
 
-		int leftRN = cg.rnv.calc(ast.left());
-		int rightRN = cg.rnv.calc(ast.right());
 
-		Register leftReg, rightReg;
-		if (leftRN > rightRN) {
-            leftReg = visit(ast.left(), ctx);
-            rightReg = visit(ast.right(), ctx);
-		} else {
-            rightReg = visit(ast.right(), ctx);
-            leftReg = visit(ast.left(), ctx);
-		}
+		Pair<Register> pair = visitCheaperSideFirst(ast.left(), ast.right(), ctx);
+		Register leftReg = pair.a;
+		Register rightReg = pair.a;
 
 		cg.debug("Binary Op: %s (%s,%s)", ast, leftReg, rightReg);
 
@@ -75,10 +72,7 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 			cg.emit.emit("jne", labelOK);
 
 			// exit with error code ExitCode.DIVISION_BY_ZERO
-			List<String> arguments = new ArrayList<>();
-			arguments.add(AssemblyEmitter.constant(ExitCode.DIVISION_BY_ZERO.value));
-			cg.beforeFunctionCall(arguments, ctx.stackOffset);
-			cg.emit.emit("call", Config.EXIT);
+			emitExit(ExitCode.DIVISION_BY_ZERO, ctx);
 
 			cg.emit.emitLabel(labelOK);
 
@@ -191,41 +185,77 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 
 	@Override
 	public Register cast(Cast ast, Context ctx) {
-        // TODO exit with error code ExitCode.INVALID_DOWNCAST if runtime type is not a subtype of cast type
-		{
-			throw new ToDoException();
-		}
+		Register right = visit(ast.arg(), ctx);
+		String labelErr = cg.emit.uniqueLabel();
+		String labelOk = cg.emit.uniqueLabel();
+		String labelLoop = cg.emit.uniqueLabel();
+
+		// check if null
+		cg.emit.emit("cmp", constant(0), right);
+		cg.emit.emit("je", labelOk);
+
+		// load cast-vtable
+		Register castVTable = cg.rm.getRegister();
+		cg.emit.emit("leal", VTableBuilder.getVTableLabel(ast.typeName), castVTable);
+
+		// load vtable ptr
+		Register objVTable = cg.rm.getRegister();
+		cg.emit.emitLoad(0, right, objVTable);
+
+		cg.emit.emitLabel(labelLoop);
+
+		// check equality
+		cg.emit.emit("cmp", objVTable, castVTable);
+		cg.emit.emit("je", labelOk);
+
+		// fail, if no parent
+		cg.emit.emit("cmpl", constant(0), registerOffset(0, objVTable));
+		cg.emit.emit("je", labelErr);
+
+		// load parent vtable
+		cg.emit.emitLoad(0, objVTable, objVTable);
+		cg.emit.emit("jmp", labelLoop);
+
+		cg.emit.emitLabel(labelErr);
+		emitExit(ExitCode.INVALID_DOWNCAST, ctx);
+
+		cg.emit.emitLabel(labelOk);
+		return right;
 	}
 
+	// array structure on heap:
+	//  --------------------  ptr +
+	// | vtable ptr			| 0 - 4
+	// | length of array	| 4 - 8
+	// | ...				|
+	// | data[length - 1]	|
+	//  --------------------
 	@Override
 	public Register index(Index ast, Context ctx) {
-
         boolean calculateValue = ctx.calculateValue;
         ctx.calculateValue = true;
 
-        int leftRN = cg.rnv.calc(ast.left());
-        int rightRN = cg.rnv.calc(ast.right());
+        Pair<Register> pair = visitCheaperSideFirst(ast.left(), ast.right(), ctx);
+		Register baseReg = pair.a;
+		Register offsetReg = pair.b;
 
-        Register baseReg, offsetReg;
-        if (leftRN > rightRN) {
-            // generate code to get the base address of the array
-            baseReg = visit(ast.left(), ctx);
-            // generate code to get the offset in the array
-            offsetReg = visit(ast.right(), ctx);
-        } else {
-            offsetReg = visit(ast.right(), ctx);
-            baseReg = visit(ast.left(), ctx);
-        }
+		String labelOk = cg.emit.uniqueLabel();
+		String labelErr = cg.emit.uniqueLabel();
 
-        // TODO exit with error code ExitCode.INVALID_ARRAY_BOUNDS if array index is invalid
-		// array structure on heap:
-		//  --------------------  ptr +
-		// | vtable ptr			| 0 - 4
-		// | length of array	| 4 - 8
-		// | data[0]			| 8 - 12
-		// | ...				|
-		// | data[length - 1]	|
-		//  --------------------
+		cg.emit.emit("cmp", constant(0), offsetReg);
+		cg.emit.emit("jl", labelErr);
+
+		Register allowedSize = cg.rm.getRegister();
+		cg.emit.emitLoad(SIZEOF_PTR, baseReg, allowedSize);
+		cg.emit.emit("cmp", offsetReg, allowedSize);
+		cg.emit.emit("jle", labelErr);
+		cg.emit.emit("jmp", labelOk);
+		cg.rm.releaseRegister(allowedSize);
+
+		cg.emit.emitLabel(labelErr);
+		emitExit(ExitCode.INVALID_ARRAY_BOUNDS, ctx);
+
+		cg.emit.emitLabel(labelOk);
 
         if (calculateValue) {
             cg.emit.emitMove(arrayAddress(baseReg, offsetReg), baseReg); // access array element
@@ -259,22 +289,61 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		return recv;
     }
 
+
+	// array structure on heap:
+	//  --------------------  ptr +
+	// | vtable ptr			| 0 - 4
+	// | length of array	| 4 - 8
+	// | data[0]			| 8 - 12
+	// | ...				|
+	// | data[length - 1]	|
+	//  --------------------
 	@Override
 	public Register newArray(NewArray ast, Context ctx) {
-        // TODO exit with error code ExitCode.INVALID_ARRAY_SIZE if array size is negative
 
-		// array structure on heap:
-		//  --------------------  ptr +
-		// | vtable ptr			| 0 - 4
-		// | length of array	| 4 - 8
-		// | data[0]			| 8 - 12
-		// | ...				|
-		// | data[length - 1]	|
-		//  --------------------
+		String labelOK = cg.emit.uniqueLabel();
+		Register reg = visit(ast.arg(), ctx);
+		cg.emit.emit("cmp", constant(0), reg);
+		cg.emit.emit("jge", labelOK);
+		emitExit(ExitCode.INVALID_ARRAY_SIZE, ctx);
 
-		{
-			throw new ToDoException();
+		cg.emit.emitLabel(labelOK);
+
+		// add two to size for vtable and length of array
+		cg.emit.emit("add", constant(2), reg);
+
+		List<String> arguments = new ArrayList<>();
+		arguments.add(reg.repr);
+		arguments.add(AssemblyEmitter.constant(Config.SIZEOF_PTR));
+
+		cg.emit.emit("push", reg);
+		ctx.stackOffset -= SIZEOF_PTR;
+		cg.beforeFunctionCall(arguments, ctx.stackOffset);
+
+		cg.emit.emit("call", Config.CALLOC);
+
+		// store address
+		cg.emit.emitMove(Register.EAX, reg);
+
+		// store vtable
+		Symbol.TypeSymbol elementType = ((Symbol.ArrayTypeSymbol) ast.type).elementType;
+		if (elementType.isReferenceType()) {
+			String VTableLabel = VTableBuilder.getVTableLabel(elementType.name);
+			cg.emit.emit("leal", VTableLabel, Register.EAX);
+		} else {
+			cg.emit.emitMove(constant(0), Register.EAX);
 		}
+		cg.emit.emitStore(Register.EAX, 0, reg);
+
+		cg.afterFunctionCall(arguments, ctx.stackOffset);
+		cg.emit.emit("pop", Register.EAX);
+		ctx.stackOffset += SIZEOF_PTR;
+
+		// store size
+		cg.emit.emit("sub", constant(2), Register.EAX);
+		cg.emit.emitStore(Register.EAX, SIZEOF_PTR, reg);
+
+		return reg;
 	}
 
 	@Override
@@ -399,4 +468,29 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 
         return reg;
     }
+
+	void emitExit(ExitCode exitCode, Context ctx) {
+		List<String> arguments = new ArrayList<>();
+		arguments.add(AssemblyEmitter.constant(exitCode.value));
+		cg.beforeFunctionCall(arguments, ctx.stackOffset);
+		cg.emit.emit("call", Config.EXIT);
+	}
+
+	private Pair<Register> visitCheaperSideFirst(Expr left, Expr right, Context ctx) {
+		int leftRN = cg.rnv.calc(left);
+		int rightRN = cg.rnv.calc(right);
+
+		Register leftReg, rightReg;
+		if (leftRN > rightRN) {
+			// generate code to get the base address of the array
+			leftReg = visit(left, ctx);
+			// generate code to get the offset in the array
+			rightReg = visit(right, ctx);
+		} else {
+			rightReg = visit(right, ctx);
+			leftReg = visit(left, ctx);
+		}
+
+		return new Pair<>(leftReg, rightReg);
+	}
 }

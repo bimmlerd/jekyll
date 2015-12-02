@@ -2,6 +2,7 @@ package cd.backend.codegen;
 
 import cd.Config;
 import cd.Main;
+import cd.backend.ExitCode;
 import cd.backend.codegen.RegisterManager.*;
 import cd.ir.Ast.ClassDecl;
 import cd.ir.Symbol;
@@ -134,8 +135,7 @@ public class AstCodeGenerator {
 
 		emit.emit("call", mainSymbol.vTable.getMethodLabel("main"));
 
-		// move zero on to the stack
-		emit.emitStore(AssemblyEmitter.constant(0), 0, STACK_REG);
+		emit.emitStore(AssemblyEmitter.constant(ExitCode.OK.value), 0, STACK_REG);
 		emit.emit("call", Config.EXIT);
 	}
 
