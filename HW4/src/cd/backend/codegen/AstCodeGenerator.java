@@ -113,7 +113,7 @@ public class AstCodeGenerator {
 		arguments.add(AssemblyEmitter.constant(mainSymbol.oTable.getCount()));
 		arguments.add(AssemblyEmitter.constant(Config.SIZEOF_PTR));
 
-		int offset = beforeFunctionCall(arguments, 0);
+		beforeFunctionCall(arguments, 0);
 
 		emit.emit("call", Config.CALLOC);
 
@@ -121,11 +121,11 @@ public class AstCodeGenerator {
 		Register mainInstance = rm.getRegister();
 		emit.emitMove(Register.EAX, mainInstance);
 
-		assert afterFunctionCall(arguments, offset) == 0;
+		afterFunctionCall(arguments, 0);
 
 		// store vtable ptr
 		Register vTablePointer = rm.getRegister();
-		emit.emitMove(mainSymbol.vTable.getVTableLabel(), vTablePointer);
+		emit.emit("leal", mainSymbol.vTable.getVTableLabel(), vTablePointer);
 		emit.emitStore(vTablePointer, 0, mainInstance);
 
 		// put 'this' on stack
@@ -134,7 +134,9 @@ public class AstCodeGenerator {
 
 		emit.emit("call", mainSymbol.vTable.getMethodLabel("main"));
 
-		emitMethodSuffix(true);
+		// move zero on to the stack
+		emit.emitStore(AssemblyEmitter.constant(0), 0, STACK_REG);
+		emit.emit("call", Config.EXIT);
 	}
 
 	protected void emitEpilogue() {
@@ -151,7 +153,7 @@ public class AstCodeGenerator {
 			emit.emitMove(constant(0), Register.EAX);
 		}
 
-		restoreRegisters(false);
+		restoreRegisters(CALLEE_SAVE);
 
 		emit.emitRaw("leave");
 		emit.emitRaw("ret");
@@ -159,13 +161,12 @@ public class AstCodeGenerator {
 
 	/**
 	 * Stores registers on the stack.
-	 * @param caller true if caller saved, false otherwise
+	 * @param collection array of registers to save
 	 * @return the offset it caused (i.e. -12)
 	 */
-	public int storeRegisters(boolean caller) {
+	public int saveRegisters(Register[] collection) {
 		int offset = 0;
-		emit.emitComment(String.format("Storing %s Saved Registers:", caller ? "Caller" : "Callee"));
-		Register[] collection = caller ? RegisterManager.CALLER_SAVE : CALLEE_SAVE;
+		emit.emitComment("Saving Registers:");
 		for (Register reg : collection) {
 			emit.emit("push", reg);
 			offset -= Config.SIZEOF_PTR;
@@ -175,15 +176,14 @@ public class AstCodeGenerator {
 
 	/**
 	 * Restores saved registers in reversed order as they are stored.
-	 * @param caller true if caller saved, false otherwise
+	 * @param collection array of registers to restore
 	 * @return the offset it caused (i.e. +12)
 	 */
-	public int restoreRegisters(boolean caller) {
+	public int restoreRegisters(Register[] collection) {
 		int offset = 0;
-		emit.emitComment(String.format("Restoring %s Saved Registers:", caller ? "Caller" : "Callee"));
-		Register[] collection = caller ? RegisterManager.CALLER_SAVE : CALLEE_SAVE;
+		emit.emitComment("Restoring Saved Registers:");
 		for (int i = collection.length - 1; i >= 0; i--) {
-			emit.emit("pop", RegisterManager.CALLER_SAVE[i]);
+			emit.emit("pop", collection[i]);
 			offset += Config.SIZEOF_PTR;
 		}
 		return offset;
@@ -195,10 +195,8 @@ public class AstCodeGenerator {
 	 * 	used for arbitrary function calls
 	 * @param arguments contains the arguments passed to the library function (C-like order)
 	 * @param offset stores the current stack offset
-	 * @return the new offset
 	 */
-	public int beforeFunctionCall(List<String> arguments, int offset) {
-		offset += storeRegisters(true);
+	public void beforeFunctionCall(List<String> arguments, int offset) {
 
 		int allocSpace = calculateAllocSpace(arguments.size(), offset);
 
@@ -210,22 +208,18 @@ public class AstCodeGenerator {
 		for (int i = 0; i < arguments.size(); i++) {
 			emit.emitStore(arguments.get(i), i * Config.SIZEOF_PTR, RegisterManager.STACK_REG);
 		}
-		return offset;
 	}
 
 	/**
 	 * Reverses the effects of {@link #beforeFunctionCall(List, int)}
 	 * @param arguments the arguments passed to the library function
 	 * @param offset the current offset
-	 * @return the new offset (should be the same as it was before beforeFunctionCall)
 	 */
-	public int afterFunctionCall(List<String> arguments, int offset) {
+	public void afterFunctionCall(List<String> arguments, int offset) {
 		int allocSpace = calculateAllocSpace(arguments.size(), offset);
 
 		emit.emitComment("Reclaim space from arguments:");
 		emit.emit("addl", constant(allocSpace), RegisterManager.STACK_REG);
-
-		return offset + restoreRegisters(true);
 	}
 
 	/**

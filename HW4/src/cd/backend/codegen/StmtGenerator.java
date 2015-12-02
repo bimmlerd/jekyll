@@ -57,7 +57,7 @@ class StmtGenerator extends AstVisitor<Register, Context> {
 		cg.emit.emit("enter",
 				AssemblyEmitter.constant(localSpace),
 				AssemblyEmitter.constant(0));
-		ctx.stackOffset += localSpace + 4; // localSpace for locals, 4 for enter
+		ctx.stackOffset = -1 * (localSpace + 8); // localSpace for locals, 4 for enter, 4 for the ret addr
 
 		if (ctx.offsetTable != null) {
 			ctx.offsetTable.clear();
@@ -76,14 +76,14 @@ class StmtGenerator extends AstVisitor<Register, Context> {
 		basePointerOffset = 0;
 		cg.emit.emitComment("Zero locals on stack");
 		for (Symbol.VariableSymbol local : ast.sym.locals.values()) {
-            ctx.offsetTable.put(local.name, basePointerOffset);
 			basePointerOffset -= Config.SIZEOF_PTR;
+			ctx.offsetTable.put(local.name, basePointerOffset);
 			cg.emit.emitStore(AssemblyEmitter.constant(0),
                     basePointerOffset,
                     RegisterManager.BASE_REG);
         }
 
-		ctx.stackOffset += cg.storeRegisters(false);
+		ctx.stackOffset += cg.saveRegisters(RegisterManager.CALLEE_SAVE);
 
 		// # Function body.
 		visit(ast.body(), ctx);
@@ -169,9 +169,9 @@ class StmtGenerator extends AstVisitor<Register, Context> {
         arguments.add(reg.repr);
 
         // put arguments on the stack and save caller saved registers before making the call
-		ctx.stackOffset = cg.beforeFunctionCall(arguments, ctx.stackOffset);
+		cg.beforeFunctionCall(arguments, ctx.stackOffset);
 		cg.emit.emit("call", Config.PRINTF); // return value is not stored
-		ctx.stackOffset = cg.afterFunctionCall(arguments, ctx.stackOffset);
+		cg.afterFunctionCall(arguments, ctx.stackOffset);
 
 		cg.rm.releaseRegister(reg);
 		return null;
@@ -183,9 +183,9 @@ class StmtGenerator extends AstVisitor<Register, Context> {
         arguments.add(labelAddress("STR_NL"));
 
         // put arguments on the stack and save caller saved registers before making the call
-		ctx.stackOffset = cg.beforeFunctionCall(arguments, ctx.stackOffset);
+		cg.beforeFunctionCall(arguments, ctx.stackOffset);
         cg.emit.emit("call", Config.PRINTF); // return value is not stored
-		ctx.stackOffset = cg.afterFunctionCall(arguments, ctx.stackOffset);
+		cg.afterFunctionCall(arguments, ctx.stackOffset);
 
 		return null;
 	}

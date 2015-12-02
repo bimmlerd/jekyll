@@ -14,8 +14,7 @@ import java.util.List;
 
 import static cd.Config.SCANF;
 import static cd.backend.codegen.AssemblyEmitter.*;
-import static cd.backend.codegen.RegisterManager.BASE_REG;
-import static cd.backend.codegen.RegisterManager.STACK_REG;
+import static cd.backend.codegen.RegisterManager.*;
 
 /**
  * Generates code to evaluate expressions. After emitting the code, returns a
@@ -78,7 +77,7 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 			// exit with error code ExitCode.DIVISION_BY_ZERO
 			List<String> arguments = new ArrayList<>();
 			arguments.add(AssemblyEmitter.constant(ExitCode.DIVISION_BY_ZERO.value));
-			ctx.stackOffset = cg.beforeFunctionCall(arguments, ctx.stackOffset);
+			cg.beforeFunctionCall(arguments, ctx.stackOffset);
 			cg.emit.emit("call", Config.EXIT);
 
 			cg.emit.emitLabel(labelOK);
@@ -179,13 +178,13 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
         arguments.add(labelAddress("STR_D"));
         arguments.add(reg.repr);
 
-		ctx.stackOffset = cg.beforeFunctionCall(arguments, ctx.stackOffset);
+		cg.beforeFunctionCall(arguments, ctx.stackOffset);
 
 		cg.emit.emit("call", SCANF);
 
         // store value
         cg.emit.emitLoad(8, STACK_REG, reg);
-        ctx.stackOffset = cg.afterFunctionCall(arguments, ctx.stackOffset);
+        cg.afterFunctionCall(arguments, ctx.stackOffset);
 
 		return reg;
 	}
@@ -248,7 +247,7 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 	@Override
 	public Register field(Field ast, Context ctx) {
 		boolean calculateValue = ctx.calculateValue;
-		int offset = ctx.currentClass.oTable.getOffset(ast.fieldName);
+		int offset = ((Symbol.ClassSymbol) ast.arg().type).oTable.getOffset(ast.fieldName);
 
 		ctx.calculateValue = true;
 		Register recv = visit(ast.arg(), ctx);
@@ -295,18 +294,18 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		arguments.add(AssemblyEmitter.constant(classSymbol.oTable.getCount()));
 		arguments.add(AssemblyEmitter.constant(Config.SIZEOF_PTR));
 
-		ctx.stackOffset = cg.beforeFunctionCall(arguments, ctx.stackOffset);
+		cg.beforeFunctionCall(arguments, ctx.stackOffset);
 
 		cg.emit.emit("call", Config.CALLOC);
 
 		// store address in a new register
 		Register reg = cg.rm.getRegister();
 		cg.emit.emitMove(Register.EAX, reg);
-
-		ctx.stackOffset = cg.afterFunctionCall(arguments, ctx.stackOffset);
-
 		// store vtable ptr
-		//classSymbol.vTable.getVTableLabel()
+		cg.emit.emit("leal", classSymbol.vTable.getVTableLabel(), Register.EAX);
+		cg.emit.emitStore(Register.EAX, 0, reg);
+
+		cg.afterFunctionCall(arguments, ctx.stackOffset);
 
 		return reg;
 	}
@@ -330,7 +329,7 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 	public Register methodCall(MethodCallExpr ast, Context ctx) {
         List<Expr> arguments = ast.allArguments();
 
-		ctx.stackOffset += cg.storeRegisters(true);
+		ctx.stackOffset += cg.saveRegisters(CALLER_SAVE);
 
 		int allocSpace = cg.calculateAllocSpace(arguments.size(), ctx.stackOffset);
 
@@ -348,16 +347,21 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
         }
 
 		// call method
-        cg.emit.emit("call", ctx.currentClass.vTable.getMethodLabel(ast.methodName));
+		reg = cg.rm.getRegister();
+		cg.emit.emitLoad(0, STACK_REG, reg); // Load object pointer
+		cg.emit.emitLoad(0, reg, reg); // Load vtable pointer
+		int offset = ((Symbol.ClassSymbol) ast.receiver().type).vTable.getMethodOffset(ast.methodName);
+		cg.emit.emit("addl", constant(offset), reg);
+		cg.emit.emitLoad(0, reg, reg);
+        cg.emit.emit("call", String.format("*%s", reg.repr));
 
         // store return value in a new register
-        reg = cg.rm.getRegister();
         cg.emit.emitMove(Register.EAX, reg);
 
 		cg.emit.emitComment("Reclaim space from arguments:");
 		cg.emit.emit("addl", constant(allocSpace), STACK_REG);
 
-		ctx.stackOffset += cg.restoreRegisters(true);
+		ctx.stackOffset += cg.restoreRegisters(CALLER_SAVE);
 
 		return reg;
 	}
