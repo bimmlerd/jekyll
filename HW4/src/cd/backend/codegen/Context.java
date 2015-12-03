@@ -16,7 +16,7 @@ public class Context {
 
     protected int stackOffset = 0; // documents the offset of a 16 byte aligned stack
 
-    protected Map<String, Integer> offsetTable;
+    protected Map<String, Integer> offsetTable; // parameters and locals all have a unique offset to the base pointer on the stack
 
     public Context(Symbol.ClassSymbol currentClass) {
         this.currentClass = currentClass;

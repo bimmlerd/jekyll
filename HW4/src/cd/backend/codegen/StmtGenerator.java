@@ -43,7 +43,7 @@ class StmtGenerator extends AstVisitor<Register, Context> {
 		return null;
 	}
 
-	// Emit vtable for arrays of this class:
+	// Emit vtable for arrays of this class: TODO ?
 	@Override
 	public Register classDecl(ClassDecl ast, Context ctx) {
 		return visitChildren(ast, ctx);
@@ -149,13 +149,14 @@ class StmtGenerator extends AstVisitor<Register, Context> {
 	public Register assign(Assign ast, Context ctx) {
         // we need an address where to store the assigned value
         ctx.calculateValue = false;
-        Register lhsReg = cg.eg.visit(ast.left(), ctx);
+        Register lhsReg = cg.eg.visit(ast.left(), ctx); // TODO: check where less registers are needed before visiting -> similar to binaryOp and index
 
         // we want to value of the rhs expression
         ctx.calculateValue = true;
         Register rhsReg = cg.eg.visit(ast.right(), ctx);
 
-		cg.emit.emitStore(rhsReg, 0, lhsReg);
+		cg.emit.emitStore(rhsReg, 0, lhsReg); // store value at calculated address in memory
+		cg.rm.releaseRegister(lhsReg);
 		cg.rm.releaseRegister(rhsReg);
 		return null;
 	}
@@ -199,6 +200,7 @@ class StmtGenerator extends AstVisitor<Register, Context> {
             Register reg = cg.eg.visit(ast.arg(), ctx);
             cg.emit.emitMove(reg, Register.EAX);
             cg.emitMethodSuffix(false);
+			cg.rm.releaseRegister(reg);
         }
 
         return null;

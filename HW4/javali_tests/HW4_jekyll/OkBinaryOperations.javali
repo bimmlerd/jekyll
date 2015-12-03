@@ -39,25 +39,25 @@ class Main {
 
 // division
 
-/*        i0 = 40 / 20;
+        i0 = 40 / 20;
         i1 = 20 / i0;
         i1 = i1 / -1;
         i2 = i0 / i1;
 
         write(i0); writeln();
         write(i1); writeln();
-        write(i2); writeln();*/
+        write(i2); writeln();
 
 // modulo
 
-/*        i0 = 3 % 20;
+        i0 = 3 % 20;
         i1 = 20 % i0;
         i1 = i1 % 4;
         i2 = i0 % i1;
 
         write(i0); writeln();
         write(i1); writeln();
-        write(i2); writeln();*/
+        write(i2); writeln();
 
 // and
 

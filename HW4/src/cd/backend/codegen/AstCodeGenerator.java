@@ -103,6 +103,10 @@ public class AstCodeGenerator {
 	protected void emitPrologue() {
 		emit.emitCommentSection("Prologue");
 
+		// get all registers we need for the prologue
+		Register mainInstance = rm.getRegister();
+		Register vTablePointer = rm.getRegister();
+
 		emit.emitRaw(Config.TEXT_SECTION);
 		emit.emitRaw(String.format(".globl %s", MAIN));
 		emit.emitLabel(MAIN);
@@ -116,27 +120,30 @@ public class AstCodeGenerator {
 
 		beforeFunctionCall(arguments, 0);
 
-		emit.emit("call", Config.CALLOC);
+		emit.emit("call", Config.CALLOC); // allocate space for the instance of the Main class
 
 		// store address in a new register
-		Register mainInstance = rm.getRegister();
 		emit.emitMove(Register.EAX, mainInstance);
 
 		afterFunctionCall(arguments, 0);
 
 		// store vtable ptr
-		Register vTablePointer = rm.getRegister();
 		emit.emit("leal", mainSymbol.vTable.getVTableLabel(), vTablePointer);
 		emit.emitStore(vTablePointer, 0, mainInstance);
 
 		// put 'this' on stack
 		emit.emitMove(vTablePointer, registerOffset(Config.SIZEOF_PTR, BASE_REG));
-		rm.releaseRegister(vTablePointer);
 
-		emit.emit("call", mainSymbol.vTable.getMethodLabel("main"));
+		emit.emit("call", mainSymbol.vTable.getMethodLabel("main")); // execute the main() method on the newly create instance
 
+		// TODO: do we need to check the return value of main()?
+		// if we return normally from the main() function with the value 0, no error occurred and we can terminate the execution
 		emit.emitStore(AssemblyEmitter.constant(ExitCode.OK.value), 0, STACK_REG);
 		emit.emit("call", Config.EXIT);
+
+		// release all register we needed for the prologue
+		rm.releaseRegister(vTablePointer);
+		rm.releaseRegister(mainInstance);
 	}
 
 	protected void emitEpilogue() {

@@ -4,7 +4,6 @@ import cd.Config;
 import cd.ToDoException;
 import cd.backend.ExitCode;
 import cd.backend.codegen.RegisterManager.Register;
-import cd.ir.Ast;
 import cd.ir.Ast.*;
 import cd.ir.ExprVisitor;
 import cd.ir.Symbol;
@@ -13,7 +12,6 @@ import cd.util.debug.AstOneLine;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.StringJoiner;
 
 import static cd.Config.SCANF;
 import static cd.Config.SIZEOF_PTR;
@@ -44,26 +42,22 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 
 	@Override
 	public Register binaryOp(BinaryOp ast, Context ctx) {
-		// Simplistic HW1 implementation that does
-		// not care if it runs out of registers, and
-		// supports only a limited range of operations:
-
-
-		Pair<Register> pair = visitCheaperSideFirst(ast.left(), ast.right(), ctx);
+        // visit ast in the optimal order to save registers
+		Pair<Register> pair = visitMoreExpensiveSideFirst(ast.left(), ast.right(), ctx);
 		Register leftReg = pair.a;
-		Register rightReg = pair.a;
+		Register rightReg = pair.b;
 
 		cg.debug("Binary Op: %s (%s,%s)", ast, leftReg, rightReg);
 
-        // store opcode of jump to be performed after comparison of registers
-        String jmpOp = "";
-
+        String jmpOp = ""; // store opcode of jump to be performed after comparison of registers
 		boolean isModulo = false;
+
 		switch (ast.operator) {
 		case B_TIMES:
 			cg.emit.emit("imul", rightReg, leftReg);
 			break;
 
+		// TODO: div and mod are broken -> store value in left reg without actual operation performed
 		case B_MOD:
 			isModulo = true;
 		case B_DIV:
@@ -185,21 +179,23 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 
 	@Override
 	public Register cast(Cast ast, Context ctx) {
-		Register right = visit(ast.arg(), ctx);
+		Register right = visit(ast.arg(), ctx); // get address of object
+
 		String labelErr = cg.emit.uniqueLabel();
 		String labelOk = cg.emit.uniqueLabel();
 		String labelLoop = cg.emit.uniqueLabel();
 
-		// check if null
-		cg.emit.emit("cmp", constant(0), right);
-		cg.emit.emit("je", labelOk);
+        Register castVTable = cg.rm.getRegister();
+        Register objVTable = cg.rm.getRegister();
 
-		// load cast-vtable
-		Register castVTable = cg.rm.getRegister();
-		cg.emit.emit("leal", VTableBuilder.getVTableLabel(ast.typeName), castVTable);
+        // check if null
+        cg.emit.emit("cmp", constant(0), right);
+        cg.emit.emit("je", labelOk);
 
-		// load vtable ptr
-		Register objVTable = cg.rm.getRegister();
+        // load cast-vtable
+        cg.emit.emit("leal", VTableBuilder.getVTableLabel(ast.typeName), castVTable);
+
+        // load vtable ptr
 		cg.emit.emitLoad(0, right, objVTable);
 
 		cg.emit.emitLabel(labelLoop);
@@ -220,6 +216,10 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		emitExit(ExitCode.INVALID_DOWNCAST, ctx);
 
 		cg.emit.emitLabel(labelOk);
+
+        // release all registers we acquired for intermediate computations
+        cg.rm.releaseRegister(objVTable);
+        cg.rm.releaseRegister(castVTable);
 		return right;
 	}
 
@@ -235,9 +235,9 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
         boolean calculateValue = ctx.calculateValue;
         ctx.calculateValue = true;
 
-        Pair<Register> pair = visitCheaperSideFirst(ast.left(), ast.right(), ctx);
-		Register baseReg = pair.a;
-		Register offsetReg = pair.b;
+        Pair<Register> pair = visitMoreExpensiveSideFirst(ast.left(), ast.right(), ctx);
+		Register baseReg = pair.a; // generate code to get the base address of the array
+		Register offsetReg = pair.b; // generate code to get the offset in the array
 
 		String labelOk = cg.emit.uniqueLabel();
 		String labelErr = cg.emit.uniqueLabel();
@@ -476,15 +476,13 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		cg.emit.emit("call", Config.EXIT);
 	}
 
-	private Pair<Register> visitCheaperSideFirst(Expr left, Expr right, Context ctx) {
+	private Pair<Register> visitMoreExpensiveSideFirst(Expr left, Expr right, Context ctx) {
 		int leftRN = cg.rnv.calc(left);
 		int rightRN = cg.rnv.calc(right);
 
 		Register leftReg, rightReg;
 		if (leftRN > rightRN) {
-			// generate code to get the base address of the array
 			leftReg = visit(left, ctx);
-			// generate code to get the offset in the array
 			rightReg = visit(right, ctx);
 		} else {
 			rightReg = visit(right, ctx);
