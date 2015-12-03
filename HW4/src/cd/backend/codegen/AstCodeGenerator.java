@@ -3,7 +3,7 @@ package cd.backend.codegen;
 import cd.Config;
 import cd.Main;
 import cd.backend.ExitCode;
-import cd.backend.codegen.RegisterManager.*;
+import cd.backend.codegen.RegisterManager.Register;
 import cd.ir.Ast.ClassDecl;
 import cd.ir.Symbol;
 
@@ -13,8 +13,8 @@ import java.util.List;
 
 import static cd.Config.MAIN;
 import static cd.backend.codegen.AssemblyEmitter.constant;
-import static cd.backend.codegen.AssemblyEmitter.registerOffset;
-import static cd.backend.codegen.RegisterManager.*;
+import static cd.backend.codegen.RegisterManager.CALLEE_SAVE;
+import static cd.backend.codegen.RegisterManager.STACK_REG;
 
 public class AstCodeGenerator {
 
@@ -137,7 +137,6 @@ public class AstCodeGenerator {
 
 		emit.emit("call", mainSymbol.vTable.getMethodLabel("main")); // execute the main() method on the newly create instance
 
-		// TODO: do we need to check the return value of main()?
 		// if we return normally from the main() function with the value 0, no error occurred and we can terminate the execution
 		emit.emitStore(AssemblyEmitter.constant(ExitCode.OK.value), 0, STACK_REG);
 		emit.emit("call", Config.EXIT);

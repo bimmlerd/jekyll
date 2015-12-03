@@ -3,7 +3,7 @@ package cd.backend.codegen;
 import cd.Config;
 import cd.ToDoException;
 import cd.backend.ExitCode;
-import cd.backend.codegen.RegisterManager.Register;
+import cd.backend.codegen.RegisterManager.*;
 import cd.ir.Ast.*;
 import cd.ir.ExprVisitor;
 import cd.ir.Symbol;
@@ -64,7 +64,6 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 			cg.emit.emit("cmp", AssemblyEmitter.constant(0), rightReg);
 			cg.emit.emit("jne", labelOK);
 
-			// exit with error code ExitCode.DIVISION_BY_ZERO
 			emitExit(ExitCode.DIVISION_BY_ZERO, ctx);
 
 			cg.emit.emitLabel(labelOK);
@@ -97,7 +96,7 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 				cg.emit.emitComment("Restore eax post div");
 				cg.emit.emitMove(AssemblyEmitter.registerOffset(-4, RegisterManager.STACK_REG), Register.EAX);
 			}
-			if (cg.rm.isInUse(Register.EDX)) {
+			if (cg.rm.isInUse(Register.EDX) && Register.EDX != rightReg) {
 				cg.emit.emitComment("Restore edx post div");
 				cg.emit.emitMove(AssemblyEmitter.registerOffset(-8, RegisterManager.STACK_REG), Register.EDX);
 			}
@@ -238,23 +237,31 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
         ctx.calculateValue = true;
 
         Pair<Register> pair = visitMoreExpensiveSideFirst(ast.left(), ast.right(), ctx);
-		Register baseReg = pair.a; // generate code to get the base address of the array
-		Register offsetReg = pair.b; // generate code to get the offset in the array
+		Register baseReg = pair.a; // base address of the array
+		Register offsetReg = pair.b; // offset in the array
 
         String labelOk = cg.emit.uniqueLabel();
-        String labelErr = cg.emit.uniqueLabel();
+		String labelNullErr = cg.emit.uniqueLabel();
+        String labelInvalidBoundErr = cg.emit.uniqueLabel();
+
+		// check if null pointer access
+		cg.emit.emit("cmp", constant(0), baseReg);
+		cg.emit.emit("je", labelNullErr);
 
         Register allowedSize = cg.rm.getRegister(ctx);
 
         cg.emit.emit("cmp", constant(0), offsetReg);
-        cg.emit.emit("jl", labelErr);
+        cg.emit.emit("jl", labelInvalidBoundErr);
 
 		cg.emit.emitLoad(SIZEOF_PTR, baseReg, allowedSize);
 		cg.emit.emit("cmp", offsetReg, allowedSize);
-		cg.emit.emit("jle", labelErr);
+		cg.emit.emit("jle", labelInvalidBoundErr);
 		cg.emit.emit("jmp", labelOk);
 
-        cg.emit.emitLabel(labelErr);
+		cg.emit.emitLabel(labelNullErr);
+		emitExit(ExitCode.NULL_POINTER, ctx);
+
+        cg.emit.emitLabel(labelInvalidBoundErr);
         emitExit(ExitCode.INVALID_ARRAY_BOUNDS, ctx);
 
         cg.emit.emitLabel(labelOk);
@@ -284,6 +291,16 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 
 		ctx.calculateValue = true;
 		Register recv = visit(ast.arg(), ctx);
+
+		String labelOk = cg.emit.uniqueLabel();
+
+		cg.emit.emit("cmp", constant(0), recv);
+		cg.emit.emit("jne", labelOk);
+
+		emitExit(ExitCode.NULL_POINTER, ctx);
+
+		cg.emit.emitLabel(labelOk);
+
         if (calculateValue) {
             cg.emit.emitMove(registerOffset(offset, recv), recv); // access field
         } else {
@@ -402,18 +419,30 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 
 	@Override
 	public Register methodCall(MethodCallExpr ast, Context ctx) {
-        List<Expr> arguments = ast.allArguments();
+        List<Expr> arguments = ast.argumentsWithoutReceiver();
 
 		ctx.stackOffset += cg.saveRegisters(CALLER_SAVE);
 
-		int allocSpace = cg.calculateAllocSpace(arguments.size(), ctx.stackOffset);
+		int allocSpace = cg.calculateAllocSpace(ast.allArguments().size(), ctx.stackOffset);
 
 		// make space for the arguments including alignment
 		cg.emit.emitComment("Space for arguments and place arguments:");
 		cg.emit.emit("subl", constant(allocSpace), STACK_REG);
+		ctx.stackOffset -= allocSpace;
 
-		Register reg;
-        for (int i = 0; i < arguments.size(); i++) {
+		Register reg = visit(ast.receiver(), ctx);
+		cg.emit.emitStore(reg, 0, STACK_REG);
+		cg.rm.releaseRegister(reg, ctx);
+
+		String labelOk = cg.emit.uniqueLabel();
+
+		cg.emit.emit("cmp", constant(0), reg);
+		cg.emit.emit("jne", labelOk);
+
+		emitExit(ExitCode.NULL_POINTER, ctx);
+
+		cg.emit.emitLabel(labelOk);
+        for (int i = 1; i < arguments.size(); i++) {
 			// evaluate this argument
             reg = visit(arguments.get(i), ctx);
 			// and store it on the stack
@@ -467,9 +496,9 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		int offset = ctx.offsetTable.get(ast.name);
 
         if (ctx.calculateValue) {
-            cg.emit.emitMove(String.format("%d(%s)", offset, BASE_REG), reg); // access local variable
+            cg.emit.emitMove(registerOffset(offset, BASE_REG), reg); // access local variable
         } else {
-            cg.emit.emit("leal", String.format("%d(%s)", offset, BASE_REG), reg); // store address of local variable
+            cg.emit.emit("leal", registerOffset(offset, BASE_REG), reg); // store address of local variable
         }
 
         return reg;

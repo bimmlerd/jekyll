@@ -20,7 +20,7 @@ public class Context {
     protected Map<String, Integer> offsetTable; // parameters and locals all have a unique offset to the base pointer on the stack
 
     Set<RegisterManager.Register> reservedRegisters; // Registers that we cannot spill, as they are needed locally
-    Set<RegisterManager.Register> spilledRegisters; // Re
+    Set<RegisterManager.Register> spilledRegisters; // Spilled Registers, those which need to be unspilled when released
 
     public Context(Symbol.ClassSymbol currentClass) {
         this.currentClass = currentClass;
