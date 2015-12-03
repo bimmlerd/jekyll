@@ -2,6 +2,7 @@ package cd.backend.codegen;
 
 import cd.ir.Symbol;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -19,8 +20,8 @@ public class Context {
 
     protected Map<String, Integer> offsetTable; // parameters and locals all have a unique offset to the base pointer on the stack
 
-    Set<RegisterManager.Register> reservedRegisters; // Registers that we cannot spill, as they are needed locally
-    Set<RegisterManager.Register> spilledRegisters; // Spilled Registers, those which need to be unspilled when released
+    Set<RegisterManager.Register> reservedRegisters = new HashSet<>(); // Registers that we cannot spill, as they are needed locally
+    Set<RegisterManager.Register> spilledRegisters = new HashSet<>(); // Spilled Registers, those which need to be unspilled when released
 
     public Context(Symbol.ClassSymbol currentClass) {
         this.currentClass = currentClass;

@@ -26,19 +26,18 @@ public class AstCodeGenerator {
 	protected final Main main;
 	
 	protected final AssemblyEmitter emit;
-	protected final RegisterManager rm = new RegisterManager();
+	protected final RegisterManager rm;
 
 	AstCodeGenerator(Main main, Writer out) {
-		{
-			initMethodData();
-		}
-		
 		this.emit = new AssemblyEmitter(out);
 		this.main = main;
 		this.rnv = new RegsNeededVisitor();
 
 		this.eg = new ExprGenerator(this);
 		this.sg = new StmtGenerator(this);
+		this.rm = new RegisterManager(this);
+
+        initMethodData();
 	}
 
 	protected void debug(String format, Object... args) {
