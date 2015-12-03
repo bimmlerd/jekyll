@@ -554,12 +554,28 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		int leftRN = cg.rnv.calc(left);
 		int rightRN = cg.rnv.calc(right);
 
+        int regCount;
+
 		Register leftReg, rightReg;
 		if (leftRN > rightRN) {
 			leftReg = visit(left, ctx);
+
+            // List<Register> spilledRegs = new ArrayList<>();
+            Stack<Register> spilledRegs = new Stack<>();
+            regCount = cg.rm.availableRegisters();
+
+            while (regCount < 2) {
+                spilledRegs.push(cg.rm.spillRegister(ctx));
+                regCount++;
+            }
+            // make spilled registers available for node visited next
+            spilledRegs.forEach(cg.rm::releaseRegisterWithoutUnspilling);
+
 			rightReg = visit(right, ctx);
+            // TODO
 		} else {
 			rightReg = visit(right, ctx);
+            // TODO spill?
 			leftReg = visit(left, ctx);
 		}
 
