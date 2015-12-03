@@ -132,7 +132,7 @@ public class AstCodeGenerator {
 		emit.emitStore(vTablePointer, 0, mainInstance);
 
 		// put 'this' on stack
-		emit.emitMove(vTablePointer, registerOffset(Config.SIZEOF_PTR, BASE_REG));
+		emit.emitStore(mainInstance, 0, STACK_REG);
 
 		emit.emit("call", mainSymbol.vTable.getMethodLabel("main")); // execute the main() method on the newly create instance
 
