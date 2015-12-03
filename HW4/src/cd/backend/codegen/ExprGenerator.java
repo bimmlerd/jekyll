@@ -303,7 +303,12 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 	public Register field(Field ast, Context ctx) {
 		boolean calculateValue = ctx.calculateValue;
 		Symbol.ClassSymbol classSymbol = (Symbol.ClassSymbol) ast.arg().type;
-		int offset = classSymbol.oTable.getOffset(String.format("%s.%s", classSymbol.name, ast.fieldName));
+		int offset = -1;
+		Symbol.ClassSymbol current = classSymbol;
+		while (offset < 0 && current != Symbol.ClassSymbol.objectType) {
+			offset = classSymbol.oTable.getOffset(String.format("%s.%s", current.name, ast.fieldName));
+			current = current.superClass;
+		}
 
 		ctx.calculateValue = true;
 		Register recv = visit(ast.arg(), ctx);
@@ -340,45 +345,51 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		String labelOK = cg.emit.uniqueLabel();
 
         // calculate size
-		Register reg = visit(ast.arg(), ctx);
+		Register size = visit(ast.arg(), ctx);
 
-		cg.emit.emit("cmp", constant(0), reg);
+		cg.emit.emit("cmp", constant(0), size);
 		cg.emit.emit("jge", labelOK);
 		emitExit(ExitCode.INVALID_ARRAY_SIZE, ctx);
 
 		cg.emit.emitLabel(labelOK);
 
 		// add two to size for vtable and length of array
-		cg.emit.emit("add", constant(2), reg);
+		cg.emit.emit("add", constant(2), size);
 
 		List<String> arguments = new ArrayList<>();
-		arguments.add(reg.repr);
+		arguments.add(size.repr);
 		arguments.add(AssemblyEmitter.constant(Config.SIZEOF_PTR));
 
-		cg.emit.emit("push", reg);
-		ctx.stackOffset -= SIZEOF_PTR;
+		Stack<Register> registerStack = storeUsedCallerSavedRegisters(ctx);
 		cg.beforeFunctionCall(arguments, ctx.stackOffset);
 
 		cg.emit.emit("call", Config.CALLOC);
 
 		// store address
-		cg.emit.emitMove(Register.EAX, reg);
+		Register address = cg.rm.getRegister(ctx);
+		cg.emit.emitMove(Register.EAX, address);
 
 		// store vtable ptr
 		cg.emit.emit("leal", VTableBuilder.getArrayVTableLabelFromArray(ast.type), Register.EAX);
-		cg.emit.emitStore(Register.EAX, 0, reg);
+		cg.emit.emitStore(Register.EAX, 0, address);
 
 		cg.afterFunctionCall(arguments, ctx.stackOffset);
-		cg.emit.emit("pop", Register.EAX);
-		ctx.stackOffset += SIZEOF_PTR;
+		restoreUsedCallerSavedRegisters(registerStack, ctx);
 
 		// store size
-		cg.emit.emit("sub", constant(2), Register.EAX);
-		cg.emit.emitStore(Register.EAX, SIZEOF_PTR, reg);
+		cg.emit.emit("sub", constant(2), size);
+		cg.emit.emitStore(size, SIZEOF_PTR, address);
 
-		return reg;
+		cg.rm.releaseRegister(size, ctx);
+
+		return address;
 	}
 
+	// object structure on heap:
+	//  --------------------  ptr +
+	// | vtable ptr			| 0 - 4
+	// | data 				| 4 - ...
+	//  --------------------
 	@Override
 	public Register newObject(NewObject ast, Context ctx) {
 		if (!(ast.type instanceof Symbol.ClassSymbol)) {
@@ -386,16 +397,11 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		}
 		Symbol.ClassSymbol classSymbol = (Symbol.ClassSymbol) ast.type;
 
-		// object structure on heap: TODO
-		//  --------------------  ptr +
-		// | vtable ptr			| 0 - 4
-		// | data 				| 4 - ...
-		//  --------------------
-
 		List<String> arguments = new ArrayList<>();
 		arguments.add(AssemblyEmitter.constant(classSymbol.oTable.getCount()));
 		arguments.add(AssemblyEmitter.constant(Config.SIZEOF_PTR));
 
+		Stack<Register> registerStack = storeUsedCallerSavedRegisters(ctx);
 		cg.beforeFunctionCall(arguments, ctx.stackOffset);
 
 		cg.emit.emit("call", Config.CALLOC);
@@ -408,8 +414,30 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		cg.emit.emitStore(Register.EAX, 0, reg);
 
 		cg.afterFunctionCall(arguments, ctx.stackOffset);
+		restoreUsedCallerSavedRegisters(registerStack, ctx);
 
 		return reg;
+	}
+
+	private Stack<Register> storeUsedCallerSavedRegisters(Context ctx) {
+		cg.emit.emitComment("Saving Caller Saved Registers:");
+		Stack<Register> toPop = new Stack<>();
+		for (Register reg : CALLER_SAVE) {
+			if (cg.rm.isInUse(reg)) {
+				cg.emit.emit("push", reg);
+				ctx.stackOffset -= Config.SIZEOF_PTR;
+				toPop.push(reg);
+			}
+		}
+		return toPop;
+	}
+
+	private void restoreUsedCallerSavedRegisters(Stack<Register> toPop, Context ctx) {
+		cg.emit.emitComment("Restoring Caller Saved Registers:");
+		while (! toPop.empty()) {
+			cg.emit.emit("pop", toPop.pop());
+			ctx.stackOffset += Config.SIZEOF_PTR;
+		}
 	}
 
 	@Override
@@ -431,15 +459,7 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 	public Register methodCall(MethodCallExpr ast, Context ctx) {
         List<Expr> arguments = ast.argumentsWithoutReceiver();
 
-        Stack<Register> virtualStack = new Stack<>();
-        cg.emit.emitComment("Saving Registers:");
-        for (Register reg : CALLER_SAVE) {
-            if (cg.rm.isInUse(reg)) {
-                cg.emit.emit("push", reg);
-                virtualStack.push(reg);
-                ctx.stackOffset -= SIZEOF_PTR;
-            }
-        }
+        Stack<Register> registerStack = storeUsedCallerSavedRegisters(ctx);
 
 		int allocSpace = cg.calculateAllocSpace(ast.allArguments().size(), ctx.stackOffset);
 
@@ -484,11 +504,7 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		cg.emit.emit("addl", constant(allocSpace), STACK_REG);
         ctx.stackOffset += allocSpace;
 
-        cg.emit.emitComment("Restoring Saved Registers:");
-        while (!virtualStack.empty()) {
-            cg.emit.emit("pop", virtualStack.pop());
-            ctx.stackOffset += SIZEOF_PTR;
-        }
+        restoreUsedCallerSavedRegisters(registerStack, ctx);
 
 		return reg;
 	}

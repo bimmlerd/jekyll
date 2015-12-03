@@ -1,7 +1,6 @@
 package cd.backend.codegen;
 
 import cd.Config;
-import cd.ToDoException;
 import cd.ir.Symbol;
 
 import java.util.ArrayList;
@@ -28,19 +27,11 @@ public class ObjectTableBuilder {
             }
             table.addAll(classSymbol.superClass.oTable.table); // this preserves indices.
             table.set(0, VTableBuilder.getVTableLabel(classSymbol));
-            String className = classSymbol.name;
-            while (classSymbol != null) {
-                classSymbol.fields.keySet().forEach((n) -> table.add(String.format("%s.%s", className, n)));
-                classSymbol = classSymbol.superClass;
-            }
+            classSymbol.fields.keySet().forEach((n) -> table.add(String.format("%s.%s", classSymbol.name, n)));
         }
 
         public int getOffset(String name) {
             int res = table.indexOf(name);
-            if (res < 0) {
-                // TODO
-                throw new ToDoException("Trying to getOffset for a field which doesn't appear in the otable");
-            }
             return res * Config.SIZEOF_PTR;
         }
 
