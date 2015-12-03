@@ -21,7 +21,7 @@ public class TestSamplePrograms extends AbstractTestAgainstFrozenReference {
 	 * variable like:
 	 * {@code justFile = new File("javali_tests/HW2/Inheritance.javali")}.
 	 */
-	public static final File justFile = new File("javali_tests/HW4_jekyll/SimpleTryOut.javali");
+	public static final File justFile = new File("javali_tests/HW4_jekyll/OkBinaryOperations.javali");
 //	public static final File justFile = null;
 
 	/**
@@ -30,8 +30,8 @@ public class TestSamplePrograms extends AbstractTestAgainstFrozenReference {
 	 * particular directory, use sth. like:
 	 * {@code testDir = new File("javali_tests/HW2/")}.
 	 */
-//	public static final File testDir = new File("javali_tests/HW1");
-	public static final File testDir = null;
+	public static final File testDir = new File("javali_tests/shared/JAVAAAA/HW4/gen");
+//	public static final File testDir = null;
 	
 	@Parameters(name="{index}:{0}")
 	public static Collection<Object[]> testFiles() {

@@ -103,9 +103,10 @@ public class AstCodeGenerator {
 	protected void emitPrologue() {
 		emit.emitCommentSection("Prologue");
 
+		Context ctx = new Context(null);
 		// get all registers we need for the prologue
-		Register mainInstance = rm.getRegister();
-		Register vTablePointer = rm.getRegister();
+		Register mainInstance = rm.getRegister(ctx);
+		Register vTablePointer = rm.getRegister(ctx);
 
 		emit.emitRaw(Config.TEXT_SECTION);
 		emit.emitRaw(String.format(".globl %s", MAIN));
@@ -142,8 +143,8 @@ public class AstCodeGenerator {
 		emit.emit("call", Config.EXIT);
 
 		// release all register we needed for the prologue
-		rm.releaseRegister(vTablePointer);
-		rm.releaseRegister(mainInstance);
+		rm.releaseRegister(vTablePointer, ctx);
+		rm.releaseRegister(mainInstance, ctx);
 	}
 
 	protected void emitEpilogue() {

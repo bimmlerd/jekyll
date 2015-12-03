@@ -89,8 +89,9 @@ public class RegisterManager {
 
 	/**
 	 * returns a free register and marks it as used
+	 * @param ctx the context of the function requesting a register
 	 */
-	public Register getRegister() {
+	public Register getRegister(Context ctx) {
 		int last = registers.size() - 1;
 		if (last < 0)
 			throw new AssemblyFailedException(
@@ -101,8 +102,10 @@ public class RegisterManager {
 
 	/**
 	 * marks a currently used register as free
+	 * @param reg the to be released register
+	 * @param ctx the context of the function releasing a register
 	 */
-	public void releaseRegister(Register reg) {
+	public void releaseRegister(Register reg, Context ctx) {
 		assert !registers.contains(reg);
 		registers.add(reg);
 	}

@@ -147,21 +147,21 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
             break;
 		}
 
-		cg.rm.releaseRegister(leftReg);
+		cg.rm.releaseRegister(leftReg, ctx);
 
 		return rightReg;
 	}
 
 	@Override
 	public Register booleanConst(BooleanConst ast, Context ctx) {
-        Register reg = cg.rm.getRegister();
+        Register reg = cg.rm.getRegister(ctx);
         cg.emit.emitMove(ast.value ? constant(1) : constant(0), reg);
         return reg;
 	}
 
 	@Override
 	public Register builtInRead(BuiltInRead ast, Context ctx) {
-		Register reg = cg.rm.getRegister();
+		Register reg = cg.rm.getRegister(ctx);
 		cg.emit.emit("leal", AssemblyEmitter.registerOffset(8, STACK_REG), reg);
 
         List<String> arguments = new ArrayList<>();
@@ -187,8 +187,8 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		String labelOk = cg.emit.uniqueLabel();
 		String labelLoop = cg.emit.uniqueLabel();
 
-        Register castVTable = cg.rm.getRegister();
-        Register objVTable = cg.rm.getRegister();
+        Register castVTable = cg.rm.getRegister(ctx);
+        Register objVTable = cg.rm.getRegister(ctx);
 
         // check if null
         cg.emit.emit("cmp", constant(0), right);
@@ -220,8 +220,8 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		cg.emit.emitLabel(labelOk);
 
         // release all registers we acquired for intermediate computations
-        cg.rm.releaseRegister(objVTable);
-        cg.rm.releaseRegister(castVTable);
+        cg.rm.releaseRegister(objVTable, ctx);
+        cg.rm.releaseRegister(castVTable, ctx);
 		return right;
 	}
 
@@ -244,7 +244,7 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
         String labelOk = cg.emit.uniqueLabel();
         String labelErr = cg.emit.uniqueLabel();
 
-        Register allowedSize = cg.rm.getRegister();
+        Register allowedSize = cg.rm.getRegister(ctx);
 
         cg.emit.emit("cmp", constant(0), offsetReg);
         cg.emit.emit("jl", labelErr);
@@ -265,14 +265,14 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
             cg.emit.emit("leal", arrayAddress(baseReg, offsetReg), baseReg); // store address of array element
         }
 
-        cg.rm.releaseRegister(allowedSize);
-        cg.rm.releaseRegister(offsetReg);
+        cg.rm.releaseRegister(offsetReg, ctx);
+        cg.rm.releaseRegister(allowedSize, ctx);
         return baseReg;
 	}
 
 	@Override
 	public Register intConst(IntConst ast, Context ctx) {
-        Register reg = cg.rm.getRegister();
+        Register reg = cg.rm.getRegister(ctx);
         cg.emit.emitMove(constant(ast.value), reg);
         return reg;
 	}
@@ -374,7 +374,7 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		cg.emit.emit("call", Config.CALLOC);
 
 		// store address in a new register
-		Register reg = cg.rm.getRegister();
+		Register reg = cg.rm.getRegister(ctx);
 		cg.emit.emitMove(Register.EAX, reg);
 		// store vtable ptr
 		cg.emit.emit("leal", classSymbol.vTable.getVTableLabel(), Register.EAX);
@@ -387,7 +387,7 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 
 	@Override
 	public Register nullConst(NullConst ast, Context ctx) {
-		Register reg = cg.rm.getRegister();
+		Register reg = cg.rm.getRegister(ctx);
 		cg.emit.emitMove(constant(0), reg);
 		return reg;
 	}
@@ -395,7 +395,7 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 	@Override
 	public Register thisRef(ThisRef ast, Context ctx) {
 		int offset = ctx.offsetTable.get("this");
-		Register thisReg = cg.rm.getRegister();
+		Register thisReg = cg.rm.getRegister(ctx);
 		cg.emit.emitMove(registerOffset(offset, BASE_REG), thisReg);
 		return thisReg;
 	}
@@ -418,11 +418,11 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
             reg = visit(arguments.get(i), ctx);
 			// and store it on the stack
 			cg.emit.emitStore(reg, i * Config.SIZEOF_PTR, STACK_REG);
-			cg.rm.releaseRegister(reg);
+			cg.rm.releaseRegister(reg, ctx);
         }
 
 		// call method
-		reg = cg.rm.getRegister();
+		reg = cg.rm.getRegister(ctx);
 		cg.emit.emitLoad(0, STACK_REG, reg); // Load object pointer
 		cg.emit.emitLoad(0, reg, reg); // Load vtable pointer
 		int offset = ((Symbol.ClassSymbol) ast.receiver().type).vTable.getMethodOffset(ast.methodName);
@@ -463,7 +463,7 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 	
 	@Override
 	public Register var(Var ast, Context ctx) {
-		Register reg = cg.rm.getRegister();
+		Register reg = cg.rm.getRegister(ctx);
 		int offset = ctx.offsetTable.get(ast.name);
 
         if (ctx.calculateValue) {

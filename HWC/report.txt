@@ -1,0 +1,34 @@
+Report to the Code Review for Ronimo by jekyll
+==============================================
+
+## Preliminary Comments
+
+The code seems to be complete and thoroughly tested. It was pointed out that the test suit was well organised and tested a wide range of programs. One reviewer found a tricky corner case that the compiler did not handle correctly. Overall the implementation works almost perfect, though.
+
+The provided comments capture why and how things are done. Still, the documentation of the code could have included more comments on what a class or function is supposed to do.
+
+==============================================
+
+## Code Style
+
+There is a lot of duplicate code throughout the implementation. Take varDecl() in the AstSymbolVisitor as an example. We had a closer look at lines 49 to 66, where a new VariableSymbol is created with nearly the same arguments in different branches. Someone suggested to store the arguments and then call the constructor once in a single point afterwards.
+
+In the ExprVisitor, the reviewers critiqued the lack of a switch/case statement in both unaryOp and binaryOp. The use of multiple nested if/else statements makes the code less clean and harder to read.
+
+It is a bad habit to rely on hard coded string comparisons. Especially, when the framework already provides an operator type enum and object structures for primitive types, e.g. line 70 and subsequent in the ExprVisitor.
+
+==============================================
+
+## Design Choices related to Efficiency
+
+Instead of reusing common subexpressions, they evaluate them multiple times in a row. This slows down the execution, in particular, when such a subexpression is long and contains method calls. If these method calls have no side effects, it is perfectly fine to do them only once.
+
+The check for circular inheritance is done recursively with SemanticAnalyzer.checkCircularInheritance(). The function could be turned into a loop easily and would therefore be more memory efficient.
+
+One of the reviewer suggested to avoid a list creation inside a loop and rather reuse an already existing list. Rebuilding a list in every loop iteration as in AstSymbolVisitor.java:155 is a lot less efficient than reusing the list.
+
+==============================================
+
+## Conclusion
+
+The reviewers all agreed that the solution was complete and handled input programs in a way it is supposed to. Even as is was not the most efficient solution we have looked at. The code is well structured, but is not always as readable as it could be.

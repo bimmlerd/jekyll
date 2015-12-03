@@ -39,7 +39,7 @@ class StmtGenerator extends AstVisitor<Register, Context> {
 	public Register methodCall(MethodCall ast, Context ctx) {
         Register reg = cg.eg.visit(ast.getMethodCallExpr(), ctx);
 		// return value is not stored
-		cg.rm.releaseRegister(reg);
+		cg.rm.releaseRegister(reg, ctx);
 		return null;
 	}
 
@@ -104,7 +104,7 @@ class StmtGenerator extends AstVisitor<Register, Context> {
 
 		// decide whether then-part is executed
 		cg.emit.emit("cmp", constant(0), conditionReg);
-        cg.rm.releaseRegister(conditionReg);
+        cg.rm.releaseRegister(conditionReg, ctx);
         cg.emit.emit("je", labelAfterThen);
 
 		// generate code for then-part
@@ -134,7 +134,7 @@ class StmtGenerator extends AstVisitor<Register, Context> {
 
         // decide whether loop-body is executed
         cg.emit.emit("cmp", constant(0), conditionReg);
-        cg.rm.releaseRegister(conditionReg);
+        cg.rm.releaseRegister(conditionReg, ctx);
         cg.emit.emit("je", labelAfterBody);
 
         // generate code for loop-body
@@ -156,8 +156,8 @@ class StmtGenerator extends AstVisitor<Register, Context> {
         Register rhsReg = cg.eg.visit(ast.right(), ctx);
 
 		cg.emit.emitStore(rhsReg, 0, lhsReg); // store value at calculated address in memory
-		cg.rm.releaseRegister(lhsReg);
-		cg.rm.releaseRegister(rhsReg);
+		cg.rm.releaseRegister(lhsReg, ctx);
+		cg.rm.releaseRegister(rhsReg, ctx);
 		return null;
 	}
 
@@ -174,7 +174,7 @@ class StmtGenerator extends AstVisitor<Register, Context> {
 		cg.emit.emit("call", Config.PRINTF); // return value is not stored
 		cg.afterFunctionCall(arguments, ctx.stackOffset);
 
-		cg.rm.releaseRegister(reg);
+		cg.rm.releaseRegister(reg, ctx);
 		return null;
 	}
 
@@ -200,7 +200,7 @@ class StmtGenerator extends AstVisitor<Register, Context> {
             Register reg = cg.eg.visit(ast.arg(), ctx);
             cg.emit.emitMove(reg, Register.EAX);
             cg.emitMethodSuffix(false);
-			cg.rm.releaseRegister(reg);
+			cg.rm.releaseRegister(reg, ctx);
         }
 
         return null;
