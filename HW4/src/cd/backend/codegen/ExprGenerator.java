@@ -302,7 +302,8 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 	@Override
 	public Register field(Field ast, Context ctx) {
 		boolean calculateValue = ctx.calculateValue;
-		int offset = ((Symbol.ClassSymbol) ast.arg().type).oTable.getOffset(ast.fieldName);
+		Symbol.ClassSymbol classSymbol = (Symbol.ClassSymbol) ast.arg().type;
+		int offset = classSymbol.oTable.getOffset(String.format("%s.%s", classSymbol.name, ast.fieldName));
 
 		ctx.calculateValue = true;
 		Register recv = visit(ast.arg(), ctx);

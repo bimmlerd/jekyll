@@ -2,7 +2,6 @@ package cd.backend.codegen;
 
 import cd.Config;
 import cd.ToDoException;
-import cd.ir.Ast;
 import cd.ir.Symbol;
 
 import java.util.ArrayList;
@@ -29,7 +28,11 @@ public class ObjectTableBuilder {
             }
             table.addAll(classSymbol.superClass.oTable.table); // this preserves indices.
             table.set(0, VTableBuilder.getVTableLabel(classSymbol));
-            classSymbol.fields.forEach((n, v) -> table.add(n));
+            String className = classSymbol.name;
+            while (classSymbol != null) {
+                classSymbol.fields.keySet().forEach((n) -> table.add(String.format("%s.%s", className, n)));
+                classSymbol = classSymbol.superClass;
+            }
         }
 
         public int getOffset(String name) {

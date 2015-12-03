@@ -135,7 +135,12 @@ public class AstCodeGenerator {
 		// put 'this' on stack
 		emit.emitStore(mainInstance, 0, STACK_REG);
 
-		emit.emit("call", mainSymbol.vTable.getMethodLabel("main")); // execute the main() method on the newly create instance
+		// execute the main() method on the newly create instance
+		emit.emitLoad(0, mainInstance, mainInstance); // Load vtable pointer
+		int offset = mainSymbol.vTable.getMethodOffset("main");
+		emit.emit("addl", constant(offset), mainInstance);
+		emit.emitLoad(0, mainInstance, mainInstance);
+		emit.emit("call", String.format("*%s", mainInstance.repr));
 
 		// if we return normally from the main() function with the value 0, no error occurred and we can terminate the execution
 		emit.emitStore(AssemblyEmitter.constant(ExitCode.OK.value), 0, STACK_REG);
