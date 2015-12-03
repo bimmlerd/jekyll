@@ -93,9 +93,21 @@ public class RegisterManager {
 	 */
 	public Register getRegister(Context ctx) {
 		int last = registers.size() - 1;
-		if (last < 0)
+		if (last < 0) {
+			// we need to spill a register
+			for (Register reg : RegisterManager.Register.values()) {
+				if (ctx.reservedRegisters.contains(reg)) {
+					continue;
+				}
+				// TODO spill reg
+				ctx.spilledRegisters.add(reg);
+				return reg;
+			}
+
+			// we only get here if every register is reserved
 			throw new AssemblyFailedException(
 					"Program requires too many registers");
+		}
 
 		return registers.remove(last);
 	}
@@ -107,6 +119,13 @@ public class RegisterManager {
 	 */
 	public void releaseRegister(Register reg, Context ctx) {
 		assert !registers.contains(reg);
+
+		if (ctx.spilledRegisters.contains(reg)) {
+			//TODO unspill this register
+			// -> don't add it to registers, as it isn't free
+			return;
+		}
+
 		registers.add(reg);
 	}
 
