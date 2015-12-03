@@ -54,10 +54,9 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 
 		switch (ast.operator) {
 		case B_TIMES:
-			cg.emit.emit("imul", rightReg, leftReg);
+			cg.emit.emit("imul", leftReg, rightReg);
 			break;
 
-		// TODO: div and mod are broken -> store value in left reg without actual operation performed
 		case B_MOD:
 			isModulo = true;
 		case B_DIV:
@@ -103,20 +102,23 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 				cg.emit.emitMove(AssemblyEmitter.registerOffset(-8, RegisterManager.STACK_REG), Register.EDX);
 			}
 			break;
-		case B_PLUS:
-			cg.emit.emit("add", rightReg, leftReg);
+        case B_PLUS:
+			cg.emit.emit("add", leftReg, rightReg);
 			break;
 
 		case B_MINUS:
-			cg.emit.emit("sub", rightReg, leftReg);
-			break;
+            cg.emit.emit("sub", rightReg, leftReg);
+            Register tmp = rightReg;
+            rightReg = leftReg; // Switch because the result is now in l
+            leftReg = tmp;
+            break;
 
 		case B_AND:
-			cg.emit.emit("and", rightReg, leftReg);
+			cg.emit.emit("and", leftReg, rightReg);
             break;
 
 		case B_OR:
-            cg.emit.emit("or", rightReg, leftReg);
+            cg.emit.emit("or", leftReg, rightReg);
             break;
 
 		case B_EQUAL:
@@ -137,17 +139,17 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
             String labelFalse = cg.emit.uniqueLabel();
             cg.emit.emit("cmp", rightReg, leftReg);
             cg.emit.emit(jmpOp, labelTrue);
-            cg.emit.emitMove(constant(0), leftReg);
+            cg.emit.emitMove(constant(0), rightReg);
             cg.emit.emit("jmp", labelFalse);
             cg.emit.emitLabel(labelTrue);
-            cg.emit.emitMove(constant(1), leftReg);
+            cg.emit.emitMove(constant(1), rightReg);
             cg.emit.emitLabel(labelFalse);
             break;
 		}
 
-		cg.rm.releaseRegister(rightReg);
+		cg.rm.releaseRegister(leftReg);
 
-		return leftReg;
+		return rightReg;
 	}
 
 	@Override
@@ -239,23 +241,23 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		Register baseReg = pair.a; // generate code to get the base address of the array
 		Register offsetReg = pair.b; // generate code to get the offset in the array
 
-		String labelOk = cg.emit.uniqueLabel();
-		String labelErr = cg.emit.uniqueLabel();
+        String labelOk = cg.emit.uniqueLabel();
+        String labelErr = cg.emit.uniqueLabel();
 
-		cg.emit.emit("cmp", constant(0), offsetReg);
-		cg.emit.emit("jl", labelErr);
+        Register allowedSize = cg.rm.getRegister();
 
-		Register allowedSize = cg.rm.getRegister();
+        cg.emit.emit("cmp", constant(0), offsetReg);
+        cg.emit.emit("jl", labelErr);
+
 		cg.emit.emitLoad(SIZEOF_PTR, baseReg, allowedSize);
 		cg.emit.emit("cmp", offsetReg, allowedSize);
 		cg.emit.emit("jle", labelErr);
 		cg.emit.emit("jmp", labelOk);
-		cg.rm.releaseRegister(allowedSize);
 
-		cg.emit.emitLabel(labelErr);
-		emitExit(ExitCode.INVALID_ARRAY_BOUNDS, ctx);
+        cg.emit.emitLabel(labelErr);
+        emitExit(ExitCode.INVALID_ARRAY_BOUNDS, ctx);
 
-		cg.emit.emitLabel(labelOk);
+        cg.emit.emitLabel(labelOk);
 
         if (calculateValue) {
             cg.emit.emitMove(arrayAddress(baseReg, offsetReg), baseReg); // access array element
@@ -263,6 +265,7 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
             cg.emit.emit("leal", arrayAddress(baseReg, offsetReg), baseReg); // store address of array element
         }
 
+        cg.rm.releaseRegister(allowedSize);
         cg.rm.releaseRegister(offsetReg);
         return baseReg;
 	}
@@ -302,7 +305,10 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 	public Register newArray(NewArray ast, Context ctx) {
 
 		String labelOK = cg.emit.uniqueLabel();
+
+        // calculate size
 		Register reg = visit(ast.arg(), ctx);
+
 		cg.emit.emit("cmp", constant(0), reg);
 		cg.emit.emit("jge", labelOK);
 		emitExit(ExitCode.INVALID_ARRAY_SIZE, ctx);
@@ -390,7 +396,7 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 	public Register thisRef(ThisRef ast, Context ctx) {
 		int offset = ctx.offsetTable.get("this");
 		Register thisReg = cg.rm.getRegister();
-		cg.emit.emitMove(String.format("%d(%s)", offset, BASE_REG), thisReg);
+		cg.emit.emitMove(registerOffset(offset, BASE_REG), thisReg);
 		return thisReg;
 	}
 
