@@ -194,7 +194,14 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
         cg.emit.emit("je", labelOk);
 
         // load cast-vtable
-        cg.emit.emit("leal", VTableBuilder.getVTableLabel(ast.typeName), castVTable);
+		String vTableLabel;
+		Symbol.TypeSymbol typeSymbol = ast.type;
+		if (typeSymbol instanceof Symbol.ArrayTypeSymbol) {
+			vTableLabel = VTableBuilder.getArrayVTableLabelFromArray(typeSymbol);
+		} else {
+			vTableLabel = VTableBuilder.getVTableLabel(ast.typeName);
+		}
+        cg.emit.emit("leal", vTableLabel, castVTable);
 
         // load vtable ptr
 		cg.emit.emitLoad(0, right, objVTable);
@@ -348,14 +355,8 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		// store address
 		cg.emit.emitMove(Register.EAX, reg);
 
-		// store vtable
-		Symbol.TypeSymbol elementType = ((Symbol.ArrayTypeSymbol) ast.type).elementType;
-		if (elementType.isReferenceType()) {
-			String VTableLabel = VTableBuilder.getVTableLabel(elementType.name);
-			cg.emit.emit("leal", VTableLabel, Register.EAX);
-		} else {
-			cg.emit.emitMove(constant(0), Register.EAX);
-		}
+		// store vtable ptr
+		cg.emit.emit("leal", VTableBuilder.getArrayVTableLabelFromArray(ast.type), Register.EAX);
 		cg.emit.emitStore(Register.EAX, 0, reg);
 
 		cg.afterFunctionCall(arguments, ctx.stackOffset);
@@ -442,11 +443,11 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		emitExit(ExitCode.NULL_POINTER, ctx);
 
 		cg.emit.emitLabel(labelOk);
-        for (int i = 1; i < arguments.size(); i++) {
+        for (int i = 0; i < arguments.size(); i++) {
 			// evaluate this argument
             reg = visit(arguments.get(i), ctx);
 			// and store it on the stack
-			cg.emit.emitStore(reg, i * Config.SIZEOF_PTR, STACK_REG);
+			cg.emit.emitStore(reg, (i + 1) * Config.SIZEOF_PTR, STACK_REG);
 			cg.rm.releaseRegister(reg, ctx);
         }
 

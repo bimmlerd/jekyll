@@ -1,6 +1,7 @@
 package cd.backend.codegen;
 
 import cd.Config;
+import cd.ToDoException;
 import cd.ir.Ast;
 import cd.ir.Symbol;
 import javafx.util.Pair;
@@ -15,6 +16,7 @@ public class VTableBuilder {
     private final AstCodeGenerator cg;
 
     public final static String VTABLE_PREFIX = "VTABLE";
+    public final static String ARRAY_VTABLE_PREFIX = "ARRAY_VTABLE";
 
     public VTableBuilder(AstCodeGenerator cg) {
         // TODO refactor into just emitter, don't actually need the cg
@@ -29,7 +31,7 @@ public class VTableBuilder {
         Set<Symbol.ClassSymbol> handledClasses = new HashSet<>();
 
         Symbol.ClassSymbol.objectType.vTable = VTable.makeObjectVTable();
-        emitVTable(Symbol.TypeSymbol.ClassSymbol.objectType);
+        emitVTableAndArrVTable(Symbol.TypeSymbol.ClassSymbol.objectType);
         Symbol.ClassSymbol.objectType.oTable = new ObjectTableBuilder.ObjectTable(Symbol.ClassSymbol.objectType);
         handledClasses.add(Symbol.ClassSymbol.objectType);
 
@@ -52,11 +54,15 @@ public class VTableBuilder {
             while (!deferredClasses.empty()) {
                 current = deferredClasses.pop();
                 buildVTable(current);
-                emitVTable(current);
+                emitVTableAndArrVTable(current);
                 ObjectTableBuilder.buildObjectTable(current);
                 handledClasses.add(current);
             }
         }
+
+        // emit array vtables for primitive types
+        emitArrVTable(Symbol.PrimitiveTypeSymbol.booleanType);
+        emitArrVTable(Symbol.PrimitiveTypeSymbol.intType);
     }
 
 
@@ -70,9 +76,19 @@ public class VTableBuilder {
 
     }
 
-    private void emitVTable(Symbol.ClassSymbol classSymbol) {
+    /**
+     * Emits a vtable for classSymbol and its array type
+     * @param classSymbol
+     */
+    private void emitVTableAndArrVTable(Symbol.ClassSymbol classSymbol) {
         cg.emit.emitLabel(getVTableLabel(classSymbol));
         classSymbol.vTable.getSortedList().forEach(cg.emit::emitConstantData);
+        emitArrVTable(classSymbol);
+    }
+
+    private void emitArrVTable(Symbol.TypeSymbol typeSymbol) {
+        cg.emit.emitLabel(getArrayVTableLabel(typeSymbol));
+        cg.emit.emitConstantData(getVTableLabel(Symbol.ClassSymbol.objectType));
     }
 
     public static class VTable {
@@ -128,10 +144,30 @@ public class VTableBuilder {
 
     // Utility methods to have naming logic at one place only
     public static String getVTableLabel(String name) {
-        return String.format("%s$%s", VTABLE_PREFIX, name);
+        return getVTableLabel(name, VTABLE_PREFIX);
     }
+
+    public static String getVTableLabel(String name, String prefix) {
+        return String.format("%s$%s", prefix, name);
+    }
+
     public static String getVTableLabel(Ast.ClassDecl classDecl) {
         return getVTableLabel(classDecl.name);
+    }
+
+    public static String getArrayVTableLabel(Symbol.TypeSymbol typeSymbol) {
+        if (typeSymbol instanceof Symbol.ArrayTypeSymbol) {
+            throw new ToDoException("Not what this is intended for!");
+        }
+        return getVTableLabel(typeSymbol.name, ARRAY_VTABLE_PREFIX);
+    }
+
+    public static String getArrayVTableLabelFromArray(Symbol.TypeSymbol typeSymbol) {
+        if (!(typeSymbol instanceof Symbol.ArrayTypeSymbol)) {
+            throw new ToDoException("You sure?");
+        }
+
+        return getArrayVTableLabel(((Symbol.ArrayTypeSymbol) typeSymbol).elementType);
     }
 
     public static String getVTableLabel(Symbol.ClassSymbol classSymbol) {
