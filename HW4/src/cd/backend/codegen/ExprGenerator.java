@@ -161,15 +161,22 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 	@Override
 	public Register builtInRead(BuiltInRead ast, Context ctx) {
 		Register reg = cg.rm.getRegister(ctx);
-		cg.emit.emit("leal", AssemblyEmitter.registerOffset(8, STACK_REG), reg);
 
         List<String> arguments = new ArrayList<>();
         arguments.add(labelAddress("STR_D"));
         arguments.add(reg.repr);
 
-		cg.beforeFunctionCall(arguments, ctx.stackOffset);
+        int allocSpace = cg.calculateAllocSpace(arguments.size(), ctx.stackOffset);
 
-		cg.emit.emit("call", SCANF);
+        // make space for the arguments including alignment
+        cg.emit.emitComment("Space for arguments and place arguments:");
+        cg.emit.emit("subl", constant(allocSpace), RegisterManager.STACK_REG);
+
+        cg.emit.emit("leal", AssemblyEmitter.registerOffset(8, STACK_REG), reg);
+        cg.emit.emitStore(reg, 4, STACK_REG);
+        cg.emit.emitStore("$STR_D", 0, STACK_REG);
+
+        cg.emit.emit("call", SCANF);
 
         // store value
         cg.emit.emitLoad(8, STACK_REG, reg);
