@@ -155,15 +155,16 @@ public class AstCodeGenerator {
 		emit.emitRaw(Config.DOT_STRING + " \"%d\"");
 	}
 
-	protected void emitMethodSuffix(boolean returnNull) {
+	protected int emitMethodSuffix(boolean returnNull) {
 		if (returnNull) {
 			emit.emitMove(constant(0), Register.EAX);
 		}
 
-		restoreRegisters(CALLEE_SAVE);
+		int stackOffset = restoreRegisters(CALLEE_SAVE);
 
 		emit.emitRaw("leave");
 		emit.emitRaw("ret");
+		return stackOffset;
 	}
 
 	/**

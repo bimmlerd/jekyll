@@ -12,6 +12,7 @@ import cd.util.debug.AstOneLine;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 import static cd.Config.SCANF;
 import static cd.Config.SIZEOF_PTR;
@@ -429,7 +430,15 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 	public Register methodCall(MethodCallExpr ast, Context ctx) {
         List<Expr> arguments = ast.argumentsWithoutReceiver();
 
-		ctx.stackOffset += cg.saveRegisters(CALLER_SAVE);
+        Stack<Register> virtualStack = new Stack<>();
+        cg.emit.emitComment("Saving Registers:");
+        for (Register reg : CALLER_SAVE) {
+            if (cg.rm.isInUse(reg)) {
+                cg.emit.emit("push", reg);
+                virtualStack.push(reg);
+                ctx.stackOffset -= SIZEOF_PTR;
+            }
+        }
 
 		int allocSpace = cg.calculateAllocSpace(ast.allArguments().size(), ctx.stackOffset);
 
@@ -472,8 +481,13 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 
 		cg.emit.emitComment("Reclaim space from arguments:");
 		cg.emit.emit("addl", constant(allocSpace), STACK_REG);
+        ctx.stackOffset += allocSpace;
 
-		ctx.stackOffset += cg.restoreRegisters(CALLER_SAVE);
+        cg.emit.emitComment("Restoring Saved Registers:");
+        while (!virtualStack.empty()) {
+            cg.emit.emit("pop", virtualStack.pop());
+            ctx.stackOffset += SIZEOF_PTR;
+        }
 
 		return reg;
 	}

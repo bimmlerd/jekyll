@@ -89,7 +89,7 @@ class StmtGenerator extends AstVisitor<Register, Context> {
 		visit(ast.body(), ctx);
 
 		// TODO somehow avoid emitting the suffix again if we had a return in the body?
-		cg.emitMethodSuffix(ast.sym.returnType.equals(Symbol.PrimitiveTypeSymbol.voidType));
+        ctx.stackOffset += cg.emitMethodSuffix(ast.sym.returnType.equals(Symbol.PrimitiveTypeSymbol.voidType));
 		return null;
 	}
 
@@ -195,11 +195,11 @@ class StmtGenerator extends AstVisitor<Register, Context> {
 	public Register returnStmt(ReturnStmt ast, Context ctx) {
         if (ast.arg() == null) {
             // no return value
-            cg.emitMethodSuffix(true);
+            ctx.stackOffset += cg.emitMethodSuffix(true);
         } else {
             Register reg = cg.eg.visit(ast.arg(), ctx);
             cg.emit.emitMove(reg, Register.EAX);
-            cg.emitMethodSuffix(false);
+            ctx.stackOffset += cg.emitMethodSuffix(false);
 			cg.rm.releaseRegister(reg, ctx);
         }
 
