@@ -1,0 +1,49 @@
+// checks statically dispatched fields
+
+class A {
+    int a;
+    void main() {
+        Main main_inst;
+        Main main_inst2;
+        A a_inst;
+        A a_inst2;
+
+        writeThings();
+
+        a = 3;
+        writeThings();
+
+        main_inst = (Main) this;
+        main_inst2 = new Main();
+        this.a = 2;
+        writeThings();
+        main_inst.writeThings();
+
+        main_inst2.a = 1;
+        writeThings();
+
+        a_inst = new A();
+        writeThings();
+        a_inst.writeThings();
+
+        a_inst2 = new A();
+        a_inst2.a = 6;
+        writeThings();
+        a_inst.writeThings();
+        a_inst2.writeThings();
+    }
+
+    void writeThings() {
+        write(a); writeln();
+        write(this.a); writeln();
+    }
+}
+
+class Main extends A {
+    int a;
+
+    void writeThings() {
+        write(this.a); writeln();
+        write(a); writeln();
+    }
+}
