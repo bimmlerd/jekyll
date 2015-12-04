@@ -1,0 +1,52 @@
+class Main {
+    void main() {
+        BSTNode root, b;
+        root = new BSTNode();
+        root.insert(0);
+        root.insert(1);
+        root.insert(5);
+        root.insert(5);
+        root.insert(3);
+        root.insert(7);
+        root.insert(-5);
+        b = root.findKey(4);
+        b = root.findKey(3);
+    }
+}
+
+class BSTNode {
+    int key;
+    BSTNode left;
+    BSTNode right;
+
+    BSTNode findKey(int i) {
+        if (i < key) {
+            return left.findKey(i);
+        }
+        if (i > key) {
+            return right.findKey(i);
+        }
+        return this;
+    }
+
+    void insert(int i) {
+        if (i < key) {
+            if (left != null) {
+                left.insert(i);
+            } else {
+                left = new BSTNode();
+                left.key = i;
+            }
+            return;
+        }
+        if (i > key) {
+            if (right != null) {
+                right.insert(i);
+            } else {
+                right = new BSTNode();
+                right.key = i;
+            }
+            return;
+        }
+    }
+}

@@ -1,0 +1,15 @@
+// Expected Error: ExitCode.INVALID_ARRAY_BOUNDS
+// Store into array with invalid index
+
+class Main {
+    void main() {
+        A[] array;
+        A a;
+        array = new A[10];
+        a = new A();
+        array[-1] = a;
+        write(0);
+    }
+}
+
+class A {}

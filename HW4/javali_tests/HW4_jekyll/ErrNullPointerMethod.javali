@@ -1,0 +1,21 @@
+// Expected Error: ExitCode.NULL_POINTER
+// Invoke method on null pointer
+
+class Main {
+    void main() {
+        A a;
+        boolean b;
+        b = a.method();
+        if (b) {
+            write(1);
+        } else {
+            write(0);
+        }
+    }
+}
+
+class A {
+    boolean method() {
+        return true;
+    }
+}
