@@ -47,6 +47,9 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		Pair<Register> pair = visitMoreExpensiveSideFirst(ast.left(), ast.right(), ctx);
 		Register leftReg = pair.a;
 		Register rightReg = pair.b;
+		assert rightReg != leftReg;
+		assert cg.rm.isInUse(rightReg);
+		assert cg.rm.isInUse(leftReg);
 
 		cg.debug("Binary Op: %s (%s,%s)", ast, leftReg, rightReg);
 
@@ -146,6 +149,8 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
             cg.emit.emitLabel(labelFalse);
             break;
 		}
+
+		assert rightReg != ctx.reservedRegister;
 
 		cg.rm.releaseRegister(leftReg, ctx);
 
@@ -254,6 +259,7 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
         Pair<Register> pair = visitMoreExpensiveSideFirst(ast.left(), ast.right(), ctx);
 		Register baseReg = pair.a; // base address of the array
 		Register offsetReg = pair.b; // offset in the array
+		assert baseReg != offsetReg;
 
         String labelOk = cg.emit.uniqueLabel();
 		String labelNullErr = cg.emit.uniqueLabel();
@@ -287,9 +293,16 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
             cg.emit.emit("leal", arrayAddress(baseReg, offsetReg), baseReg); // store address of array element
         }
 
-        cg.rm.releaseRegister(offsetReg, ctx);
-        cg.rm.releaseRegister(allowedSize, ctx);
-        return baseReg;
+		if (baseReg != ctx.reservedRegister) {
+			cg.rm.releaseRegister(offsetReg, ctx);
+			cg.rm.releaseRegister(allowedSize, ctx);
+			return baseReg;
+		} else {
+			cg.emit.emitMove(baseReg, offsetReg);
+			cg.rm.releaseRegister(baseReg, ctx);
+			cg.rm.releaseRegister(allowedSize, ctx);
+			return offsetReg;
+		}
 	}
 
 	@Override
@@ -303,7 +316,12 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 	public Register field(Field ast, Context ctx) {
 		boolean calculateValue = ctx.calculateValue;
 		Symbol.ClassSymbol classSymbol = (Symbol.ClassSymbol) ast.arg().type;
-		int offset = classSymbol.oTable.getOffset(String.format("%s.%s", classSymbol.name, ast.fieldName));
+		int offset = -1;
+		Symbol.ClassSymbol current = classSymbol;
+		while (offset < 0 && current != Symbol.ClassSymbol.objectType) {
+			offset = classSymbol.oTable.getOffset(String.format("%s.%s", current.name, ast.fieldName));
+			current = current.superClass;
+		}
 
 		ctx.calculateValue = true;
 		Register recv = visit(ast.arg(), ctx);
@@ -340,45 +358,51 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		String labelOK = cg.emit.uniqueLabel();
 
         // calculate size
-		Register reg = visit(ast.arg(), ctx);
+		Register size = visit(ast.arg(), ctx);
 
-		cg.emit.emit("cmp", constant(0), reg);
+		cg.emit.emit("cmp", constant(0), size);
 		cg.emit.emit("jge", labelOK);
 		emitExit(ExitCode.INVALID_ARRAY_SIZE, ctx);
 
 		cg.emit.emitLabel(labelOK);
 
 		// add two to size for vtable and length of array
-		cg.emit.emit("add", constant(2), reg);
+		cg.emit.emit("add", constant(2), size);
 
 		List<String> arguments = new ArrayList<>();
-		arguments.add(reg.repr);
+		arguments.add(size.repr);
 		arguments.add(AssemblyEmitter.constant(Config.SIZEOF_PTR));
 
-		cg.emit.emit("push", reg);
-		ctx.stackOffset -= SIZEOF_PTR;
+		Stack<Register> registerStack = storeUsedCallerSavedRegisters(ctx);
 		cg.beforeFunctionCall(arguments, ctx.stackOffset);
 
 		cg.emit.emit("call", Config.CALLOC);
 
 		// store address
-		cg.emit.emitMove(Register.EAX, reg);
+		Register address = cg.rm.getRegister(ctx);
+		cg.emit.emitMove(Register.EAX, address);
 
 		// store vtable ptr
 		cg.emit.emit("leal", VTableBuilder.getArrayVTableLabelFromArray(ast.type), Register.EAX);
-		cg.emit.emitStore(Register.EAX, 0, reg);
+		cg.emit.emitStore(Register.EAX, 0, address);
 
 		cg.afterFunctionCall(arguments, ctx.stackOffset);
-		cg.emit.emit("pop", Register.EAX);
-		ctx.stackOffset += SIZEOF_PTR;
+		restoreUsedCallerSavedRegisters(registerStack, ctx);
 
 		// store size
-		cg.emit.emit("sub", constant(2), Register.EAX);
-		cg.emit.emitStore(Register.EAX, SIZEOF_PTR, reg);
+		cg.emit.emit("sub", constant(2), size);
+		cg.emit.emitStore(size, SIZEOF_PTR, address);
 
-		return reg;
+		cg.rm.releaseRegister(size, ctx);
+
+		return address;
 	}
 
+	// object structure on heap:
+	//  --------------------  ptr +
+	// | vtable ptr			| 0 - 4
+	// | data 				| 4 - ...
+	//  --------------------
 	@Override
 	public Register newObject(NewObject ast, Context ctx) {
 		if (!(ast.type instanceof Symbol.ClassSymbol)) {
@@ -386,16 +410,11 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		}
 		Symbol.ClassSymbol classSymbol = (Symbol.ClassSymbol) ast.type;
 
-		// object structure on heap: TODO
-		//  --------------------  ptr +
-		// | vtable ptr			| 0 - 4
-		// | data 				| 4 - ...
-		//  --------------------
-
 		List<String> arguments = new ArrayList<>();
 		arguments.add(AssemblyEmitter.constant(classSymbol.oTable.getCount()));
 		arguments.add(AssemblyEmitter.constant(Config.SIZEOF_PTR));
 
+		Stack<Register> registerStack = storeUsedCallerSavedRegisters(ctx);
 		cg.beforeFunctionCall(arguments, ctx.stackOffset);
 
 		cg.emit.emit("call", Config.CALLOC);
@@ -408,8 +427,30 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		cg.emit.emitStore(Register.EAX, 0, reg);
 
 		cg.afterFunctionCall(arguments, ctx.stackOffset);
+		restoreUsedCallerSavedRegisters(registerStack, ctx);
 
 		return reg;
+	}
+
+	private Stack<Register> storeUsedCallerSavedRegisters(Context ctx) {
+		cg.emit.emitComment("Saving Caller Saved Registers:");
+		Stack<Register> toPop = new Stack<>();
+		for (Register reg : CALLER_SAVE) {
+			if (cg.rm.isInUse(reg)) {
+				cg.emit.emit("push", reg);
+				ctx.stackOffset -= Config.SIZEOF_PTR;
+				toPop.push(reg);
+			}
+		}
+		return toPop;
+	}
+
+	private void restoreUsedCallerSavedRegisters(Stack<Register> toPop, Context ctx) {
+		cg.emit.emitComment("Restoring Caller Saved Registers:");
+		while (! toPop.empty()) {
+			cg.emit.emit("pop", toPop.pop());
+			ctx.stackOffset += Config.SIZEOF_PTR;
+		}
 	}
 
 	@Override
@@ -431,15 +472,7 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 	public Register methodCall(MethodCallExpr ast, Context ctx) {
         List<Expr> arguments = ast.argumentsWithoutReceiver();
 
-        Stack<Register> virtualStack = new Stack<>();
-        cg.emit.emitComment("Saving Registers:");
-        for (Register reg : CALLER_SAVE) {
-            if (cg.rm.isInUse(reg)) {
-                cg.emit.emit("push", reg);
-                virtualStack.push(reg);
-                ctx.stackOffset -= SIZEOF_PTR;
-            }
-        }
+        Stack<Register> registerStack = storeUsedCallerSavedRegisters(ctx);
 
 		int allocSpace = cg.calculateAllocSpace(ast.allArguments().size(), ctx.stackOffset);
 
@@ -484,11 +517,7 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		cg.emit.emit("addl", constant(allocSpace), STACK_REG);
         ctx.stackOffset += allocSpace;
 
-        cg.emit.emitComment("Restoring Saved Registers:");
-        while (!virtualStack.empty()) {
-            cg.emit.emit("pop", virtualStack.pop());
-            ctx.stackOffset += SIZEOF_PTR;
-        }
+        restoreUsedCallerSavedRegisters(registerStack, ctx);
 
 		return reg;
 	}
@@ -538,31 +567,49 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		int leftRN = cg.rnv.calc(left);
 		int rightRN = cg.rnv.calc(right);
 
-        int regCount;
-
-		Register leftReg, rightReg;
+		Expr first, second;
 		if (leftRN > rightRN) {
-			leftReg = visit(left, ctx);
-
-            // List<Register> spilledRegs = new ArrayList<>();
-            Stack<Register> spilledRegs = new Stack<>();
-            regCount = cg.rm.availableRegisters();
-
-            while (regCount < 2) {
-                spilledRegs.push(cg.rm.spillRegister(ctx));
-                regCount++;
-            }
-            // make spilled registers available for node visited next
-            spilledRegs.forEach(cg.rm::releaseRegisterWithoutUnspilling);
-
-			rightReg = visit(right, ctx);
-            // TODO
+			first = left;
+			second = right;
 		} else {
-			rightReg = visit(right, ctx);
-            // TODO spill?
-			leftReg = visit(left, ctx);
+			second = left;
+			first = right;
 		}
 
-		return new Pair<>(leftReg, rightReg);
+		Register firstReg, lastReg;
+		firstReg = visit(first, ctx);
+		assert cg.rm.isInUse(firstReg);
+
+		Register oldReserved = ctx.reservedRegister;
+		ctx.reservedRegister = firstReg;
+
+		Stack<Register> spilledRegs = new Stack<>();
+		int regCount = cg.rm.availableRegisters();
+
+		while (regCount < 2) {
+			spilledRegs.push(cg.rm.spillRegister(ctx));
+			regCount++;
+		}
+
+		//ctx.spilledRegisters.clear();
+		assert cg.rm.isInUse(firstReg);
+		lastReg = visit(second, ctx);
+		if (!cg.rm.isInUse(firstReg)) {
+			assert ctx.spilledRegisters.contains(firstReg);
+			cg.rm.unspillRegister(firstReg, ctx);
+		}
+		assert cg.rm.isInUse(lastReg);
+		assert lastReg != ctx.reservedRegister;
+
+		// restore old reserved
+		ctx.reservedRegister = oldReserved;
+
+		ctx.spilledRegisters = spilledRegs;
+
+		if (leftRN > rightRN) {
+			return new Pair<>(firstReg, lastReg);
+		} else {
+			return new Pair<>(lastReg, firstReg);
+		}
 	}
 }

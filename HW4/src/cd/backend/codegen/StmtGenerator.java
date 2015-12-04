@@ -195,11 +195,11 @@ class StmtGenerator extends AstVisitor<Register, Context> {
 	public Register returnStmt(ReturnStmt ast, Context ctx) {
         if (ast.arg() == null) {
             // no return value
-            ctx.stackOffset += cg.emitMethodSuffix(true);
+            cg.emitMethodSuffix(true);
         } else {
             Register reg = cg.eg.visit(ast.arg(), ctx);
             cg.emit.emitMove(reg, Register.EAX);
-            ctx.stackOffset += cg.emitMethodSuffix(false);
+            cg.emitMethodSuffix(false);
 			cg.rm.releaseRegister(reg, ctx);
         }
 
