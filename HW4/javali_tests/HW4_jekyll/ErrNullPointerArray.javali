@@ -1,0 +1,13 @@
+// Expected Error: ExitCode.NULL_POINTER
+// Access array on null pointer
+
+class Main {
+    void main() {
+        A[] array;
+        A a;
+        array[0] = a;
+        write(0);
+    }
+}
+
+class A {}

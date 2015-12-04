@@ -1,0 +1,17 @@
+// Expected Error: INVALID_DOWNCAST
+// Cast expression where runtime type is not a subtype of cast type
+
+class Main {
+    void main() {
+        A a;
+        B b;
+        a = new A();
+        b = new B();
+        b = (B) a;
+        write(0);
+    }
+}
+
+class A {}
+
+class B extends A {}

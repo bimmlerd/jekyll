@@ -1,0 +1,12 @@
+// Expected Error: ExitCode.INVALID_ARRAY_BOUNDS
+// Load from array with invalid index
+
+class Main {
+    void main() {
+        int[] array;
+        int i;
+        array = new int[10];
+        i = array[10];
+        write(i);
+    }
+}

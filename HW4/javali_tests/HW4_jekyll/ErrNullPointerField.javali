@@ -1,0 +1,15 @@
+// Expected Error: ExitCode.NULL_POINTER
+// Access field on null pointer
+
+class Main {
+    void main() {
+        A a;
+        int i;
+        a.field = i;
+        write(0);
+    }
+}
+
+class A {
+    int field;
+}

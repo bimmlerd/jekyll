@@ -1,0 +1,43 @@
+/* Test conditional statements */
+class Main {
+    void main() {
+        int i0, i1, i2;
+        boolean b0, b1, b2;
+        i0 = 256;
+        i1 = 0x23;
+        b0 = true;
+
+        while (b0) {
+            if (b0 || b1) {
+                write(i0); writeln();
+            }
+            b0 = false;
+        }
+
+        if (i0 > i1 && i1 > i2) {
+            write(i2); writeln();
+        }
+
+        if (i0 == i1) {
+            write(0); writeln();
+        } else {
+            write(1); writeln();
+            i0 = 0;
+            b0 = true;
+            while (b0 && (i0 < i1)) {
+                write(2); writeln();
+                b0 = false;
+            }
+        }
+
+        if (true) {
+            if (i0 < i1) {
+                write(i1);
+            } else {
+                write(-i1);
+            }
+        } else {
+            write(i0); writeln();
+        }
+    }
+}

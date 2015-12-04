@@ -1,0 +1,12 @@
+// Expected Error: ExitCode.INVALID_ARRAY_SIZE
+// Create an array with a negative size
+
+class Main {
+    void main() {
+        int[] array;
+        int i;
+        array = new int[-10];
+        i = array[1];
+        write(i);
+    }
+}
