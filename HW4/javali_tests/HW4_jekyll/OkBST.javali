@@ -2,6 +2,7 @@ class Main {
     void main() {
         BSTNode root, b;
         root = new BSTNode();
+        root.i = 2;
         root.insert(0);
         root.insert(1);
         root.insert(5);
@@ -11,6 +12,7 @@ class Main {
         root.insert(-5);
         b = root.findKey(4);
         b = root.findKey(3);
+        write(b.key);
     }
 }
 
@@ -21,10 +23,18 @@ class BSTNode {
 
     BSTNode findKey(int i) {
         if (i < key) {
-            return left.findKey(i);
+            if (left != null) {
+                return left.findKey(i);
+            } else {
+                return null;
+            }
         }
         if (i > key) {
-            return right.findKey(i);
+            if (right != null) {
+                return right.findKey(i);
+            } else {
+                return null;
+            }
         }
         return this;
     }
