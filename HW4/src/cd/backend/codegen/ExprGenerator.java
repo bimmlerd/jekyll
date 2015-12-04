@@ -47,6 +47,9 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		Pair<Register> pair = visitMoreExpensiveSideFirst(ast.left(), ast.right(), ctx);
 		Register leftReg = pair.a;
 		Register rightReg = pair.b;
+		assert rightReg != leftReg;
+		assert cg.rm.isInUse(rightReg);
+		assert cg.rm.isInUse(leftReg);
 
 		cg.debug("Binary Op: %s (%s,%s)", ast, leftReg, rightReg);
 
@@ -146,6 +149,8 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
             cg.emit.emitLabel(labelFalse);
             break;
 		}
+
+		assert rightReg != ctx.reservedRegister;
 
 		cg.rm.releaseRegister(leftReg, ctx);
 
@@ -254,6 +259,7 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
         Pair<Register> pair = visitMoreExpensiveSideFirst(ast.left(), ast.right(), ctx);
 		Register baseReg = pair.a; // base address of the array
 		Register offsetReg = pair.b; // offset in the array
+		assert baseReg != offsetReg;
 
         String labelOk = cg.emit.uniqueLabel();
 		String labelNullErr = cg.emit.uniqueLabel();
@@ -287,9 +293,16 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
             cg.emit.emit("leal", arrayAddress(baseReg, offsetReg), baseReg); // store address of array element
         }
 
-        cg.rm.releaseRegister(offsetReg, ctx);
-        cg.rm.releaseRegister(allowedSize, ctx);
-        return baseReg;
+		if (baseReg != ctx.reservedRegister) {
+			cg.rm.releaseRegister(offsetReg, ctx);
+			cg.rm.releaseRegister(allowedSize, ctx);
+			return baseReg;
+		} else {
+			cg.emit.emitMove(baseReg, offsetReg);
+			cg.rm.releaseRegister(baseReg, ctx);
+			cg.rm.releaseRegister(allowedSize, ctx);
+			return offsetReg;
+		}
 	}
 
 	@Override
@@ -554,31 +567,49 @@ class ExprGenerator extends ExprVisitor<Register, Context> {
 		int leftRN = cg.rnv.calc(left);
 		int rightRN = cg.rnv.calc(right);
 
-        int regCount;
-
-		Register leftReg, rightReg;
+		Expr first, second;
 		if (leftRN > rightRN) {
-			leftReg = visit(left, ctx);
-
-            // List<Register> spilledRegs = new ArrayList<>();
-            Stack<Register> spilledRegs = new Stack<>();
-            regCount = cg.rm.availableRegisters();
-
-            while (regCount < 2) {
-                spilledRegs.push(cg.rm.spillRegister(ctx));
-                regCount++;
-            }
-            // make spilled registers available for node visited next
-            spilledRegs.forEach(cg.rm::releaseRegisterWithoutUnspilling);
-
-			rightReg = visit(right, ctx);
-            // TODO
+			first = left;
+			second = right;
 		} else {
-			rightReg = visit(right, ctx);
-            // TODO spill?
-			leftReg = visit(left, ctx);
+			second = left;
+			first = right;
 		}
 
-		return new Pair<>(leftReg, rightReg);
+		Register firstReg, lastReg;
+		firstReg = visit(first, ctx);
+		assert cg.rm.isInUse(firstReg);
+
+		Register oldReserved = ctx.reservedRegister;
+		ctx.reservedRegister = firstReg;
+
+		Stack<Register> spilledRegs = new Stack<>();
+		int regCount = cg.rm.availableRegisters();
+
+		while (regCount < 2) {
+			spilledRegs.push(cg.rm.spillRegister(ctx));
+			regCount++;
+		}
+
+		//ctx.spilledRegisters.clear();
+		assert cg.rm.isInUse(firstReg);
+		lastReg = visit(second, ctx);
+		if (!cg.rm.isInUse(firstReg)) {
+			assert ctx.spilledRegisters.contains(firstReg);
+			cg.rm.unspillRegister(firstReg, ctx);
+		}
+		assert cg.rm.isInUse(lastReg);
+		assert lastReg != ctx.reservedRegister;
+
+		// restore old reserved
+		ctx.reservedRegister = oldReserved;
+
+		ctx.spilledRegisters = spilledRegs;
+
+		if (leftRN > rightRN) {
+			return new Pair<>(firstReg, lastReg);
+		} else {
+			return new Pair<>(lastReg, firstReg);
+		}
 	}
 }

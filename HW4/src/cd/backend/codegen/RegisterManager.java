@@ -103,7 +103,8 @@ public class RegisterManager {
 		int last = registers.size() - 1;
 		if (last < 0) {
 			// we need to spill a register
-			spillRegister(ctx);
+			ctx.spilledRegisters.push(spillRegister(ctx));
+			return registers.remove(0);
 		}
 
 		return registers.remove(last);
@@ -115,14 +116,11 @@ public class RegisterManager {
 	 * @param ctx the context of the function releasing a register
 	 */
 	public void releaseRegister(Register reg, Context ctx) {
-		assert !registers.contains(reg);
-
 		if (ctx.spilledRegisters.contains(reg)) {
-			// undo spilling
 			unspillRegister(reg, ctx);
 			return; // don't add it to registers, as it isn't free
 		}
-
+		assert !registers.contains(reg);
 		registers.add(reg);
 	}
 
@@ -133,15 +131,15 @@ public class RegisterManager {
 
 	public Register spillRegister(Context ctx) {
 		// we need to spill a register
-		for (Register reg : RegisterManager.Register.values()) {
-			if (ctx.reservedRegisters.contains(reg)) {
-				// not save to spill this register
+		for (Register reg : RegisterManager.GPR) {
+			if (ctx.reservedRegister == reg || registers.contains(reg)) {
+				// not safe or not necessary to spill this register
 				continue;
 			}
 			// spill register
 			cg.emit.emit("push", reg); // store temporary value on the stack
 			ctx.stackOffset -= Config.SIZEOF_PTR;
-			ctx.spilledRegisters.add(reg); // add to list of spilled registers
+			registers.add(reg); // make available for use
 			return reg;
 		}
 
@@ -154,7 +152,6 @@ public class RegisterManager {
 		// undo spilling
 		cg.emit.emit("pop", reg); // get temporary value back from stack
 		ctx.stackOffset += Config.SIZEOF_PTR;
-		ctx.spilledRegisters.remove(reg);
 	}
 
 	/**
