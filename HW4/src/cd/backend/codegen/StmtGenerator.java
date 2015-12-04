@@ -43,7 +43,6 @@ class StmtGenerator extends AstVisitor<Register, Context> {
 		return null;
 	}
 
-	// Emit vtable for arrays of this class: TODO ?
 	@Override
 	public Register classDecl(ClassDecl ast, Context ctx) {
 		return visitChildren(ast, ctx);
@@ -88,7 +87,6 @@ class StmtGenerator extends AstVisitor<Register, Context> {
 		// # Function body.
 		visit(ast.body(), ctx);
 
-		// TODO somehow avoid emitting the suffix again if we had a return in the body?
         ctx.stackOffset += cg.emitMethodSuffix(ast.sym.returnType.equals(Symbol.PrimitiveTypeSymbol.voidType));
 		return null;
 	}
@@ -149,7 +147,7 @@ class StmtGenerator extends AstVisitor<Register, Context> {
 	public Register assign(Assign ast, Context ctx) {
         // we need an address where to store the assigned value
         ctx.calculateValue = false;
-        Register lhsReg = cg.eg.visit(ast.left(), ctx); // TODO: check where less registers are needed before visiting -> similar to binaryOp and index
+        Register lhsReg = cg.eg.visit(ast.left(), ctx);
 
         // we want to value of the rhs expression
         ctx.calculateValue = true;
