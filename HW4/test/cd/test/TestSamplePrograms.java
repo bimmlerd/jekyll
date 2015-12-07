@@ -1,17 +1,18 @@
 package cd.test;
 
-import cd.Config;
-import cd.Main;
-import cd.util.FileUtil;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
-
 import java.io.File;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+
+import cd.Config;
+import cd.Main;
+import cd.util.FileUtil;
 
 @RunWith(Parameterized.class)
 public class TestSamplePrograms extends AbstractTestAgainstFrozenReference {
@@ -21,8 +22,8 @@ public class TestSamplePrograms extends AbstractTestAgainstFrozenReference {
 	 * variable like:
 	 * {@code justFile = new File("javali_tests/HW2/Inheritance.javali")}.
 	 */
-	public static final File justFile = new File("javali_tests/HW4_jekyll/OkBinaryOperations.javali");
-//	public static final File justFile = null;
+//	public static final File justFile = new File("javali_tests/HW1/HelloWorld.javali");
+	public static final File justFile = null;
 
 	/**
 	 * Directory in which to search for test files. If null, then the default is
@@ -30,8 +31,8 @@ public class TestSamplePrograms extends AbstractTestAgainstFrozenReference {
 	 * particular directory, use sth. like:
 	 * {@code testDir = new File("javali_tests/HW2/")}.
 	 */
-	public static final File testDir = new File("javali_tests/shared/JAVAAAA/HW4/gen");
-//	public static final File testDir = null;
+//	public static final File testDir = new File("javali_tests/HW1");
+	public static final File testDir = null;
 	
 	@Parameters(name="{index}:{0}")
 	public static Collection<Object[]> testFiles() {
