@@ -1,103 +1,52 @@
 package cd.analyses;
 
+import cd.ir.Ast;
+
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
 /**
- * Abstract ata flow problem
+ * Abstract data flow problem
  */
 public abstract class DataFlow<T> {
 
+    /**
+     * Stores all information necessary for a basic block of a typed data flow problem.
+     */
+    protected class BasicBlock {
+        List<Ast> statements = new LinkedList<>(); // statements that make up the basic block
+
+        List<BasicBlock> predecessors = new LinkedList<>(); // keep track of neighboring basic blocks in CFG
+        List<BasicBlock> successors = new LinkedList<>();
+
+        Set<T> inSet = new HashSet<>();
+        Set<T> outSet = new HashSet<>();
+
+        Set<T> localNew = new HashSet<>(); // locally generated elements
+        Set<T> localCut = new HashSet<>(); // locally destroyed elements
+    }
+
     // direction
-    abstract List<BasicBlock<T>> ancestors(BasicBlock<T> b);
+    abstract List<BasicBlock> ancestors(BasicBlock b);
 
     // meet operation: function that takes a list of solution sets and computes a new context set
-    abstract Set<T> meet(List<BasicBlock<T>> ancestors);
+    abstract Set<T> meet(List<BasicBlock> ancestors);
 
     // solution and context sets
-    abstract Set<T> context(BasicBlock<T> b);
-    abstract Set<T> solution(BasicBlock<T> b);
+    abstract Set<T> context(BasicBlock b);
+    abstract Set<T> solution(BasicBlock b);
 
-    Set<T> computeContext(BasicBlock<T> b) {
+    Set<T> computeContext(BasicBlock b) {
         return meet(ancestors(b));
     }
 
-    Set<T> computeSolution(BasicBlock<T> b) {
-        return null;
-    }
-
-    /**
-     * Forward Data-Flow Problem: context = IN, solution = OUT
-     */
-    public abstract class FwdDataFlow extends DataFlow<T> {
-        @Override
-        List<BasicBlock<T>> ancestors(BasicBlock<T> b) {
-            return b.predecessors;
-        }
-
-        @Override
-        Set<T> context(BasicBlock<T> b) {
-            return b.inSet;
-        }
-
-        @Override
-        Set<T> solution(BasicBlock<T> b) {
-            return b.outSet;
-        }
-    }
-
-    /**
-     * Backward Data-Flow Problem: context = OUT, solution = IN
-     */
-    public abstract class BwdDataFlow extends DataFlow<T> {
-        @Override
-        List<BasicBlock<T>> ancestors(BasicBlock<T> b) {
-            return b.successors;
-        }
-
-        @Override
-        Set<T> context(BasicBlock<T> b) {
-            return b.outSet;
-        }
-
-        @Override
-        Set<T> solution(BasicBlock<T> b) {
-            return b.inSet;
-        }
-    }
-
-    /**
-     * Forward Or Data-Flow Problem: meet operation = union
-     */
-    public abstract class FwdOrDataFlow extends FwdDataFlow {
-        @Override
-        Set<T> meet(List<BasicBlock<T>> ancestors) {
-            Set<T> union = new HashSet<>();
-            for (BasicBlock<T> b : ancestors) {
-                union.addAll(solution(b));
-            }
-            return union;
-        }
-    }
-
-    /**
-     * Backward And Data-Flow Problem: meet operation = intersection
-     */
-    public abstract class BwdAndDataFlow extends BwdDataFlow {
-        @Override
-        Set<T> meet(List<BasicBlock<T>> ancestors) {
-            Set<T> intersection = new HashSet<>();
-            for (BasicBlock<T> b : ancestors) {
-                intersection.retainAll(solution(b));
-            }
-            return intersection;
-        }
-    }
-
-    public class UninitDataFlow extends FwdOrDataFlow {
-    }
-
-    public class BexprDataFlow extends BwdAndDataFlow {
+    Set<T> computeSolution(BasicBlock b) {
+        Set<T> result = new HashSet<>();
+        result.addAll(context(b));
+        result.removeAll(b.localCut);
+        result.addAll(b.localNew);
+        return result;
     }
 }
