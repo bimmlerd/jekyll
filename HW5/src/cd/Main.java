@@ -10,12 +10,13 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
+import cd.analyses.DataFlow;
+import cd.analyses.UninitDataFlow;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
-import cd.analyses.BasicBlockBuilder;
 import cd.backend.codegen.AstCodeGenerator;
 import cd.frontend.parser.JavaliAstVisitor;
 import cd.frontend.parser.JavaliLexer;
@@ -125,7 +126,8 @@ public class Main {
 	}
 
     public void analyseDataFlow(List<ClassDecl> astRoots) {
-        new BasicBlockBuilder().build(astRoots);
+        DataFlow df = new UninitDataFlow();
+        df.run(astRoots);
     }
 
 	public void generateCode(List<ClassDecl> astRoots, Writer out) {
