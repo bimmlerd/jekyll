@@ -1,0 +1,22 @@
+class Main {
+    void main() {
+        int a, b;
+        a = 1;
+        if (a < b) {
+            blah(a);
+        }
+    }
+
+    int blah(int b) {
+        write(b);
+        return 0;
+    }
+}
+
+class A {
+    void method() {
+        while(true) {
+            return;
+        }
+    }
+}
