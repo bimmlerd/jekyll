@@ -7,4 +7,13 @@ import cd.ir.Symbol.VariableSymbol;
  * whenever an uninitialized local variable is used as an operand.
  */
 public class UninitDataFlow extends FwdOrDataFlow<VariableSymbol> {
+    @Override
+    void initSolutionSets(ControlFlowGraph cfg) {
+
+    }
+
+    @Override
+    void computeLocals(ControlFlowGraph cfg) {
+
+    }
 }

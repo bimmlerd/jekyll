@@ -13,6 +13,16 @@ public abstract class BwdDataFlow<T> extends DataFlow<T> {
     }
 
     @Override
+    List<BasicBlock> descendant(BasicBlock b) {
+        return b.predecessors;
+    }
+
+    @Override
+    BasicBlock startPoint(ControlFlowGraph cfg) {
+        return cfg.exit;
+    }
+
+    @Override
     Set<T> context(BasicBlock b) {
         return b.outSet;
     }
@@ -20,5 +30,15 @@ public abstract class BwdDataFlow<T> extends DataFlow<T> {
     @Override
     Set<T> solution(BasicBlock b) {
         return b.inSet;
+    }
+
+    @Override
+    void setContext(BasicBlock b, Set<T> context) {
+        b.outSet = context;
+    }
+
+    @Override
+    void setSolution(BasicBlock b, Set<T> solution) {
+        b.inSet = solution;
     }
 }
