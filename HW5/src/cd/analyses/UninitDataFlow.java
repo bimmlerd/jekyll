@@ -1,12 +1,16 @@
 package cd.analyses;
 
+import cd.frontend.semantic.SemanticFailure;
+import cd.frontend.semantic.SemanticFailure.Cause;
 import cd.ir.Ast;
 import cd.ir.Ast.Assign;
 import cd.ir.Ast.Expr;
 import cd.ir.Ast.VarDecl;
+import cd.ir.AstVisitor;
 import cd.ir.ExprVisitor;
 import cd.ir.Symbol.VariableSymbol;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -28,12 +32,12 @@ public class UninitDataFlow extends FwdOrDataFlow<VariableSymbol> {
 
     @Override
     void computeLocals(ControlFlowGraph cfg) {
-        VariableCollector visitor = new VariableCollector();
+        VariableCollector collector = new VariableCollector();
         for (BasicBlock b : cfg.blockSet) {
             for (Ast ast : b.statements) {
                 if (ast instanceof Assign) {
                     // add initialized variables to the localCut set
-                    b.localCut.addAll(visitor.visit(((Assign) ast).left(), null));
+                    b.localCut.addAll(collector.visit(((Assign) ast).left(), null));
                 }
                 // the localNew sets are all empty
             }
@@ -42,7 +46,13 @@ public class UninitDataFlow extends FwdOrDataFlow<VariableSymbol> {
 
     @Override
     void evaluateDataFlow(ControlFlowGraph cfg) {
-        // TODO: throw SemanticFailure with cause POSSIBLY_UNINITIALIZED, if a Variable in the set of uninitialized variables is used as an operand
+        UsageChecker checker = new UsageChecker();
+        for (BasicBlock b : cfg.blockSet) {
+            Set<VariableSymbol> uninitVars = context(b);
+            for (Ast ast : b.statements) {
+                uninitVars = checker.visit(ast, uninitVars);
+            }
+        }
     }
 
     protected class VariableCollector extends ExprVisitor<Set<VariableSymbol>, Void> {
@@ -60,6 +70,33 @@ public class UninitDataFlow extends FwdOrDataFlow<VariableSymbol> {
             Set<VariableSymbol> singleVar = new HashSet<>();
             singleVar.add(ast.sym);
             return singleVar;
+        }
+    }
+
+    protected class UsageChecker extends AstVisitor<Set<VariableSymbol>, Set<VariableSymbol>> {
+        VariableCollector collector = new VariableCollector();
+
+        @Override
+        protected Set<VariableSymbol> dflt(Ast ast, Set<VariableSymbol> arg) {
+            for (Ast child : ast.children()) {
+                Set<VariableSymbol> usedVars = collector.visit((Expr) child, null);
+                if (!Collections.disjoint(usedVars, arg)) {
+                    // at least one variable in the set of uninitialized variables is used as an operand
+                    Set<VariableSymbol> report = new HashSet<>();
+                    report.addAll(usedVars);
+                    report.retainAll(arg); // report all uninitialized variables that are used in the expression
+                    throw new SemanticFailure(Cause.POSSIBLY_UNINITIALIZED, "Not all used variables are initialized: " + report);
+                }
+            }
+            return arg;
+        }
+
+        @Override
+        public Set<VariableSymbol> assign(Assign ast, Set<VariableSymbol> arg) {
+            // first, visit the right side of the assignment and check that no uninitialized variables are used as operands
+            arg = this.visit(ast.right(), arg);
+            arg.removeAll(collector.visit(ast.left(), null)); // remove newly initialized variables
+            return arg;
         }
     }
 }
