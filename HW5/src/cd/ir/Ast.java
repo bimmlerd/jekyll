@@ -1,16 +1,17 @@
 package cd.ir;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
 import cd.ir.Symbol.ClassSymbol;
 import cd.ir.Symbol.MethodSymbol;
 import cd.ir.Symbol.TypeSymbol;
 import cd.ir.Symbol.VariableSymbol;
 import cd.util.Pair;
+import cd.util.debug.AstDump;
 import cd.util.debug.AstOneLine;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public abstract class Ast {
 
@@ -66,7 +67,18 @@ public abstract class Ast {
 				AstOneLine.toString(this),
 				System.identityHashCode(this));
 	}
-	
+
+    @Override
+    public boolean equals(Object obj) {
+        return (obj instanceof Ast) && AstDump.toString(this).equals(AstDump.toString((Ast) obj));
+
+    }
+
+    @Override
+    public int hashCode() {
+        return AstDump.toString(this).hashCode();
+    }
+
 	// _________________________________________________________________
 	// Expressions
 
