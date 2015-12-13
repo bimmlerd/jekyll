@@ -5,7 +5,6 @@ class Main {
         while (true) {
             b = 0;
             write(b);
-            return;
         }
         c = a + b;
     }

@@ -99,24 +99,19 @@ public abstract class DataFlow<T> {
             initSolutionSets(cfg); // initialize solution sets
             computeLocals(cfg); // compute localCut and localNew sets for all basic blocks
 
-            boolean hasChanged;
             Queue<BasicBlock> blocks = new LinkedList<>();
-            do {
-                hasChanged = false;
-                blocks.addAll(descendant(startPoint(cfg))); // start at the start point of the cfg to evaluate context and solution sets
-                while (!blocks.isEmpty()) { // ups. that produces an infinite loop for while loops in the CFG TODO!
-                    BasicBlock b = blocks.poll();
-                    blocks.addAll(descendant(b)); // add the descendants of the current basic block to the queue to be evaluated next
+            blocks.addAll(descendant(startPoint(cfg))); // start at the start point of the cfg to evaluate context and solution sets
 
-                    // compute context and solution set in each iteration
-                    setContext(b, computeContext(b));
-                    Set<T> computedSolution = computeSolution(b);
-                    if (!computedSolution.equals(solution(b))) {
-                        setSolution(b, computedSolution);
-                        hasChanged = true;
-                    }
+            while (!blocks.isEmpty()) {
+                BasicBlock b = blocks.poll();
+                // compute context and solution set in each iteration
+                setContext(b, computeContext(b));
+                Set<T> computedSolution = computeSolution(b);
+                if (!computedSolution.equals(solution(b))) {
+                    setSolution(b, computedSolution);
+                    blocks.addAll(descendant(b)); // add the descendants of the current basic block to the queue to be evaluated next
                 }
-            } while (hasChanged); // iterate over the basic blocks until no more changes to a solution set occur
+            }
 
             evaluateDataFlow(cfg);
         }

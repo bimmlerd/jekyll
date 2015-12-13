@@ -47,8 +47,9 @@ public class UninitDataFlow extends FwdOrDataFlow<VariableSymbol> {
     @Override
     void evaluateDataFlow(ControlFlowGraph cfg) {
         UsageChecker checker = new UsageChecker();
+        Set<VariableSymbol> uninitVars;
         for (BasicBlock b : cfg.blockSet) {
-            Set<VariableSymbol> uninitVars = context(b);
+            uninitVars = context(b);
             for (Ast ast : b.statements) {
                 uninitVars = checker.visit(ast, uninitVars);
             }
@@ -78,8 +79,9 @@ public class UninitDataFlow extends FwdOrDataFlow<VariableSymbol> {
 
         @Override
         protected Set<VariableSymbol> dflt(Ast ast, Set<VariableSymbol> arg) {
+            Set<VariableSymbol> usedVars;
             for (Ast child : ast.children()) {
-                Set<VariableSymbol> usedVars = collector.visit((Expr) child, null);
+                usedVars = collector.visit((Expr) child, null);
                 if (!Collections.disjoint(usedVars, arg)) {
                     // at least one variable in the set of uninitialized variables is used as an operand
                     Set<VariableSymbol> report = new HashSet<>();
