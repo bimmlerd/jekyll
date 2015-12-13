@@ -1,6 +1,7 @@
 package cd.analyses;
 
 import cd.ir.Ast;
+import cd.ir.Ast.MethodDecl;
 import cd.ir.AstVisitor;
 
 import java.util.*;
@@ -21,8 +22,8 @@ public abstract class DataFlow<T> {
         final List<BasicBlock> predecessors = new LinkedList<>(); // keep track of neighboring basic blocks in CFG
         final List<BasicBlock> successors = new LinkedList<>();
 
-        Set<T> inSet = new HashSet<>();
-        Set<T> outSet = new HashSet<>();
+        Set<T> inSet;
+        Set<T> outSet;
 
         final Set<T> localNew = new HashSet<>(); // locally generated elements
         final Set<T> localCut = new HashSet<>(); // locally destroyed elements
@@ -36,6 +37,8 @@ public abstract class DataFlow<T> {
         BasicBlock exit;
 
         final Set<BasicBlock> blockSet = new HashSet<>(); // does neither contain the entry nor the exit block
+
+        MethodDecl methodDecl; // reference to the method declaration the cfg belongs to
 
         private BasicBlock addBlockWithPredecessor(BasicBlock b) {
             BasicBlock newBlock = addBlock();
@@ -70,13 +73,13 @@ public abstract class DataFlow<T> {
     // solution and context sets
     abstract Set<T> context(BasicBlock b);
     abstract Set<T> solution(BasicBlock b);
-
     abstract void setContext(BasicBlock b, Set<T> context);
     abstract void setSolution(BasicBlock b, Set<T> solution);
 
-    abstract void initSolutionSets(ControlFlowGraph cfg);
-
-    abstract void computeLocals(ControlFlowGraph cfg);
+    // depending on the actual implementation
+    abstract void initSolutionSets(ControlFlowGraph cfg); // initialization depends on the actually implemented problem
+    abstract void computeLocals(ControlFlowGraph cfg); // compute localNew and localCut: these local sets also depend on the problem
+    abstract void evaluateDataFlow(ControlFlowGraph cfg); // after running the data flow algorithm, we may want to print some results
 
     Set<T> computeContext(BasicBlock b) {
         return meet(ancestors(b));
@@ -100,8 +103,8 @@ public abstract class DataFlow<T> {
             Queue<BasicBlock> blocks = new LinkedList<>();
             do {
                 hasChanged = false;
-                blocks.addAll(ancestors(startPoint(cfg))); // start at the start point of the cfg to evaluate context and solution sets
-                while (!blocks.isEmpty()) {
+                blocks.addAll(descendant(startPoint(cfg))); // start at the start point of the cfg to evaluate context and solution sets
+                while (!blocks.isEmpty()) { // ups. that produces an infinite loop for while loops in the CFG TODO!
                     BasicBlock b = blocks.poll();
                     blocks.addAll(descendant(b)); // add the descendants of the current basic block to the queue to be evaluated next
 
@@ -114,6 +117,8 @@ public abstract class DataFlow<T> {
                     }
                 }
             } while (hasChanged); // iterate over the basic blocks until no more changes to a solution set occur
+
+            evaluateDataFlow(cfg);
         }
     }
 
@@ -130,6 +135,7 @@ public abstract class DataFlow<T> {
                 if (last != null) {
                     cfg.connectBlocks(last, cfg.exit);
                 }
+                cfg.methodDecl = methodDecl;
                 graphs.add(cfg);
             }
         }
