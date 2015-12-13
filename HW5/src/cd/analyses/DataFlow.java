@@ -77,8 +77,7 @@ public abstract class DataFlow<T> {
     abstract void setSolution(BasicBlock b, Set<T> solution);
 
     // depending on the actual implementation
-    abstract void initSolutionSets(ControlFlowGraph cfg); // initialization depends on the actually implemented problem
-    abstract void computeLocals(ControlFlowGraph cfg); // compute localNew and localCut: these local sets also depend on the problem
+    abstract void initSets(ControlFlowGraph cfg); // compute all local sets such as the initial solution, localNew and localCut
     abstract void evaluateDataFlow(ControlFlowGraph cfg); // after running the data flow algorithm, we may want to print some results
 
     Set<T> computeContext(BasicBlock b) {
@@ -96,8 +95,7 @@ public abstract class DataFlow<T> {
     public void run(List<Ast.ClassDecl> astRoots) {
         buildBasicBlocks(astRoots); // build uninitialized basic blocks
         for (ControlFlowGraph cfg : graphs) {
-            initSolutionSets(cfg); // initialize solution sets
-            computeLocals(cfg); // compute localCut and localNew sets for all basic blocks
+            initSets(cfg); // initialize solution sets and compute localCut and localNew sets for all basic blocks
 
             Queue<BasicBlock> blocks = new LinkedList<>();
             blocks.addAll(descendant(startPoint(cfg))); // start at the start point of the cfg to evaluate context and solution sets

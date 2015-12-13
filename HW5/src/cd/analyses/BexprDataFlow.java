@@ -13,25 +13,24 @@ import java.util.Set;
  */
 public class BexprDataFlow extends BwdAndDataFlow<Expr> {
     @Override
-    void initSolutionSets(ControlFlowGraph cfg) {
+    void initSets(ControlFlowGraph cfg) {
+        ExpressionCollector exprCollector = new ExpressionCollector();
+
         // collect all expressions used intra-procedural
         Set<Expr> exprs = new HashSet<>();
-        ExpressionCollector collector = new ExpressionCollector();
         for (BasicBlock b : cfg.blockSet) {
             for (Ast ast : b.statements) {
-                exprs.addAll(collector.visit(ast, null));
+                exprs.addAll(exprCollector.visit(ast, null));
             }
         }
-
         setSolution(startPoint(cfg), new HashSet<>()); // the solution set of the start point is empty
+
         for (BasicBlock b : cfg.blockSet) {
             setSolution(b, exprs); // the solution sets for all other blocks initially contain all expressions
+            for (Ast ast : b.statements) {
+                // TODO
+            }
         }
-    }
-
-    @Override
-    void computeLocals(ControlFlowGraph cfg) {
-
     }
 
     @Override
@@ -39,6 +38,7 @@ public class BexprDataFlow extends BwdAndDataFlow<Expr> {
 
     }
 
+    // TODO: we don't want expressions that contain arrays or fields
     protected class ExpressionCollector extends AstVisitor<Set<Expr>, Void> {
         @Override
         protected Set<Expr> dflt(Ast ast, Void arg) {
