@@ -1,0 +1,11 @@
+class Main {
+    void main() {
+        int a, b, c;
+        a = 0x24;
+        b = method(a + b + c);
+    }
+
+    int method(int i) {
+        return i;
+    }
+}

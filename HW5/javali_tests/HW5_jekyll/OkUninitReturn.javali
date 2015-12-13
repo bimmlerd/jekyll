@@ -1,0 +1,14 @@
+class Main {
+    void main() {
+        A a;
+        a = method();
+    }
+
+    A method() {
+        A a;
+        a = new A();
+        return a;
+    }
+}
+
+class A {}
