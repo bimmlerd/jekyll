@@ -1,4 +1,4 @@
-package cd.analyses;
+package cd.analysis;
 
 import cd.ir.Ast;
 import cd.ir.Ast.MethodDecl;

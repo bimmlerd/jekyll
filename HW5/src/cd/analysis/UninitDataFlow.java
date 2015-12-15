@@ -1,4 +1,4 @@
-package cd.analyses;
+package cd.analysis;
 
 import cd.frontend.semantic.SemanticFailure;
 import cd.frontend.semantic.SemanticFailure.Cause;

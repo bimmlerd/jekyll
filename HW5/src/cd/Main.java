@@ -10,8 +10,9 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
-import cd.analyses.DataFlow;
-import cd.analyses.UninitDataFlow;
+import cd.analysis.BexprDataFlow;
+import cd.analysis.DataFlow;
+import cd.analysis.UninitDataFlow;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -66,27 +67,42 @@ public class Main {
 	/** Parse command line, invoke compile() routine */
 	public static void main(String args[]) throws IOException {
 		Main m = new Main();
+		boolean analyseUninitialized = false;
+		boolean analyseBusy = false;
 
 		for (String arg : args) {
-			if (arg.equals("-d"))
-				m.debug = new OutputStreamWriter(System.err);
-			else {
-				FileReader fin = new FileReader(arg);
+			switch (arg) {
+				case "-d":
+					m.debug = new OutputStreamWriter(System.err);
+					break;
+				case "-uninit":
+					analyseUninitialized = true;
+					break;
+				case "-bexpr":
+					analyseBusy = true;
+					break;
+				default:
+					FileReader fin = new FileReader(arg);
 
-				// Parse:
-				List<ClassDecl> astRoots = m.parse(fin);
+					// Parse:
+					List<ClassDecl> astRoots = m.parse(fin);
 
-				// Run the semantic check:
-				m.semanticCheck(astRoots);
+					// Run the semantic check:
+					m.semanticCheck(astRoots);
 
-                // Run data flow analyses:
-                m.analyseDataFlow(astRoots);
+					if (analyseUninitialized) { // Run data flow analysis for uninitialized variables
+						m.analyseUninitialized(astRoots);
+					}
 
-				// Generate code:
-				String sFile = arg + Config.ASMEXT;
-				try (FileWriter fout = new FileWriter(sFile)) {
-					m.generateCode(astRoots, fout);
-				}
+					if (analyseBusy) { // Run data flow analysis for busy expressions
+						m.analyseBusy(astRoots);
+					}
+
+					// Generate code:
+					String sFile = arg + Config.ASMEXT;
+					try (FileWriter fout = new FileWriter(sFile)) {
+						m.generateCode(astRoots, fout);
+					}
 			}
 		}
 	}
@@ -125,10 +141,15 @@ public class Main {
 		}
 	}
 
-    public void analyseDataFlow(List<ClassDecl> astRoots) {
+    public void analyseUninitialized(List<ClassDecl> astRoots) {
         DataFlow df = new UninitDataFlow();
         df.run(astRoots);
     }
+
+	public void analyseBusy(List<ClassDecl> astRoots) {
+		DataFlow df = new BexprDataFlow();
+		df.run(astRoots);
+	}
 
 	public void generateCode(List<ClassDecl> astRoots, Writer out) {
 		{

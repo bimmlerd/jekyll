@@ -1,4 +1,4 @@
-package cd.analyses;
+package cd.analysis;
 
 import cd.ir.Ast;
 import cd.ir.Ast.Expr;
@@ -27,9 +27,13 @@ public class BexprDataFlow extends BwdAndDataFlow<Expr> {
 
         for (BasicBlock b : cfg.blockSet) {
             setSolution(b, exprs); // the solution sets for all other blocks initially contain all expressions
+            DFContext ctx = new DFContext(exprCollector, exprs);
+            DFVisitor dfVisitor = new DFVisitor();
             for (Ast ast : b.statements) {
-                // TODO
+                ctx = dfVisitor.visit(ast, ctx);
             }
+            b.localCut.addAll(ctx.localCut);
+            b.localNew.addAll(ctx.localNew);
         }
     }
 
@@ -41,6 +45,13 @@ public class BexprDataFlow extends BwdAndDataFlow<Expr> {
     // TODO: we don't want expressions that contain arrays or fields
     protected class ExpressionCollector extends AstVisitor<Set<Expr>, Void> {
         @Override
+        protected Set<Expr> dfltExpr(Expr ast, Void arg) {
+            Set<Expr> singleExpr = new HashSet<>();
+            singleExpr.add(ast);
+            return singleExpr;
+        }
+
+        @Override
         protected Set<Expr> dflt(Ast ast, Void arg) {
             Set<Expr> union = new HashSet<>();
             for (Ast child : ast.children()) {
@@ -48,19 +59,22 @@ public class BexprDataFlow extends BwdAndDataFlow<Expr> {
             }
             return union;
         }
+    }
 
+    private class DFVisitor extends AstVisitor<DFContext, DFContext> {
         @Override
-        public Set<Expr> binaryOp(Ast.BinaryOp ast, Void arg) {
-            Set<Expr> singleExpr = new HashSet<>();
-            singleExpr.add(ast);
-            return singleExpr;
+        public DFContext assign(Ast.Assign ast, DFContext arg) {
+            if (ast.left() instanceof Ast.Var) {
+                arg.cutExpressionsContaining((Ast.Var) ast.left());
+            }
+            arg.filterCut(arg.expressionCollector.visit(ast.right(), null));
+            return arg;
         }
 
         @Override
-        public Set<Expr> unaryOp(Ast.UnaryOp ast, Void arg) {
-            Set<Expr> singleExpr = new HashSet<>();
-            singleExpr.add(ast);
-            return singleExpr;
+        protected DFContext dflt(Ast ast, DFContext arg) {
+            arg.filterCut(arg.expressionCollector.visit(ast, null));
+            return arg;
         }
     }
 }

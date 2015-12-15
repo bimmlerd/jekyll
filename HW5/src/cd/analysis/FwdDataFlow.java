@@ -1,44 +1,44 @@
-package cd.analyses;
+package cd.analysis;
 
 import java.util.List;
 import java.util.Set;
 
 /**
- * Backward Data-Flow Problem: context = OUT, solution = IN
+ * Forward Data-Flow Problem: context = IN, solution = OUT
  */
-public abstract class BwdDataFlow<T> extends DataFlow<T> {
+public abstract class FwdDataFlow<T> extends DataFlow<T> {
     @Override
     List<BasicBlock> ancestors(BasicBlock b) {
-        return b.successors;
-    }
-
-    @Override
-    List<BasicBlock> descendant(BasicBlock b) {
         return b.predecessors;
     }
 
     @Override
+    List<BasicBlock> descendant(BasicBlock b) {
+        return b.successors;
+    }
+
+    @Override
     BasicBlock startPoint(ControlFlowGraph cfg) {
-        return cfg.exit;
+        return cfg.entry;
     }
 
     @Override
     Set<T> context(BasicBlock b) {
-        return b.outSet;
-    }
-
-    @Override
-    Set<T> solution(BasicBlock b) {
         return b.inSet;
     }
 
     @Override
+    Set<T> solution(BasicBlock b) {
+        return b.outSet;
+    }
+
+    @Override
     void setContext(BasicBlock b, Set<T> context) {
-        b.outSet = context;
+        b.inSet = context;
     }
 
     @Override
     void setSolution(BasicBlock b, Set<T> solution) {
-        b.inSet = solution;
+        b.outSet = solution;
     }
 }
