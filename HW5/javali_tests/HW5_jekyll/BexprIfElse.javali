@@ -1,0 +1,13 @@
+class Main {
+    void main() {
+        int a, b, c;
+        b = 0x24;
+        if (b < 0) {
+            b = a + 1;
+        } else {
+            b = 0;
+            c = a + 1;
+        }
+        c = a + 1;
+    }
+}
