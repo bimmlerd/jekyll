@@ -24,7 +24,7 @@ public class BexprDataFlow extends BwdAndDataFlow<Expr> {
         Set<Expr> allExpr = new HashSet<>();
         for (BasicBlock b : cfg.blockSet) {
             for (Ast ast : b.statements) {
-                allExpr.addAll(exprCollector.visit(ast, null));
+                allExpr.addAll(exprCollector.visit(ast, null).allExpr);
             }
         }
         setSolution(startPoint(cfg), new HashSet<>()); // the solution set of the start point is empty
@@ -55,22 +55,70 @@ public class BexprDataFlow extends BwdAndDataFlow<Expr> {
     /**
      * Visits statements and returns the set of expressions we are interested in.
      */
-    // TODO: we don't want expressions that contain arrays or fields
-    protected class ExpressionCollector extends AstVisitor<Set<Expr>, Void> {
+    protected class ExpressionCollector extends AstVisitor<CollectorContext, Void> {
         @Override
-        protected Set<Expr> dfltExpr(Expr ast, Void arg) {
-            Set<Expr> singleExpr = new HashSet<>();
-            singleExpr.add(ast);
-            return singleExpr;
+        protected CollectorContext dfltStmt(Ast.Stmt ast, Void arg) {
+            CollectorContext ctx = new CollectorContext(true);
+            for (Ast child : ast.children()) {
+                ctx.updateAllExpr(visit((Expr) child, arg).allExpr);
+            }
+            return ctx;
         }
 
         @Override
-        protected Set<Expr> dflt(Ast ast, Void arg) {
-            Set<Expr> union = new HashSet<>();
-            for (Ast child : ast.children()) {
-                union.addAll(visit((Expr) child, arg));
+        protected CollectorContext dfltExpr(Expr ast, Void arg) {
+            return new CollectorContext(false);
+        }
+
+        @Override
+        public CollectorContext binaryOp(Ast.BinaryOp ast, Void arg) {
+            CollectorContext leftCtx = visit(ast.left(), arg);
+            CollectorContext rightCtx = visit(ast.right(), arg);
+
+            CollectorContext ctx = new CollectorContext(leftCtx.exprIsValid && rightCtx.exprIsValid);
+            ctx.updateAllExpr(leftCtx.allExpr);
+            ctx.updateAllExpr(rightCtx.allExpr);
+
+            // only add the current ast node if we did not invalidate either of the expressions
+            if (leftCtx.exprIsValid && rightCtx.exprIsValid) {
+                ctx.allExpr.add(ast);
             }
-            return union;
+            return ctx;
+        }
+
+        @Override
+        public CollectorContext booleanConst(Ast.BooleanConst ast, Void arg) {
+            return new CollectorContext(true);
+        }
+
+        @Override
+        public CollectorContext intConst(Ast.IntConst ast, Void arg) {
+            return new CollectorContext(ast, true);
+        }
+
+        @Override
+        public CollectorContext methodCall(Ast.MethodCallExpr ast, Void arg) {
+            CollectorContext ctx = new CollectorContext(true);
+            for (Ast child : ast.children()) {
+                ctx.updateAllExpr(visit((Expr) child, arg).allExpr);
+            }
+            return ctx;
+        }
+
+        @Override
+        public CollectorContext unaryOp(Ast.UnaryOp ast, Void arg) {
+            CollectorContext ctx = visit(ast.arg(), arg);
+
+            // only add the current ast node if we did not invalidate the expression
+            if (ctx.exprIsValid) {
+                ctx.allExpr.add(ast);
+            }
+            return ctx;
+        }
+
+        @Override
+        public CollectorContext var(Ast.Var ast, Void arg) {
+            return new CollectorContext(ast, true);
         }
     }
 
@@ -89,7 +137,7 @@ public class BexprDataFlow extends BwdAndDataFlow<Expr> {
 
         @Override
         protected LocalSetContext dflt(Ast ast, LocalSetContext arg) {
-            arg.updateLocalNewWithExprNotInCut(exprCollector.visit(ast, null));
+            arg.updateLocalNewWithExprNotInCut(exprCollector.visit(ast, null).allExpr);
             return arg;
         }
     }
@@ -130,6 +178,27 @@ public class BexprDataFlow extends BwdAndDataFlow<Expr> {
 
         void updateLocalNewWithExprNotInCut(Set<Ast.Expr> exprs) {
             exprs.stream().filter(expr -> !localCut.contains(expr)).forEach(localNew::add);
+        }
+    }
+
+    /**
+     * Holds the intermediate set of collected expressions and indicates whether we are interested in the current expression.
+     */
+    private class CollectorContext {
+        Set<Expr> allExpr = new HashSet<>();
+        boolean exprIsValid = true;
+
+        public CollectorContext(boolean exprIsValid) {
+            this.exprIsValid = exprIsValid;
+        }
+
+        public CollectorContext(Expr expr, boolean exprIsValid) {
+            this.allExpr.add(expr);
+            this.exprIsValid = exprIsValid;
+        }
+
+        void updateAllExpr(Set<Expr> exprs) {
+            allExpr.addAll(exprs);
         }
     }
 }
