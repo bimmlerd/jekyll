@@ -3,6 +3,7 @@ package cd.analysis;
 import cd.ir.Ast;
 import cd.ir.Ast.Expr;
 import cd.ir.AstVisitor;
+import cd.util.debug.AstOneLine;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -39,7 +40,13 @@ public class BexprDataFlow extends BwdAndDataFlow<Expr> {
 
     @Override
     void evaluateDataFlow(ControlFlowGraph cfg) {
-
+        for (BasicBlock b : cfg.blockSet) {
+            if (b.condition != null && !context(b).isEmpty()) {
+                System.out.println(String.format("Busy expressions at %s in method %s.%s:",
+                        AstOneLine.toString(b.condition), cfg.classDecl.name, cfg.methodDecl.name));
+                context(b).stream().forEach(expr -> System.out.println(AstOneLine.toString(expr)));
+            }
+        }
     }
 
     // TODO: we don't want expressions that contain arrays or fields
