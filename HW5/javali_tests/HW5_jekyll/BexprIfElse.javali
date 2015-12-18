@@ -1,6 +1,8 @@
 class Main {
     void main() {
         int a, b, c;
+        int i0, i1, i2;
+        A obj;
         b = 0x24;
         if (b < 0) {
             b = a + 1;
@@ -9,5 +11,21 @@ class Main {
             c = a + 1;
         }
         c = a + 1;
+        obj.method(a + b, c - (1 + a));
+    }
+}
+
+class A {
+    void method(int a, int b) {
+        boolean valid, large;
+        if (a > b) {
+            large = !valid;
+            while (a > b) {
+                b = a - 1;
+                valid = b < a;
+            }
+        }
+        large = valid;
+        return;
     }
 }
