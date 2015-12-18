@@ -45,6 +45,7 @@ public class BexprDataFlow extends BwdAndDataFlow<Expr> {
         for (BasicBlock b : cfg.blockSet) {
             // report busy expressions at the start of an if/else or while statement
             if (b.condition != null && !context(b).isEmpty()) {
+                System.out.println();
                 System.out.println(String.format("Busy expressions at %s in method %s.%s:",
                         AstOneLine.toString(b.condition), cfg.classDecl.name, cfg.methodDecl.name));
                 context(b).stream().forEach(expr -> System.out.println(AstOneLine.toString(expr)));
@@ -99,8 +100,8 @@ public class BexprDataFlow extends BwdAndDataFlow<Expr> {
         @Override
         public CollectorContext methodCall(Ast.MethodCallExpr ast, Void arg) {
             CollectorContext ctx = new CollectorContext(true);
-            for (Ast child : ast.children()) {
-                ctx.updateAllExpr(visit((Expr) child, arg).allExpr);
+            for (Expr child : ast.argumentsWithoutReceiver()){
+                ctx.updateAllExpr(visit(child, arg).allExpr);
             }
             return ctx;
         }
