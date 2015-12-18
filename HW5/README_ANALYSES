@@ -1,0 +1,9 @@
+Data Flow Analyses: Our implementation follows the description of the algorithm for general data flow problems from the lecture. First, it builds a control flow graph based on basic blocks for each method. After initializing the local sets, it loops over the blocks until no more changes to the solution sets occur. Finally, we evaluate the results and provide some kind of report.
+
+- Uninitialized Variables
+===========================
+ We keep track of the initialization of local variables in each method using localCut and in/out sets. After running the data flow analyzer, we need to look at the basic blocks again to determine where possibly uninitialized variables are actually used as operands. We consider local variables of any type but do not check whether individual array elements or fields of an object are initialized. We throw a semantic failure exception when we detect the use of an uninitialized variable. However, we only report uninitialized variables used in the expression where we find the first error and not all variables in the whole program that may be uninitialized.
+
+ - Busy Expressions
+ ===========================
+ Our expression collector does not report expressions containing arrays and fields. We are only interested in binary and unary operations on local variables and integer and boolean values. We also consider subexpressions within binary/unary operations. These expressions can occur as arguments of a method call, array indices or simple assignments to variables. We compare expressions by their string representation and therefore do not consider expressions like 1+a and a+1 to be equal. We do report busy expressions at all if/else and while statements and not for all basic blocks.
