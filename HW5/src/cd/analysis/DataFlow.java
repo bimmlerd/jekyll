@@ -1,7 +1,9 @@
 package cd.analysis;
 
 import cd.ir.Ast;
+import cd.ir.Ast.ClassDecl;
 import cd.ir.Ast.MethodDecl;
+import cd.ir.Ast.Stmt;
 import cd.ir.AstVisitor;
 
 import java.util.*;
@@ -18,6 +20,7 @@ public abstract class DataFlow<T> {
      */
     protected class BasicBlock {
         final List<Ast> statements = new LinkedList<>(); // statements that make up the basic block
+        Stmt condition; // enclosing conditional statement of a basic block if there's any
 
         final List<BasicBlock> predecessors = new LinkedList<>(); // keep track of neighboring basic blocks in CFG
         final List<BasicBlock> successors = new LinkedList<>();
@@ -38,6 +41,7 @@ public abstract class DataFlow<T> {
 
         final Set<BasicBlock> blockSet = new HashSet<>(); // does neither contain the entry nor the exit block
 
+        ClassDecl classDecl;
         MethodDecl methodDecl; // reference to the method declaration the cfg belongs to
 
         private BasicBlock addBlockWithPredecessor(BasicBlock b) {
@@ -92,7 +96,7 @@ public abstract class DataFlow<T> {
         return result;
     }
 
-    public void run(List<Ast.ClassDecl> astRoots) {
+    public void run(List<ClassDecl> astRoots) {
         buildBasicBlocks(astRoots); // build uninitialized basic blocks
         for (ControlFlowGraph cfg : graphs) {
             initSets(cfg); // initialize solution sets and compute localCut and localNew sets for all basic blocks
@@ -115,9 +119,9 @@ public abstract class DataFlow<T> {
         }
     }
 
-    private void buildBasicBlocks(List<Ast.ClassDecl> astRoots) {
-        for (Ast.ClassDecl classDecl : astRoots) {
-            for (Ast.MethodDecl methodDecl : classDecl.methods()) {
+    private void buildBasicBlocks(List<ClassDecl> astRoots) {
+        for (ClassDecl classDecl : astRoots) {
+            for (MethodDecl methodDecl : classDecl.methods()) {
                 // We visit the body of each method declaration to build its global (intra-procedural) control flow graph.
                 ControlFlowGraph cfg = new ControlFlowGraph();
                 cfg.entry = new BasicBlock();
@@ -128,6 +132,7 @@ public abstract class DataFlow<T> {
                 if (last != null) {
                     cfg.connectBlocks(last, cfg.exit);
                 }
+                cfg.classDecl = classDecl;
                 cfg.methodDecl = methodDecl;
                 graphs.add(cfg);
             }
@@ -150,6 +155,7 @@ public abstract class DataFlow<T> {
         @Override
         public BasicBlock ifElse(Ast.IfElse ast, BasicBlock arg) {
             arg.statements.add(ast.condition()); // add the condition expression to the current basic block
+            arg.condition = ast;
 
             // Create new basic blocks for the then and else part, respectively. Additionally connect them to the predecessor block.
             BasicBlock then = cfg.addBlockWithPredecessor(arg);
@@ -198,6 +204,7 @@ public abstract class DataFlow<T> {
         public BasicBlock whileLoop(Ast.WhileLoop ast, BasicBlock arg) {
             BasicBlock cond = cfg.addBlockWithPredecessor(arg);
             cond.statements.add(ast.condition()); // add the condition expression to the current basic block
+            cond.condition = ast;
 
             // Create new basic blocks for the loop body. Additionally connect it to the predecessor block.
             BasicBlock body = cfg.addBlockWithPredecessor(cond);
