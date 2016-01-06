@@ -1,0 +1,11 @@
+class Main {
+    void main() {
+        int a, b, c, d;
+        a = 0;
+        b = 0;
+        while (a < 10) {
+            b = a + 1;
+            a = a + 1;
+        }
+    }
+}
