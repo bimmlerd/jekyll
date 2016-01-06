@@ -1,0 +1,20 @@
+jekyll: 0/30
+
+Method calls: 0/5
+Fields accesses: 0/3
+Array access: 0/2
+While statements: 0/3.5
+If, if-then-else statements: 0/3.5
+Assignment statement: 0/2
+'new' statement: 0/2
+Casts: 0/4
+Bootstrapping: 0/1
+Exiting correctly with error messages: 0/2
+Test-cases: 0/2
+
+Comments:
+
+* Submit self-contained compilers or provide the dependencies in your
+  jar’s directory for your submissions. 
+  In that way running your compiler does not require additional work from the assistant(s).
+  Please provide such dependency and contact the assistant such that can complete the grading.
