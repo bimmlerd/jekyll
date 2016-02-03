@@ -4,7 +4,7 @@ import cd.Config;
 import cd.ToDoException;
 import cd.ir.Ast;
 import cd.ir.Symbol;
-import javafx.util.Pair;
+import cd.util.GenericPair;
 
 import java.util.*;
 
@@ -92,7 +92,7 @@ public class VTableBuilder {
 
     public static class VTable {
 
-        private final Map<String, Pair<String, Integer>> table = new HashMap<>();
+        private final Map<String, GenericPair<String, Integer>> table = new HashMap<>();
 
         private final Symbol.ClassSymbol classSymbol;
         private final static String PARENT_KEY = "$parent";
@@ -104,21 +104,21 @@ public class VTableBuilder {
         private VTable() {
             // should only be used for object vtable
             classSymbol = Symbol.ClassSymbol.objectType;
-            table.put(PARENT_KEY, new Pair<>("0", 0));
+            table.put(PARENT_KEY, new GenericPair<>("0", 0));
         }
 
         public VTable(VTable parentVTable, Symbol.ClassSymbol classSymbol) {
             table.putAll(parentVTable.table);
             this.classSymbol = classSymbol;
-            table.put(PARENT_KEY, new Pair<>(parentVTable.getVTableLabel(), 0));
+            table.put(PARENT_KEY, new GenericPair<>(parentVTable.getVTableLabel(), 0));
         }
 
         public void add(String unqualifiedName, String label) {
             if (!table.containsKey(unqualifiedName)) {
-                table.put(unqualifiedName, new Pair<>(label, table.size()));
+                table.put(unqualifiedName, new GenericPair<>(label, table.size()));
             } else {
                 Integer index = table.get(unqualifiedName).getValue();
-                table.put(unqualifiedName, new Pair<>(label, index));
+                table.put(unqualifiedName, new GenericPair<>(label, index));
             }
         }
 
